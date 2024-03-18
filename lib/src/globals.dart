@@ -1,0 +1,8 @@
+import 'package:flutter/material.dart';
+import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/pages/sticker_packs_page.dart';
+
+late List<StickerPack> packs;
+final navigatorKey = GlobalKey<NavigatorState>();
+
+StickerPacksPageState? homeState;

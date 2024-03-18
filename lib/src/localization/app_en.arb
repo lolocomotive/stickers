@@ -1,0 +1,10 @@
+{
+  "@@locale": "en",
+  "@@author": "lolocomotive",
+  "appTitle": "Sticker maker",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "@_STICKERPACKS_PAGE": {},
+  "pTitle": "My sticker packs"
+}
