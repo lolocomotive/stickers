@@ -3,8 +3,8 @@ import 'package:share_handler/share_handler.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/dialogs/create_pack_dialog.dart';
 import 'package:stickers/src/globals.dart';
+import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
-import 'package:stickers/src/pages/edit_page.dart';
 import 'package:stickers/src/widgets/sticker_pack_preview_card.dart';
 
 class SelectPackPage extends StatefulWidget {
@@ -51,7 +51,7 @@ class _SelectPackPageState extends State<SelectPackPage> {
                 onTap: () {
                   Navigator.pushNamed(
                     context,
-                    "/edit",
+                    "/crop",
                     arguments: EditArguments(
                       pack: packs[index],
                       index: packs[index].stickers.length,

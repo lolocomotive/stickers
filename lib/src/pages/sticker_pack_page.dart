@@ -9,8 +9,8 @@ import 'package:stickers/src/dialogs/delete_confirm_dialog.dart';
 import 'package:stickers/src/dialogs/edit_pack_dialog.dart';
 import 'package:stickers/src/dialogs/edit_sticker_dialog.dart';
 import 'package:stickers/src/globals.dart';
+import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
-import 'package:stickers/src/pages/edit_page.dart';
 
 class StickerPackPage extends StatefulWidget {
   final StickerPack pack;
@@ -91,7 +91,7 @@ class StickerPackPageState extends State<StickerPackPage> {
 
                                   Navigator.pushNamed(
                                     context,
-                                    "/edit",
+                                    "/crop",
                                     arguments: EditArguments(
                                       pack: widget.pack,
                                       index: index,

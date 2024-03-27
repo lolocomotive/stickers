@@ -22,9 +22,11 @@ import 'package:flutter/material.dart';
 /// All screens have some thing in common.
 /// Having a widget with all the common parts makes it easier to modify later.
 class DefaultActivity extends StatelessWidget {
-  const DefaultActivity({super.key, required this.child, this.appBar, this.fab});
+  const DefaultActivity(
+      {super.key, required this.child, this.appBar, this.fab, this.resizeToAvoidBottomInset});
 
   final Widget child;
+  final bool? resizeToAvoidBottomInset;
   final PreferredSizeWidget? appBar;
   final FloatingActionButton? fab;
 
@@ -37,6 +39,7 @@ class DefaultActivity extends StatelessWidget {
           floatingActionButton: fab,
           appBar: appBar,
           body: child,
+          resizeToAvoidBottomInset: resizeToAvoidBottomInset,
         ),
       ),
     );

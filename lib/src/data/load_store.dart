@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_editor/image_editor.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/data/sticker.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
@@ -24,8 +25,8 @@ Future<List<StickerPack>> getPacks() async {
   return List.empty(growable: true);
 }
 
-saveSticker(Rect cropRect, Uint8List rawImageData, StickerPack pack, int index) async {
-  Stopwatch sw = Stopwatch()..start();
+Future<Uint8List> cropSticker(
+    Rect cropRect, Uint8List rawImageData, StickerPack pack, int index) async {
   // Apply crop then scale then put on 512x512 transparent image in center
 
   final crop = ImageEditorOption();
@@ -61,16 +62,24 @@ saveSticker(Rect cropRect, Uint8List rawImageData, StickerPack pack, int index) 
       ),
     ),
   );
-  final result = await ImageMerger.mergeToMemory(option: option);
+  return (await ImageMerger.mergeToMemory(option: option))!;
+}
 
+void addToPack(StickerPack pack, int index, Uint8List data) {
   Directory("$packsDir/${pack.id}").createSync(recursive: true);
   File output =
       File("$packsDir/${pack.id}/sticker_${index}_${DateTime.now().millisecondsSinceEpoch}.webp");
-  output.writeAsBytesSync(result!);
+  output.writeAsBytesSync(data);
 
   pack.stickers.add(Sticker(output.path));
   pack.onEdit();
   savePacks(packs);
+}
 
-  debugPrint("Saved to ${output.path} in ${sw.elapsedMilliseconds}ms");
+Future<File> saveTemp(Uint8List data) async {
+  String path = "${(await getTemporaryDirectory()).path}/sticker_tmp";
+  await Directory(path).create(recursive: true);
+  File output = File("$path/${DateTime.now().millisecondsSinceEpoch}.tmp.webp");
+  await output.writeAsBytes(data);
+  return output;
 }

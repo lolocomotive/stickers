@@ -24,9 +24,11 @@ dependencies:
       url: https://github.com/lolocomotive/flutter_image_editor
       path: image_editor
   image_picker: ^1.0.7
+  matrix_gesture_detector: ^0.2.0-nullsafety.1
   path_provider: ^2.1.2
   share_handler: ^0.0.21
   shared_preferences: ^2.2.2
+  vector_math: ^2.1.4
   whatsapp_stickers_plus:
     git:
       url: https://github.com/lolocomotive/whatsapp_stickers_plus

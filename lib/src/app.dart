@@ -7,6 +7,7 @@ import 'package:share_handler/share_handler.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/globals.dart';
+import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/edit_page.dart';
 import 'package:stickers/src/pages/select_pack_page.dart';
 import 'package:stickers/src/pages/sticker_pack_page.dart';
@@ -124,13 +125,16 @@ class MyAppState extends State<MyApp> {
                 switch (routeSettings.name) {
                   case SettingsPage.routeName:
                     return SettingsPage(controller: widget.settingsController);
-                  case EditPage.routeName:
+                  case CropPage.routeName:
                     final args = routeSettings.arguments as EditArguments;
-                    return EditPage(
+                    return CropPage(
                       pack: args.pack,
                       index: args.index,
                       imagePath: args.imagePath,
                     );
+                  case EditPage.routeName:
+                    final args = routeSettings.arguments as EditArguments;
+                    return EditPage(args.pack, args.index, args.imagePath);
                   case StickerPackPage.routeName:
                     return StickerPackPage(routeSettings.arguments as StickerPack, () {
                       setState(() {});
@@ -164,7 +168,9 @@ class MyAppState extends State<MyApp> {
     final index = pack.stickers.length;
     final img = await decodeImageFromList(rawImageData);
     final cropRect = Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble());
-    await saveSticker(cropRect, rawImageData, pack, index);
+    final cropped = await cropSticker(cropRect, rawImageData, pack, index);
+    addToPack(pack, index, cropped);
+
     navigatorKey.currentState!.pushNamed("/pack", arguments: pack).then((value) {
       if (homeState != null) {
         homeState!.update();
