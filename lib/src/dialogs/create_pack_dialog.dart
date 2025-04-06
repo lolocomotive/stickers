@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/util.dart';
 
 class CreatePackDialog extends StatelessWidget {
   CreatePackDialog(this.packs, {super.key});
@@ -21,24 +22,14 @@ class CreatePackDialog extends StatelessWidget {
           children: [
             TextFormField(
               autofocus: true,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a name';
-                }
-                return null;
-              },
+              validator: titleValidator,
               controller: _nameController,
               decoration: const InputDecoration(
-                label: Text("Pack name"),
+                label: Text("Pack title"),
               ),
             ),
             TextFormField(
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter an author';
-                }
-                return null;
-              },
+              validator: authorValidator,
               controller: _authorController,
               decoration: const InputDecoration(
                 label: Text("Author"),

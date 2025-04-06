@@ -19,6 +19,16 @@ class SettingsController with ChangeNotifier {
 
   late bool _quickMode;
 
+  late String _defaultAuthor;
+  late String _defaultTitle;
+
+  String get defaultTitle => _defaultTitle;
+
+  String get defaultAuthor => _defaultAuthor;
+
+  // Allow Widgets to read the user's preferred ThemeMode.
+  ThemeMode get themeMode => _themeMode;
+
   bool get quickMode => _quickMode;
 
   Future<void> updateQuickMode(bool quickMode) async {
@@ -36,8 +46,23 @@ class SettingsController with ChangeNotifier {
     await _settingsService.updateQuickMode(quickMode);
   }
 
-  // Allow Widgets to read the user's preferred ThemeMode.
-  ThemeMode get themeMode => _themeMode;
+  Future<void> updateDefaultAuthor(String defaultAuthor) async {
+    // Do not perform any work if new and old ThemeMode are identical
+    if (defaultAuthor == _defaultAuthor) return;
+
+    // Otherwise, store the new ThemeMode in memory
+    _defaultAuthor = defaultAuthor;
+
+    notifyListeners();
+    await _settingsService.updateDefaultAuthor(defaultAuthor);
+  }
+
+  Future<void> updateDefaultTitle(String defaultTitle) async {
+    if (defaultTitle == _defaultTitle) return;
+    _defaultTitle = defaultTitle;
+    notifyListeners();
+    await _settingsService.updateDefaultTitle(defaultTitle);
+  }
 
   /// Load the user's settings from the SettingsService. It may load from a
   /// local database or the internet. The controller only knows it can load the
@@ -45,26 +70,19 @@ class SettingsController with ChangeNotifier {
   Future<void> loadSettings() async {
     _themeMode = await _settingsService.themeMode();
     _quickMode = await _settingsService.quickMode();
+    _defaultTitle = await _settingsService.defaultTitle();
+    _defaultAuthor = await _settingsService.defaultAuthor();
 
-    // Important! Inform listeners a change has occurred.
     notifyListeners();
   }
 
   /// Update and persist the ThemeMode based on the user's selection.
   Future<void> updateThemeMode(ThemeMode? newThemeMode) async {
     if (newThemeMode == null) return;
-
-    // Do not perform any work if new and old ThemeMode are identical
     if (newThemeMode == _themeMode) return;
 
-    // Otherwise, store the new ThemeMode in memory
     _themeMode = newThemeMode;
-
-    // Important! Inform listeners a change has occurred.
     notifyListeners();
-
-    // Persist the changes to a local database or the internet using the
-    // SettingService.
     await _settingsService.updateThemeMode(newThemeMode);
   }
 }

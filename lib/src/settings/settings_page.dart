@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stickers/src/dialogs/edit_quickmode_defaults_dialog.dart';
 import 'package:stickers/src/globals.dart';
 
 import 'settings_controller.dart';
@@ -81,15 +82,25 @@ class SettingsPage extends StatelessWidget {
             },
             title: const Text("Quick mode"),
             leading: const Icon(Icons.bolt),
-            subtitle: const Opacity(
+            subtitle: Opacity(
               opacity: .7,
-              child: Text(
-                  "Adds shared images as stickers automatically without any interaction"),
+              child: const Text("Adds shared images as stickers automatically without any interaction"),
             ),
-            trailing: Switch(
-                value: controller.quickMode,
-                onChanged: controller.updateQuickMode),
+            trailing: Switch(value: controller.quickMode, onChanged: controller.updateQuickMode),
           ),
+          if (controller.quickMode)
+            ListTile(
+              onTap: () => _showQuickModeDefaultsDialog(context),
+              leading: Icon(Icons.account_circle),
+              subtitle: Opacity(
+                  opacity: .7,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [Text("Title: ${controller.defaultTitle}"), Text("Author: ${controller.defaultAuthor}")],
+                  )),
+              title: Text("Quick mode defaults"),
+              trailing: ElevatedButton(onPressed: () => _showQuickModeDefaultsDialog(context), child: Text("Edit")),
+            ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 24, vertical: 4),
             child: Divider(),
@@ -104,8 +115,7 @@ class SettingsPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                            "${info!.appName} v${info!.version}+${info!.buildNumber}"),
+                        Text("${info!.appName} v${info!.version}+${info!.buildNumber}"),
                       ],
                     ),
                   ),
@@ -116,6 +126,15 @@ class SettingsPage extends StatelessWidget {
                 child: const Text("Licences")),
           ),
         ],
+      ),
+    );
+  }
+
+  _showQuickModeDefaultsDialog(context) {
+    showDialog(
+      context: context,
+      builder: (context) => EditQuickmodeDefaultsDialog(
+        settingsController: controller,
       ),
     );
   }

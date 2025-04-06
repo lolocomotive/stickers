@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SettingsService {
   late SharedPreferences _prefs;
   late Future<SharedPreferences> _pFuture;
+
   SettingsService() {
     _pFuture = SharedPreferences.getInstance().then((value) => _prefs = value);
   }
@@ -28,6 +29,10 @@ class SettingsService {
 
   Future<bool> quickMode() async => _prefs.getBool("quickMode") ?? false;
 
+  Future<String> defaultTitle() async => _prefs.getString("defaultPackName") ?? "New sticker pack";
+
+  Future<String> defaultAuthor() async => _prefs.getString("defaultAuthor") ?? "auto-generated";
+
   /// Persists the user's preferred ThemeMode to local or remote storage.
   Future<void> updateThemeMode(ThemeMode theme) async {
     _prefs.setString("themeMode", theme.name);
@@ -35,5 +40,13 @@ class SettingsService {
 
   Future<void> updateQuickMode(bool quickMode) async {
     _prefs.setBool("quickMode", quickMode);
+  }
+
+  Future<void> updateDefaultTitle(String defaultTitle) async {
+    _prefs.setString("defaultTitle", defaultTitle);
+  }
+
+  Future<void> updateDefaultAuthor(String defaultAuthor) async {
+    _prefs.setString("defaultAuthor", defaultAuthor);
   }
 }

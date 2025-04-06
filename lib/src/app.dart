@@ -17,8 +17,8 @@ import 'settings/settings_controller.dart';
 import 'settings/settings_page.dart';
 
 /// The Widget that configures your application.
-class MyApp extends StatefulWidget {
-  const MyApp({
+class StickersApp extends StatefulWidget {
+  const StickersApp({
     super.key,
     required this.settingsController,
   });
@@ -26,10 +26,10 @@ class MyApp extends StatefulWidget {
   final SettingsController settingsController;
 
   @override
-  State<MyApp> createState() => MyAppState();
+  State<StickersApp> createState() => StickersAppState();
 }
 
-class MyAppState extends State<MyApp> {
+class StickersAppState extends State<StickersApp> {
   @override
   void initState() {
     super.initState();
@@ -45,7 +45,7 @@ class MyAppState extends State<MyApp> {
     if (media != null) {
       debugPrint("Initial Media received");
       if (widget.settingsController.quickMode) {
-        _quickAdd(media!);
+        _quickAdd(media!, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
         media = null;
       }
     }
@@ -54,7 +54,7 @@ class MyAppState extends State<MyApp> {
       if (!mounted) return;
       debugPrint("Media Stream received");
       if (widget.settingsController.quickMode) {
-        _quickAdd(media);
+        _quickAdd(media, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
       } else {
         this.media = media;
       }
@@ -151,12 +151,12 @@ class MyAppState extends State<MyApp> {
     );
   }
 
-  Future<void> _quickAdd(SharedMedia media) async {
+  Future<void> _quickAdd(SharedMedia media, String defaultTitle, String defaultAuthor) async {
     final rawImageData = File(media.attachments!.first!.path).readAsBytesSync();
     final pack = packs.firstWhere((pack) => pack.stickers.length < 30, orElse: () {
       final pack = StickerPack(
-        "New sticker pack",
-        "auto-generated",
+        defaultTitle,
+        defaultAuthor,
         "pack_${DateTime.now().millisecondsSinceEpoch}",
         [],
         "0",
