@@ -16,8 +16,8 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  image_picker: 1.0.7
 
+  image_picker: 1.0.7
   package_info_plus: 8.3.0
   path_provider: 2.1.2
   share_handler: 0.0.21
@@ -26,7 +26,9 @@ dependencies:
 
   # Custom packages that have been modified
   matrix_gesture_detector:
-    path: C:\Users\loic\dev\StudioProjects\matrix_gesture_detector
+    git:
+      url: https://github.com/lolocomotive/matrix_gesture_detector
+      ref: e5437252a2c219c6f6139ee83c097fb27354c7b9
   extended_image:
     git:
       url: https://github.com/lolocomotive/extended_image
@@ -34,7 +36,7 @@ dependencies:
   image_editor:
     git:
       url: https://github.com/lolocomotive/flutter_image_editor
-      ref: b0c66bfb99d849b214133f69fa5b6393bee75468
+      ref: de30887fa216133e9afbb728ee5f5f6d397800bf
       path: image_editor
   whatsapp_stickers_plus:
     git:
