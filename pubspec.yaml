@@ -4,7 +4,7 @@ description: "A minimal WhatsApp sticker maker"
 # Prevent accidental publishing to pub.dev.
 publish_to: 'none'
 
-version: 1.0.0+alpha-1
+version: 1.0.0-alpha+1
 
 environment:
   sdk: '>=3.3.1 <4.0.0'
@@ -12,32 +12,39 @@ environment:
 dependencies:
   animations: ^2.0.11
   characters: ^1.3.0
-  extended_image: 
-    git:
-      url: https://github.com/lolocomotive/extended_image
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  image_editor:
-    git:
-      url: https://github.com/lolocomotive/flutter_image_editor
-      path: image_editor
   image_picker: ^1.0.7
-  matrix_gesture_detector: ^0.2.0-nullsafety.1
+
+  package_info_plus: ^8.3.0
   path_provider: ^2.1.2
   share_handler: ^0.0.21
   shared_preferences: ^2.2.2
   vector_math: ^2.1.4
+
+  # Custom packages that have been modified
+  matrix_gesture_detector:
+    path: C:\Users\loic\dev\StudioProjects\matrix_gesture_detector
+  extended_image:
+    git:
+      url: https://github.com/lolocomotive/extended_image
+      ref: 55e9313e747a783a4795aead04af433409db0475
+  image_editor:
+    git:
+      url: https://github.com/lolocomotive/flutter_image_editor
+      ref: 829e8e001e9d610c6ee5eca653b273f46e80a228
+      path: image_editor
   whatsapp_stickers_plus:
     git:
       url: https://github.com/lolocomotive/whatsapp_stickers_plus
-
+      ref: c0ba5ed891298ff2a5e49fe2ebccc33f0a1d4ba6
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^3.0.0
+  flutter_lints: ^5.0.0
 
 flutter:
   uses-material-design: true

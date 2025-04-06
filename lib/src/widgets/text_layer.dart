@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:image_editor/image_editor.dart';
-import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 import 'package:stickers/src/pages/edit_page.dart';
 
 class TextLayer extends StatefulWidget {
   final EditorText text;
-  const TextLayer(
+  late final TextLayerState state;
+
+  TextLayer(
     this.text, {
     super.key,
   });
 
   @override
-  State<TextLayer> createState() => _TextLayerState();
+  State<TextLayer> createState() {
+    state = TextLayerState();
+    return state;
+  }
+
+  void update(Matrix4 matrix){
+    state.update(matrix);
+  }
 }
 
-class _TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
+class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController(text: "");
   final _focusNode = FocusNode();
 
@@ -76,41 +84,38 @@ class _TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return MatrixGestureDetector(
-      onMatrixUpdate: (matrix, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) {
-        widget.text.transform = matrix;
-        setState(() {});
-      },
-      shouldRotate: true,
-      shouldScale: true,
-      shouldTranslate: true,
-      child: Transform(
-        origin: const Offset(0, 0),
-        transform: widget.text.transform,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            GestureDetector(
-              onTap: () {
-                enableEditing();
-              },
-              child: Text(
-                _controller.text,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  inherit: false,
-                  fontSize: widget.text.fontSize,
-                ),
+    return Transform(
+      origin: const Offset(0, 0),
+      transform: widget.text.transform,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          GestureDetector(
+            onTap: () {
+              enableEditing();
+            },
+            child: Text(
+              _controller.text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                inherit: false,
+                fontSize: widget.text.fontSize,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
+  void update(Matrix4 matrix) {
+    widget.text.transform = matrix;
+    setState(() {});
+  }
+
   void disableEditing() {
-    Navigator.of(context).popUntil((route) => route.settings.name == EditPage.routeName);
+    Navigator.of(context)
+        .popUntil((route) => route.settings.name == EditPage.routeName);
   }
 }

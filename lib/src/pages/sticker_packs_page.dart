@@ -41,7 +41,8 @@ class StickerPacksPageState extends State<StickerPacksPage> {
       ],
       fab: FloatingActionButton(
         onPressed: () {
-          showDialog(context: context, builder: (_) => CreatePackDialog(packs)).then(
+          showDialog(context: context, builder: (_) => CreatePackDialog(packs))
+              .then(
             (_) => setState(() {
               savePacks(packs);
             }),
@@ -50,13 +51,34 @@ class StickerPacksPageState extends State<StickerPacksPage> {
         child: const Icon(Icons.add),
       ),
       title: AppLocalizations.of(context)?.pTitle ?? localizationUnavailable,
-      child: ListView.separated(
-        separatorBuilder: (context, index) => Container(),
-        itemBuilder: (context, index) => StickerPackPreviewCard(packs[index], () {
-          setState(() {});
-        }),
-        itemCount: packs.length,
-      ),
+      child: packs.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.fromLTRB(0, 36, 0, 0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text(
+                    "No packs",
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  Opacity(
+                    opacity: .8,
+                    child: Text(
+                      "Click on the bottom right to add a sticker pack",
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : ListView.separated(
+              separatorBuilder: (context, index) => Container(),
+              itemBuilder: (context, index) =>
+                  StickerPackPreviewCard(packs[index], () {
+                setState(() {});
+              }),
+              itemCount: packs.length,
+            ),
     );
   }
 }
