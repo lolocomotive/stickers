@@ -10,19 +10,19 @@ environment:
   sdk: '>=3.3.1 <4.0.0'
 
 dependencies:
-  animations: ^2.0.11
-  characters: ^1.3.0
+  animations: 2.0.11
+  characters: 1.4.0
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  image_picker: ^1.0.7
+  image_picker: 1.0.7
 
-  package_info_plus: ^8.3.0
-  path_provider: ^2.1.2
-  share_handler: ^0.0.21
-  shared_preferences: ^2.2.2
-  vector_math: ^2.1.4
+  package_info_plus: 8.3.0
+  path_provider: 2.1.2
+  share_handler: 0.0.21
+  shared_preferences: 2.2.2
+  vector_math: 2.1.4
 
   # Custom packages that have been modified
   matrix_gesture_detector:
@@ -34,7 +34,7 @@ dependencies:
   image_editor:
     git:
       url: https://github.com/lolocomotive/flutter_image_editor
-      ref: 829e8e001e9d610c6ee5eca653b273f46e80a228
+      ref: b0c66bfb99d849b214133f69fa5b6393bee75468
       path: image_editor
   whatsapp_stickers_plus:
     git:
