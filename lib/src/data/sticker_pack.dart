@@ -13,9 +13,13 @@ class StickerPack {
   String author;
   String id;
   String imageDataVersion;
+  String? publisherWebsite;
+  String? privacyPolicyWebsite;
+  String? licenseAgreementWebsite;
   List<Sticker> stickers;
 
-  StickerPack(this.title, this.author, this.id, this.stickers, this.imageDataVersion);
+  StickerPack(this.title, this.author, this.id, this.stickers, this.imageDataVersion,
+      [this.publisherWebsite, this.licenseAgreementWebsite, this.privacyPolicyWebsite]);
 
   sendToWhatsapp() async {
     if (stickers.isEmpty) throw Exception("No stickers!");
@@ -35,9 +39,9 @@ class StickerPack {
       publisher: author,
       trayImageFileName: WhatsappStickerImage.fromFile(trayIcon.path),
       imageDataVersion: imageDataVersion,
-      //publisherWebsite: '', //TODO allow to edit
-      //privacyPolicyWebsite: '',
-      //licenseAgreementWebsite: '',
+      publisherWebsite: publisherWebsite,
+      privacyPolicyWebsite: privacyPolicyWebsite,
+      licenseAgreementWebsite: licenseAgreementWebsite,
     );
 
     for (var sticker in stickers) {
@@ -60,6 +64,9 @@ class StickerPack {
       "author": author,
       "imageDataVersion": imageDataVersion,
       "stickers": stickers.map((sticker) => sticker.toJson()).toList(),
+      "publisherWebsite": publisherWebsite,
+      "privacyPolicyWebsite": privacyPolicyWebsite,
+      "licenseAgreementWebsite": licenseAgreementWebsite,
     };
   }
 
@@ -70,6 +77,9 @@ class StickerPack {
       json["id"],
       (json["stickers"] as List).map((sticker) => Sticker.fromJson(sticker)).toList(),
       json["imageDataVersion"],
+      json["publisherWebsite"],
+      json["privacyPolicyWebsite"],
+      json["licenseAgreementWebsite"],
     );
   }
 }

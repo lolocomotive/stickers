@@ -17,6 +17,7 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
   final formKey = GlobalKey<FormState>();
   final controller = TextEditingController();
   bool valid = true;
+
   @override
   void initState() {
     super.initState();
@@ -75,8 +76,7 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                           onPressed: valid
                               ? () {
                                   if (formKey.currentState?.validate() == false) return;
-                                  widget.pack.stickers[widget.index].emojis =
-                                      controller.value.text.characters.toList();
+                                  widget.pack.stickers[widget.index].emojis = controller.value.text.characters.toList();
                                   widget.pack.onEdit();
                                   Navigator.of(context).pop();
                                 }
@@ -101,8 +101,8 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
     } else if (value.characters.length > 3) {
       return "Please provide atmost 3 emojis";
     }
-    final emojiRegex = RegExp(
-        r"(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])");
+    final emojiRegex =
+        RegExp(r"(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])");
     for (final char in value.characters) {
       if (emojiRegex.allMatches(char).isEmpty) {
         return "Please enter only emojis";
