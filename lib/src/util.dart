@@ -1,3 +1,9 @@
+import 'package:flutter/material.dart';
+import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/dialogs/error_dialog.dart';
+import 'package:stickers/src/globals.dart';
+import 'package:whatsapp_stickers_plus/exceptions.dart';
+
 bool isValidURL(String input) {
   final url = Uri.tryParse(input);
   if (url == null) return false;
@@ -18,4 +24,20 @@ String? authorValidator(String? value) {
     return 'Please enter an author';
   }
   return null;
+}
+
+Future<void> sendToWhatsappWithErrorHandling(StickerPack pack) async {
+  try {
+    await pack.sendToWhatsapp();
+  } on WhatsappStickersAlreadyAddedException catch (_) {
+  } on WhatsappStickersException catch (e) {
+    showDialog(
+      context: navigatorKey.currentContext!,
+      builder: (_) => ErrorDialog(
+        message: e.cause ?? e.runtimeType.toString(),
+      ),
+    );
+  } on Exception catch (e) {
+    showDialog(context: navigatorKey.currentContext!, builder: (_) => ErrorDialog(message: e.toString()));
+  }
 }

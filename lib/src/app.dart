@@ -12,6 +12,7 @@ import 'package:stickers/src/pages/edit_page.dart';
 import 'package:stickers/src/pages/select_pack_page.dart';
 import 'package:stickers/src/pages/sticker_pack_page.dart';
 import 'package:stickers/src/pages/sticker_packs_page.dart';
+import 'package:stickers/src/util.dart';
 
 import 'settings/settings_controller.dart';
 import 'settings/settings_page.dart';
@@ -176,6 +177,6 @@ class StickersAppState extends State<StickersApp> {
         homeState!.update();
       }
     });
-    await pack.sendToWhatsapp();
+    await sendToWhatsappWithErrorHandling(pack);
   }
 }

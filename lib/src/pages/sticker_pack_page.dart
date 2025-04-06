@@ -11,10 +11,12 @@ import 'package:stickers/src/dialogs/edit_sticker_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
+import 'package:stickers/src/util.dart';
 
 class StickerPackPage extends StatefulWidget {
   final StickerPack pack;
   final Function deleteCallback;
+
   const StickerPackPage(this.pack, this.deleteCallback, {super.key});
 
   static const routeName = "/pack";
@@ -40,9 +42,7 @@ class StickerPackPageState extends State<StickerPackPage> {
               ),
               IconButton(
                 onPressed: () {
-                  showDialog<bool>(
-                      context: context,
-                      builder: (context) => DeleteConfirmDialog(widget.pack.title)).then(
+                  showDialog<bool>(context: context, builder: (context) => DeleteConfirmDialog(widget.pack.title)).then(
                     (value) async {
                       if (value == true) {
                         packs.remove(widget.pack);
@@ -84,8 +84,7 @@ class StickerPackPageState extends State<StickerPackPage> {
                               ? null
                               : () async {
                                   final ImagePicker picker = ImagePicker();
-                                  final XFile? image =
-                                      await picker.pickImage(source: ImageSource.gallery);
+                                  final XFile? image = await picker.pickImage(source: ImageSource.gallery);
                                   if (image == null) return; //TODO add Snackbar warning
                                   if (!context.mounted) return;
 
@@ -148,7 +147,9 @@ class StickerPackPageState extends State<StickerPackPage> {
                   ),
                 ),
               FilledButton(
-                onPressed: widget.pack.stickers.length >= 3 ? widget.pack.sendToWhatsapp : null,
+                onPressed: widget.pack.stickers.length < 3
+                    ? null
+                    : () => sendToWhatsappWithErrorHandling(widget.pack),
                 child: const Text("Add to WhatsApp"),
               ),
             ],
