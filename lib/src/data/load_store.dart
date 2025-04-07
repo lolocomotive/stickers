@@ -71,7 +71,7 @@ void addToPack(StickerPack pack, int index, Uint8List data) {
       File("$packsDir/${pack.id}/sticker_${index}_${DateTime.now().millisecondsSinceEpoch}.webp");
   output.writeAsBytesSync(data);
 
-  pack.stickers.add(Sticker(output.path));
+  pack.stickers.add(Sticker(output.path, ["❤"]));
   pack.onEdit();
   savePacks(packs);
 }

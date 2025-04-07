@@ -4,14 +4,15 @@ class Sticker {
   String source;
 
   List<String> emojis;
-  Sticker(this.source, [this.emojis = const ["😍"]]);
+
+  Sticker(this.source, this.emojis);
 
   Map<String, dynamic> toJson() {
-    return {"source": source};
+    return {"source": source, "emojis": emojis};
   }
 
   static Sticker fromJson(Map<String, dynamic> json) {
-    return Sticker(json["source"]);
+    return Sticker(json["source"], (json["emojis"] as List<dynamic>).map<String>((e) => e as String).toList());
   }
 
   WhatsappStickerImage getWhatsappStickerImage() {

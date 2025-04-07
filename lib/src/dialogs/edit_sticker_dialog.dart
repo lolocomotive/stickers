@@ -47,6 +47,7 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                   TextFormField(
                     autofocus: true,
                     decoration: const InputDecoration(label: Text("Associated emojis")),
+                    textAlign: TextAlign.center,
                     validator: validator,
                     controller: controller,
                     onChanged: (value) {

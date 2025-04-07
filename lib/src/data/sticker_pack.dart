@@ -45,7 +45,7 @@ class StickerPack {
     );
 
     for (var sticker in stickers) {
-      stickerPack.addSticker(sticker.getWhatsappStickerImage(), ["😀"]);
+      stickerPack.addSticker(sticker.getWhatsappStickerImage(), sticker.emojis);
     }
 
     debugPrint("Adding $title ($id)  v=$imageDataVersion to Whatsapp");
