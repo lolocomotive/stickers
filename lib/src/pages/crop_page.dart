@@ -35,53 +35,55 @@ class _CropPageState extends State<CropPage> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        //TODO  make loading less abrupt
+        //TODO make loading less abrupt
         children: [
           Expanded(
-            child: Container(
-              clipBehavior: Clip.antiAlias,
-              decoration: const BoxDecoration(color: Colors.black),
-              child: ExtendedImage.file(
-                File(widget.imagePath),
-                fit: BoxFit.contain,
-                beforePaintImage: (canvas, rect, image, paint) {
-                  CheckerPainter.checkerPainter(canvas, rect, context);
-                  return false;
-                },
-                mode: ExtendedImageMode.editor,
-                extendedImageEditorKey: widget.editorKey,
-                cacheRawData: true,
-                initEditorConfigHandler: (state) {
-                  return EditorConfig(
-                    animationDuration: const Duration(milliseconds: 100),
-                    maxScale: 8.0,
-                    cropRectPadding: const EdgeInsets.all(40.0),
-                    hitTestSize: 40.0,
-                    cropAspectRatio: null,
-                    cornerColor: Colors.black,
-                    cornerSize: const Size(30, 4),
-                  );
-                },
-              ),
+            child: ExtendedImage.file(
+              File(widget.imagePath),
+              fit: BoxFit.contain,
+              beforePaintImage: (canvas, rect, image, paint) {
+                CheckerPainter.checkerPainter(canvas, rect, context);
+                return false;
+              },
+              mode: ExtendedImageMode.editor,
+              extendedImageEditorKey: widget.editorKey,
+              cacheRawData: true,
+
+              initEditorConfigHandler: (state) {
+                return EditorConfig(
+                  lineHeight: 3,
+                  lineColor: Theme.of(context).colorScheme.primary.withAlpha(100),
+                  animationDuration: const Duration(milliseconds: 100),
+                  maxScale: 8.0,
+                  cropRectPadding: const EdgeInsets.all(40.0),
+                  hitTestSize: 80.0,
+                  cropAspectRatio: null,
+                  cornerColor: Theme.of(context).colorScheme.primary,
+                  cornerSize: const Size(30, 5),
+                );
+              },
             ),
           ),
-          TextButton(
-            onPressed: () async {
-              final state = widget.editorKey.currentState!;
-              final cropped = await cropSticker(
-                  state.getCropRect()!, state.rawImageData, widget.pack, widget.index);
-              final output = await saveTemp(cropped);
-              if (!context.mounted) return;
-              Navigator.of(context).pushNamed(
-                "/edit",
-                arguments: EditArguments(
-                  pack: widget.pack,
-                  index: widget.index,
-                  imagePath: output.path,
-                ),
-              );
-            },
-            child: const Text("Done"),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
+              onPressed: () async {
+                final state = widget.editorKey.currentState!;
+                final cropped = await cropSticker(
+                    state.getCropRect()!, state.rawImageData, widget.pack, widget.index);
+                final output = await saveTemp(cropped);
+                if (!context.mounted) return;
+                Navigator.of(context).pushNamed(
+                  "/edit",
+                  arguments: EditArguments(
+                    pack: widget.pack,
+                    index: widget.index,
+                    imagePath: output.path,
+                  ),
+                );
+              },
+              child: const Text("Done"),
+            ),
           ),
         ],
       ),

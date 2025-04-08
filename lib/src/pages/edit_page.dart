@@ -60,8 +60,7 @@ class _EditPageState extends State<EditPage> {
                     _currentLayer = _layers.lastOrNull;
                     print(focalPoint);
                   },
-                  onMatrixUpdate: (matrix, translationDeltaMatrix,
-                      scaleDeltaMatrix, rotationDeltaMatrix) {
+                  onMatrixUpdate: (matrix, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) {
                     _currentLayer?.update(matrix);
                   },
                   child: Column(
@@ -72,7 +71,7 @@ class _EditPageState extends State<EditPage> {
                       Container(
                         color: Colors.black,
                         child: CustomPaint(
-                          painter: CheckerPainter(context, (size) {
+                          painter: CheckerPainter(context, sizeCallback: (size) {
                             if (imageSize != size) {
                               imageSize = size;
                               scaleFactor = size.width / 512;
@@ -147,8 +146,7 @@ class _EditPageState extends State<EditPage> {
                 option.addOption(textOption);
                 option.outputFormat = const OutputFormat.webp_lossy();
 
-                final data = await ImageEditor.editFileImage(
-                    file: _source, imageEditorOption: option);
+                final data = await ImageEditor.editFileImage(file: _source, imageEditorOption: option);
                 addToPack(widget.pack, widget.index, data!);
                 if (!context.mounted) return;
                 Navigator.of(context).pop();

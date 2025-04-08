@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 
 class EditStickerDialog extends StatefulWidget {
@@ -27,16 +28,26 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text("Edit sticker"),
+      //title: const Text("Edit sticker"),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
+              child: Text(
+                "Edit sticker",
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+            ),
             Container(
-              height: 100,
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
               clipBehavior: Clip.antiAlias,
-              child: Image.file(File(widget.pack.stickers[widget.index].source)),
+              child: CustomPaint(
+                painter: CheckerPainter(context),
+                child: Image.file(File(widget.pack.stickers[widget.index].source)),
+              ),
             ),
             Form(
               key: formKey,
@@ -45,7 +56,6 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
-                    autofocus: true,
                     decoration: const InputDecoration(label: Text("Associated emojis")),
                     textAlign: TextAlign.center,
                     validator: validator,

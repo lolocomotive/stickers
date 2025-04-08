@@ -5,11 +5,16 @@ import 'package:flutter/material.dart' hide Image;
 class CheckerPainter extends CustomPainter {
   BuildContext context;
   Function(Size)? sizeCallback;
-  CheckerPainter(this.context, [this.sizeCallback]);
+
+  CheckerPainter(this.context, {this.sizeCallback, this.fg, this.bg});
+
+  final Color? fg;
+  final Color? bg;
+
   @override
   void paint(Canvas canvas, Size size) {
     if (sizeCallback != null) sizeCallback!(size);
-    checkerPainter(canvas, Rect.fromLTWH(0, 0, size.width, size.height), context);
+    checkerPainter(canvas, Rect.fromLTWH(0, 0, size.width, size.height), context, fg, bg);
   }
 
   @override
@@ -17,20 +22,25 @@ class CheckerPainter extends CustomPainter {
     return true;
   }
 
-  static void checkerPainter(Canvas canvas, Rect rect, BuildContext context) {
+  static void checkerPainter(Canvas canvas, Rect rect, BuildContext context, [Color? bg, Color? fg]) {
     // Paint a checkerboard below the image to indicate transparency
+    fg = fg ?? (Theme.of(context).brightness == Brightness.light
+        ? Color.lerp(Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.surface, .8)
+        : Color.lerp(Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.surface, .9));
+    bg = bg ?? (Theme.of(context).brightness == Brightness.light
+            ? Color.lerp(Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.surface, .9)
+            : Color.lerp(Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.surface, .95));
 
     double size = 10;
     final checkerPaint = Paint();
     checkerPaint.blendMode = BlendMode.srcOver;
     checkerPaint.style = PaintingStyle.fill;
-    checkerPaint.color = Theme.of(context).brightness == Brightness.light
-        ? Colors.white
-        : Colors.grey.shade900.withAlpha(150);
+
+    // It's ok to null check like this since lerp only returns null only if both arguments are null,
+    // Which isn't the case here
+    checkerPaint.color = bg!;
     canvas.drawRect(rect, checkerPaint);
-    checkerPaint.color = Theme.of(context).brightness == Brightness.light
-        ? Colors.grey.shade300
-        : Colors.grey.shade900;
+    checkerPaint.color = fg!;
     canvas.clipRect(rect);
 
     // Clamp to screen area for performance reasons.

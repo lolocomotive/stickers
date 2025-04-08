@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
+import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
@@ -13,6 +14,7 @@ import 'package:stickers/src/pages/sticker_pack_page.dart';
 class StickerPackPreviewCard extends StatefulWidget {
   final StickerPack pack;
   final Function deleteCallback;
+
   const StickerPackPreviewCard(this.pack, this.deleteCallback, {super.key});
 
   @override
@@ -32,9 +34,9 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: OpenContainer(
         closedColor: surface,
-        openColor: Theme.of(context).colorScheme.background,
+        openColor: Theme.of(context).colorScheme.surface,
         middleColor: surface,
-        closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         closedBuilder: (context, action) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -47,10 +49,19 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
               leading: widget.pack.stickers.isEmpty
                   ? null
                   : Container(
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(24), boxShadow: [
+                        BoxShadow(
+                          offset: Offset(1, 1),
+                          blurRadius: 3,
+                          color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.black12,
+                        )
+                      ]),
                       clipBehavior: Clip.antiAlias,
-                      child: Image.file(
-                        File(widget.pack.stickers.first.source),
+                      child: CustomPaint(
+                        painter: CheckerPainter(context),
+                        child: Image.file(
+                          File(widget.pack.stickers.first.source),
+                        ),
                       ),
                     ),
               trailing: Row(
@@ -59,18 +70,15 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
                   IconButton(
                       icon: const Icon(Icons.edit),
                       onPressed: () {
-                        showDialog(
-                            context: context,
-                            builder: (context) => EditPackDialog(widget.pack)).then(
+                        showDialog(context: context, builder: (context) => EditPackDialog(widget.pack)).then(
                           (_) => setState(() {}),
                         );
                       }),
                   IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () {
-                      showDialog<bool>(
-                          context: context,
-                          builder: (context) => DeleteConfirmDialog(widget.pack.title)).then(
+                      showDialog<bool>(context: context, builder: (context) => DeleteConfirmDialog(widget.pack.title))
+                          .then(
                         (value) async {
                           if (value == true) {
                             packs.remove(widget.pack);
@@ -95,11 +103,22 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
                     .map((e) => Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(defaultBorderRadius),
-                            ),
+                            decoration:
+                                BoxDecoration(borderRadius: BorderRadius.circular(defaultBorderRadius), boxShadow: [
+                              BoxShadow(
+                                offset: Offset(1, 1),
+                                blurRadius: 3,
+                                color:
+                                    Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.black12,
+                              )
+                            ]),
                             clipBehavior: Clip.antiAlias,
-                            child: Image.file(File(e.source)),
+                            child: CustomPaint(
+                              painter: CheckerPainter(context),
+                              child: Image.file(
+                                File(e.source),
+                              ),
+                            ),
                           ),
                         ))
                     .toList(),

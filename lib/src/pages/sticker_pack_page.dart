@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
@@ -47,7 +48,9 @@ class StickerPackPageState extends State<StickerPackPage> {
                       if (value == true) {
                         packs.remove(widget.pack);
                         widget.deleteCallback();
-                        Navigator.of(context).pop();
+                        if (mounted) {
+                          Navigator.of(context).pop();
+                        }
                         Directory("$packsDir/${widget.pack.id}").delete(recursive: true);
                         savePacks(packs);
                       }
@@ -72,14 +75,14 @@ class StickerPackPageState extends State<StickerPackPage> {
                       bool disabled = widget.pack.stickers.length >= 30;
                       return Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(24),
                           border: Border.all(
                             color: disabled ? Colors.grey : Theme.of(context).colorScheme.primary,
                             width: 2,
                           ),
                         ),
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(24),
                           onTap: disabled
                               ? null
                               : () async {
@@ -107,18 +110,36 @@ class StickerPackPageState extends State<StickerPackPage> {
                       );
                     }
                     return Container(
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.file(File(widget.pack.stickers[index].source)),
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: ((context) => EditStickerDialog(widget.pack, index)),
-                          ).then((_) => setState(() {}));
-                        },
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(24),
+                        color: Color.lerp(
+                            Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.surface, .7),
+                        boxShadow: [
+                          BoxShadow(
+                            offset: Offset(1, 1),
+                            blurRadius: 3,
+                            color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.black12,
+                          )
+                        ],
                       ),
+                      clipBehavior: Clip.antiAlias,
+                      child: index >= widget.pack.stickers.length
+                          ? null
+                          : CustomPaint(
+                              painter: CheckerPainter(context),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(24),
+                                child: Image.file(File(widget.pack.stickers[index].source)),
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: ((context) => EditStickerDialog(widget.pack, index)),
+                                  ).then(
+                                    (_) => setState(() {}),
+                                  );
+                                },
+                              ),
+                            ),
                     );
                   }),
             ),
@@ -147,9 +168,7 @@ class StickerPackPageState extends State<StickerPackPage> {
                   ),
                 ),
               FilledButton(
-                onPressed: widget.pack.stickers.length < 3
-                    ? null
-                    : () => sendToWhatsappWithErrorHandling(widget.pack),
+                onPressed: widget.pack.stickers.length < 3 ? null : () => sendToWhatsappWithErrorHandling(widget.pack),
                 child: const Text("Add to WhatsApp"),
               ),
             ],
