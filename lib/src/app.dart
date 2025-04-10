@@ -1,12 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/globals.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/edit_page.dart';
 import 'package:stickers/src/pages/select_pack_page.dart';
@@ -46,7 +46,8 @@ class StickersAppState extends State<StickersApp> {
     if (media != null) {
       debugPrint("Initial Media received");
       if (widget.settingsController.quickMode) {
-        _quickAdd(media!, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
+        _quickAdd(media!, widget.settingsController.defaultTitle,
+            widget.settingsController.defaultAuthor);
         media = null;
       }
     }
@@ -55,7 +56,8 @@ class StickersAppState extends State<StickersApp> {
       if (!mounted) return;
       debugPrint("Media Stream received");
       if (widget.settingsController.quickMode) {
-        _quickAdd(media, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
+        _quickAdd(
+            media, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
       } else {
         this.media = media;
       }
