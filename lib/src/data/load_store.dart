@@ -18,15 +18,12 @@ void savePacks(List<StickerPack> packs) async {
 Future<List<StickerPack>> getPacks() async {
   File input = File("$packsDir/packs.json");
   if (await input.exists()) {
-    return (jsonDecode(await input.readAsString()) as List)
-        .map((json) => StickerPack.fromJson(json))
-        .toList();
+    return (jsonDecode(await input.readAsString()) as List).map((json) => StickerPack.fromJson(json)).toList();
   }
   return List.empty(growable: true);
 }
 
-Future<Uint8List> cropSticker(
-    Rect cropRect, Uint8List rawImageData, StickerPack pack, int index) async {
+Future<Uint8List> cropSticker(Rect cropRect, Uint8List rawImageData, StickerPack pack, int index) async {
   // Apply crop then scale then put on 512x512 transparent image in center
 
   final crop = ImageEditorOption();
@@ -65,13 +62,22 @@ Future<Uint8List> cropSticker(
   return (await ImageMerger.mergeToMemory(option: option))!;
 }
 
+/// Adds a sticker to a sticker pack
+/// Copies the file to the required place
+///
+/// If [index] is 30 it changes the tray icon.
 void addToPack(StickerPack pack, int index, Uint8List data) {
   Directory("$packsDir/${pack.id}").createSync(recursive: true);
-  File output =
-      File("$packsDir/${pack.id}/sticker_${index}_${DateTime.now().millisecondsSinceEpoch}.webp");
-  output.writeAsBytesSync(data);
-
-  pack.stickers.add(Sticker(output.path, ["❤"]));
+  File output;
+  if (index == 30) {
+    output = File("$packsDir/${pack.id}/tray_${DateTime.now().millisecondsSinceEpoch}.webp");
+    output.writeAsBytesSync(data);
+    pack.trayIcon = output.path;
+  } else {
+    output = File("$packsDir/${pack.id}/sticker_${index}_${DateTime.now().millisecondsSinceEpoch}.webp");
+    output.writeAsBytesSync(data);
+    pack.stickers.add(Sticker(output.path, ["❤"]));
+  }
   pack.onEdit();
   savePacks(packs);
 }

@@ -60,7 +60,7 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
                       child: CustomPaint(
                         painter: CheckerPainter(context),
                         child: Image.file(
-                          File(widget.pack.stickers.first.source),
+                          File(widget.pack.trayIcon ?? widget.pack.stickers.first.source),
                         ),
                       ),
                     ),

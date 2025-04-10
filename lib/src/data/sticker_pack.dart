@@ -17,9 +17,10 @@ class StickerPack {
   String? privacyPolicyWebsite;
   String? licenseAgreementWebsite;
   List<Sticker> stickers;
+  String? trayIcon;
 
   StickerPack(this.title, this.author, this.id, this.stickers, this.imageDataVersion,
-      [this.publisherWebsite, this.licenseAgreementWebsite, this.privacyPolicyWebsite]);
+      {this.trayIcon,this.publisherWebsite, this.licenseAgreementWebsite, this.privacyPolicyWebsite});
 
   sendToWhatsapp() async {
     if (stickers.isEmpty) throw Exception("No stickers!");
@@ -27,17 +28,17 @@ class StickerPack {
     ImageEditorOption scale = ImageEditorOption();
     scale.addOption(const ScaleOption(96, 96));
     scale.outputFormat = const OutputFormat.png();
-    File? trayIcon = await ImageEditor.editFileImageAndGetFile(
-      file: File(stickers.first.source),
+    File? trayIconFile = await ImageEditor.editFileImageAndGetFile(
+      file: File(trayIcon ??  stickers.first.source),
       imageEditorOption: scale,
     );
-    trayIcon = await trayIcon!.rename("$packsDir/$id/tray.png");
+    trayIconFile = await trayIconFile!.rename("$packsDir/$id/tray.png");
 
     var stickerPack = WhatsappStickers(
       identifier: id,
       name: title,
       publisher: author,
-      trayImageFileName: WhatsappStickerImage.fromFile(trayIcon.path),
+      trayImageFileName: WhatsappStickerImage.fromFile(trayIconFile.path),
       imageDataVersion: imageDataVersion,
       publisherWebsite: publisherWebsite,
       privacyPolicyWebsite: privacyPolicyWebsite,
@@ -64,6 +65,7 @@ class StickerPack {
       "author": author,
       "imageDataVersion": imageDataVersion,
       "stickers": stickers.map((sticker) => sticker.toJson()).toList(),
+      "trayIcon": trayIcon,
       "publisherWebsite": publisherWebsite,
       "privacyPolicyWebsite": privacyPolicyWebsite,
       "licenseAgreementWebsite": licenseAgreementWebsite,
@@ -77,9 +79,16 @@ class StickerPack {
       json["id"],
       (json["stickers"] as List).map((sticker) => Sticker.fromJson(sticker)).toList(),
       json["imageDataVersion"],
-      json["publisherWebsite"],
-      json["privacyPolicyWebsite"],
-      json["licenseAgreementWebsite"],
+      trayIcon: json["trayIcon"],
+      publisherWebsite: json["publisherWebsite"],
+      privacyPolicyWebsite: json["privacyPolicyWebsite"],
+      licenseAgreementWebsite: json["licenseAgreementWebsite"],
     );
+  }
+
+  setTray(String source) {
+    File output = File("$packsDir/${id}/tray_${DateTime.now().millisecondsSinceEpoch}.webp");
+    File(source).copySync(output.path);
+    trayIcon = output.path;
   }
 }

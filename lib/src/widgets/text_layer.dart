@@ -17,7 +17,7 @@ class TextLayer extends StatefulWidget {
     return state;
   }
 
-  void update(Matrix4 matrix){
+  void update(Matrix4 matrix) {
     state.update(matrix);
   }
 }
@@ -115,7 +115,6 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
   }
 
   void disableEditing() {
-    Navigator.of(context)
-        .popUntil((route) => route.settings.name == EditPage.routeName);
+    Navigator.of(context).popUntil((route) => route.settings.name == EditPage.routeName);
   }
 }

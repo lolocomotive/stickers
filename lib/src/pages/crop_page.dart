@@ -93,6 +93,7 @@ class _CropPageState extends State<CropPage> {
 
 class EditArguments {
   StickerPack pack;
+  // Index 30 is tray icon
   int index;
   String imagePath;
 
