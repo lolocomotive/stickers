@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/util.dart';
 
@@ -13,7 +14,7 @@ class CreatePackDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text("Create Sticker pack"),
+      title: Text(AppLocalizations.of(context)!.createStickerPack),
       content: Form(
         autovalidateMode: AutovalidateMode.onUserInteraction,
         key: _formKey,
@@ -24,15 +25,15 @@ class CreatePackDialog extends StatelessWidget {
               autofocus: true,
               validator: titleValidator,
               controller: _nameController,
-              decoration: const InputDecoration(
-                label: Text("Pack title"),
+              decoration: InputDecoration(
+                label: Text(AppLocalizations.of(context)!.packTitle),
               ),
             ),
             TextFormField(
               validator: authorValidator,
               controller: _authorController,
-              decoration: const InputDecoration(
-                label: Text("Author"),
+              decoration: InputDecoration(
+                label: Text(AppLocalizations.of(context)!.author),
               ),
             ),
           ],
@@ -43,7 +44,7 @@ class CreatePackDialog extends StatelessWidget {
             onPressed: () {
               Navigator.of(context).pop();
             },
-            child: const Text("Cancel")),
+            child: Text(AppLocalizations.of(context)!.cancel)),
         ElevatedButton(
           onPressed: () {
             if (!_formKey.currentState!.validate()) return;
@@ -56,7 +57,7 @@ class CreatePackDialog extends StatelessWidget {
             ));
             Navigator.of(context).pop();
           },
-          child: const Text("Add"),
+          child: Text(AppLocalizations.of(context)!.add),
         ),
       ],
     );

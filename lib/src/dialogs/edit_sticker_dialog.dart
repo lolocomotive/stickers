@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 
@@ -37,7 +38,7 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
               child: Text(
-                "Edit sticker",
+                AppLocalizations.of(context)!.editSticker,
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
             ),
@@ -56,7 +57,8 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
-                    decoration: const InputDecoration(label: Text("Associated emojis")),
+                    decoration: InputDecoration(
+                        label: Text(AppLocalizations.of(context)!.associatedEmojis)),
                     textAlign: TextAlign.center,
                     validator: validator,
                     controller: controller,
@@ -79,7 +81,7 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                             widget.pack.onEdit();
                           },
                           child: Text(
-                            "Delete sticker",
+                            AppLocalizations.of(context)!.deleteSticker,
                             style: TextStyle(color: Theme.of(context).colorScheme.error),
                           ),
                         ),
@@ -87,12 +89,13 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                           onPressed: valid
                               ? () {
                                   if (formKey.currentState?.validate() == false) return;
-                                  widget.pack.stickers[widget.index].emojis = controller.value.text.characters.toList();
+                                  widget.pack.stickers[widget.index].emojis =
+                                      controller.value.text.characters.toList();
                                   widget.pack.onEdit();
                                   Navigator.of(context).pop();
                                 }
                               : null,
-                          child: const Text("Done"),
+                          child: Text(AppLocalizations.of(context)!.done),
                         ),
                       ],
                     ),
@@ -108,15 +111,15 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
 
   String? validator(String? value) {
     if (value == null || value.isEmpty) {
-      return "Please provide at least one emoji";
+      return AppLocalizations.of(context)!.pleaseProvideAtLeastOneEmoji;
     } else if (value.characters.length > 3) {
-      return "Please provide atmost 3 emojis";
+      return AppLocalizations.of(context)!.pleaseProvideAtmost3Emojis;
     }
-    final emojiRegex =
-        RegExp(r"(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])");
+    final emojiRegex = RegExp(
+        r"(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])");
     for (final char in value.characters) {
       if (emojiRegex.allMatches(char).isEmpty) {
-        return "Please enter only emojis";
+        return AppLocalizations.of(context)!.pleaseEnterOnlyEmojis;
       }
     }
     return null;

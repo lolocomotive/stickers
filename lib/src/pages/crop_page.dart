@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
@@ -31,7 +32,7 @@ class _CropPageState extends State<CropPage> {
   Widget build(BuildContext context) {
     return DefaultActivity(
       appBar: AppBar(
-        title: const Text("Crop your sticker"),
+        title: Text(AppLocalizations.of(context)!.cropYourSticker),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -48,7 +49,6 @@ class _CropPageState extends State<CropPage> {
               mode: ExtendedImageMode.editor,
               extendedImageEditorKey: widget.editorKey,
               cacheRawData: true,
-
               initEditorConfigHandler: (state) {
                 return EditorConfig(
                   lineHeight: 3,
@@ -82,7 +82,7 @@ class _CropPageState extends State<CropPage> {
                   ),
                 );
               },
-              child: const Text("Done"),
+              child: Text(AppLocalizations.of(context)!.done),
             ),
           ),
         ],

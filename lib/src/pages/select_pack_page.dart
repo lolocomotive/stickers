@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:share_handler/share_handler.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/dialogs/create_pack_dialog.dart';
 import 'package:stickers/src/globals.dart';
@@ -32,7 +33,7 @@ class _SelectPackPageState extends State<SelectPackPage> {
         },
         child: const Icon(Icons.add),
       ),
-      title: "Select sticker pack",
+      title: AppLocalizations.of(context)!.selectStickerPack,
       child: ListView.separated(
         separatorBuilder: (context, index) => Container(),
         itemBuilder: (context, index) => Stack(

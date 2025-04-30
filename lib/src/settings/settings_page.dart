@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/dialogs/edit_quickmode_defaults_dialog.dart';
 import 'package:stickers/src/globals.dart';
 
@@ -19,7 +20,7 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(AppLocalizations.of(context)!.settings),
       ),
       body: Column(
         children: [
@@ -28,7 +29,7 @@ class SettingsPage extends StatelessWidget {
             title: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Theme'),
+                Text(AppLocalizations.of(context)!.theme),
                 Flexible(
                   child: Container(
                     padding: const EdgeInsets.only(left: 16, right: 8),
@@ -49,24 +50,24 @@ class SettingsPage extends StatelessWidget {
                       ),
                       underline: Container(),
                       value: controller.themeMode,
-                      items: const [
+                      items: [
                         DropdownMenuItem(
                             value: ThemeMode.system,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8),
-                              child: Text('System'),
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: Text(AppLocalizations.of(context)!.system),
                             )),
                         DropdownMenuItem(
                             value: ThemeMode.light,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8),
-                              child: Text('Light'),
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: Text(AppLocalizations.of(context)!.light),
                             )),
                         DropdownMenuItem(
                             value: ThemeMode.dark,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8),
-                              child: Text('Dark'),
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: Text(AppLocalizations.of(context)!.dark),
                             )),
                       ],
                       onChanged: controller.updateThemeMode,
@@ -80,11 +81,11 @@ class SettingsPage extends StatelessWidget {
             onTap: () {
               controller.updateQuickMode(!controller.quickMode);
             },
-            title: const Text("Quick mode"),
+            title: Text(AppLocalizations.of(context)!.quickMode),
             leading: const Icon(Icons.bolt),
             subtitle: Opacity(
               opacity: .7,
-              child: const Text("Adds shared images as stickers automatically without any interaction"),
+              child: Text(AppLocalizations.of(context)!.settings_quickmode_description),
             ),
             trailing: Switch(value: controller.quickMode, onChanged: controller.updateQuickMode),
           ),
@@ -96,10 +97,15 @@ class SettingsPage extends StatelessWidget {
                   opacity: .7,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [Text("Title: ${controller.defaultTitle}"), Text("Author: ${controller.defaultAuthor}")],
+                    children: [
+                      Text("${AppLocalizations.of(context)!.title}: ${controller.defaultTitle}"),
+                      Text("${AppLocalizations.of(context)!.author}: ${controller.defaultAuthor}")
+                    ],
                   )),
-              title: Text("Quick mode defaults"),
-              trailing: ElevatedButton(onPressed: () => _showQuickModeDefaultsDialog(context), child: Text("Edit")),
+              title: Text(AppLocalizations.of(context)!.quickModeDefaults),
+              trailing: ElevatedButton(
+                  onPressed: () => _showQuickModeDefaultsDialog(context),
+                  child: Text(AppLocalizations.of(context)!.edit)),
             ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 24, vertical: 4),
@@ -107,7 +113,7 @@ class SettingsPage extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.info_outline),
-            title: const Text("About"),
+            title: Text(AppLocalizations.of(context)!.about),
             subtitle: info == null
                 ? null
                 : Opacity(
@@ -123,7 +129,7 @@ class SettingsPage extends StatelessWidget {
                 onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const LicensePage()),
                     ),
-                child: const Text("Licences")),
+                child: Text(AppLocalizations.of(context)!.licences)),
           ),
         ],
       ),

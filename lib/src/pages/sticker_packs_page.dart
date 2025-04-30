@@ -57,13 +57,13 @@ class StickerPacksPageState extends State<StickerPacksPage> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Text(
-                    "No packs",
+                    AppLocalizations.of(context)!.noPacks,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   Opacity(
                     opacity: .8,
                     child: Text(
-                      "Click on the bottom right to add a sticker pack",
+                      AppLocalizations.of(context)!.clickOnTheBottomRightToAddAStickerPack,
                       textAlign: TextAlign.center,
                     ),
                   ),

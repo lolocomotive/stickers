@@ -18,6 +18,7 @@
  */
 
 import 'package:flutter/material.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 
 /// All screens have some thing in common.
 /// Having a widget with all the common parts makes it easier to modify later.
@@ -72,7 +73,7 @@ class DefaultSliverActivity extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget t = titleWidget ??
         Text(
-          title ?? "No title",
+          title ?? AppLocalizations.of(context)!.noTitle,
           style: TextStyle(color: titleColor),
         );
     return DefaultActivity(
