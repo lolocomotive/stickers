@@ -145,33 +145,36 @@ class StickerPackPageState extends State<StickerPackPage> {
             ),
           ),
         ),
-        Container(
-          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-          color: Theme.of(context).colorScheme.surface,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (widget.pack.stickers.length < 3)
-                const Opacity(
-                  opacity: .7,
-                  child: Text(
-                    "You need at least 3 stickers",
-                    textAlign: TextAlign.center,
+        Material(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            color: Theme.of(context).colorScheme.surface,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (widget.pack.stickers.length < 3)
+                  Opacity(
+                    opacity: .7,
+                    child: Text(
+                      "You need at least 3 stickers",
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                ),
-              if (widget.pack.stickers.length >= 30)
-                const Opacity(
-                  opacity: .7,
-                  child: Text(
-                    "You can't have more than 30 stickers",
-                    textAlign: TextAlign.center,
+                if (widget.pack.stickers.length >= 30)
+                  const Opacity(
+                    opacity: .7,
+                    child: Text(
+                      "You can't have more than 30 stickers",
+                      textAlign: TextAlign.center,
+                    ),
                   ),
+                FilledButton(
+                  onPressed:
+                      widget.pack.stickers.length < 3 ? null : () => sendToWhatsappWithErrorHandling(widget.pack),
+                  child: const Text("Add to WhatsApp"),
                 ),
-              FilledButton(
-                onPressed: widget.pack.stickers.length < 3 ? null : () => sendToWhatsappWithErrorHandling(widget.pack),
-                child: const Text("Add to WhatsApp"),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
