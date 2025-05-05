@@ -49,14 +49,14 @@ Also the code is not very well documented yet so sorry in advance to anyone tryi
 
 The app is far from finished and there's a few key points I want to work on:
 
--   [ ] Better error reporting across the entire app
+-   [x] Better error reporting across the entire app
 -   [ ] Image editor features
-    -   [ ] Text
+    -   [x] Text
     -   [ ] Drawing
--   [ ] Allow setting a cusom Tray icon
--   [ ] Allow editing more of the sticker pack metadata
--   [ ] Find a name and logo
--   [ ] Translate the App (Localization is setup, I just didn't use it)
+-   [x] Allow setting a cusom Tray icon
+-   [x] Allow editing more of the sticker pack metadata
+-   [x] Find a name and logo
+-   [x] Translate the App (Localization is setup, I just didn't use it)
 -   [ ] Maybe improve the performance of cropping (It has to do 2 Image operations right now due to the way `image_editor` is made)
 
 (also refer to the TODO comments in the code)
