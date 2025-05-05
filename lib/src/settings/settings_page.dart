@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
+import 'package:stickers/src/app.dart';
 import 'package:stickers/src/dialogs/edit_quickmode_defaults_dialog.dart';
 import 'package:stickers/src/globals.dart';
 
@@ -71,6 +72,63 @@ class SettingsPage extends StatelessWidget {
                             )),
                       ],
                       onChanged: controller.updateThemeMode,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(AppLocalizations.of(context)!.language),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.only(left: 16, right: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      color: ElevationOverlay.applySurfaceTint(
+                        Theme.of(context).colorScheme.surface,
+                        Theme.of(context).colorScheme.primary,
+                        2,
+                      ),
+                    ),
+                    child: DropdownButton<String>(
+                      borderRadius: BorderRadius.circular(16),
+                      dropdownColor: ElevationOverlay.applySurfaceTint(
+                        Theme.of(context).colorScheme.surface,
+                        Theme.of(context).colorScheme.primary,
+                        4,
+                      ),
+                      underline: Container(),
+                      value: controller.locale,
+                      items: [
+                        DropdownMenuItem(
+                            value: "en",
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: Text("English"),
+                            )),
+                        DropdownMenuItem(
+                            value: "fr",
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: Text("Français"),
+                            )),
+                        DropdownMenuItem(
+                            value: "de",
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: Text("Deutsch"),
+                            )),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) return;
+                        StickersApp.of(context)!.setLocale(Locale.fromSubtags(languageCode: value));
+                        controller.updateLocale(value);
+                      },
                     ),
                   ),
                 ),

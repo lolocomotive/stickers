@@ -5,7 +5,6 @@
   "@appTitle": {
     "description": "The title of the application"
   },
-  "@_STICKERPACKS_PAGE": {},
   "title": "Title",
   "pTitle": "My sticker packs",
   "cropYourSticker": "Crop your sticker",
@@ -57,5 +56,6 @@
   "couldnTAddStickerPack": "Couldn't add sticker pack",
   "ok": "Ok :(",
   "chooseASticker": "Choose a sticker",
-  "quickMode": "Quick mode"
+  "quickMode": "Quick mode",
+  "language": "Language"
 }

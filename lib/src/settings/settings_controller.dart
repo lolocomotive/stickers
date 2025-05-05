@@ -21,10 +21,13 @@ class SettingsController with ChangeNotifier {
 
   late String _defaultAuthor;
   late String _defaultTitle;
+  late String _locale;
 
   String get defaultTitle => _defaultTitle;
 
   String get defaultAuthor => _defaultAuthor;
+
+  String get locale => _locale;
 
   // Allow Widgets to read the user's preferred ThemeMode.
   ThemeMode get themeMode => _themeMode;
@@ -32,27 +35,15 @@ class SettingsController with ChangeNotifier {
   bool get quickMode => _quickMode;
 
   Future<void> updateQuickMode(bool quickMode) async {
-    // Do not perform any work if new and old ThemeMode are identical
     if (quickMode == _quickMode) return;
-
-    // Otherwise, store the new ThemeMode in memory
     _quickMode = quickMode;
-
-    // Important! Inform listeners a change has occurred.
     notifyListeners();
-
-    // Persist the changes to a local database or the internet using the
-    // SettingService.
     await _settingsService.updateQuickMode(quickMode);
   }
 
   Future<void> updateDefaultAuthor(String defaultAuthor) async {
-    // Do not perform any work if new and old ThemeMode are identical
     if (defaultAuthor == _defaultAuthor) return;
-
-    // Otherwise, store the new ThemeMode in memory
     _defaultAuthor = defaultAuthor;
-
     notifyListeners();
     await _settingsService.updateDefaultAuthor(defaultAuthor);
   }
@@ -64,6 +55,13 @@ class SettingsController with ChangeNotifier {
     await _settingsService.updateDefaultTitle(defaultTitle);
   }
 
+  Future<void> updateLocale(String locale) async {
+    if (locale == _locale) return;
+    _locale = locale;
+    notifyListeners();
+    await _settingsService.updateLocale(locale);
+  }
+
   /// Load the user's settings from the SettingsService. It may load from a
   /// local database or the internet. The controller only knows it can load the
   /// settings from the service.
@@ -72,6 +70,7 @@ class SettingsController with ChangeNotifier {
     _quickMode = await _settingsService.quickMode();
     _defaultTitle = await _settingsService.defaultTitle();
     _defaultAuthor = await _settingsService.defaultAuthor();
+    _locale = await _settingsService.locale();
 
     notifyListeners();
   }

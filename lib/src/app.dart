@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:share_handler/share_handler.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/globals.dart';
-import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/edit_page.dart';
 import 'package:stickers/src/pages/select_pack_page.dart';
@@ -19,6 +19,8 @@ import 'settings/settings_page.dart';
 
 /// The Widget that configures your application.
 class StickersApp extends StatefulWidget {
+  static StickersAppState? of(BuildContext context) => context.findAncestorStateOfType<StickersAppState>();
+
   const StickersApp({
     super.key,
     required this.settingsController,
@@ -30,11 +32,19 @@ class StickersApp extends StatefulWidget {
   State<StickersApp> createState() => StickersAppState();
 }
 
-class StickersAppState extends State<StickersApp> {
+class StickersAppState extends State<StickersApp> {late Locale _locale;
+
   @override
   void initState() {
     super.initState();
+    _locale = Locale.fromSubtags(languageCode:widget.settingsController.locale);
     initPlatformState();
+  }
+
+  void setLocale(Locale value) {
+    setState(() {
+      _locale = value;
+    });
   }
 
   SharedMedia? media;
@@ -46,8 +56,7 @@ class StickersAppState extends State<StickersApp> {
     if (media != null) {
       debugPrint("Initial Media received");
       if (widget.settingsController.quickMode) {
-        _quickAdd(media!, widget.settingsController.defaultTitle,
-            widget.settingsController.defaultAuthor);
+        _quickAdd(media!, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
         media = null;
       }
     }
@@ -56,8 +65,7 @@ class StickersAppState extends State<StickersApp> {
       if (!mounted) return;
       debugPrint("Media Stream received");
       if (widget.settingsController.quickMode) {
-        _quickAdd(
-            media, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
+        _quickAdd(media, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
       } else {
         this.media = media;
       }
@@ -97,7 +105,10 @@ class StickersAppState extends State<StickersApp> {
           ],
           supportedLocales: const [
             Locale('en', ''), // English, no country code
+            Locale('de', ''),
+            Locale('fr', ''),
           ],
+          locale: _locale,
 
           // Use AppLocalizations to configure the correct application title
           // depending on the user's locale.

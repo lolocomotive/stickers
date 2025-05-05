@@ -2,5 +2,6 @@
     "dart.lineLength": 100,
     "[dart]": {
         "editor.rulers": [100]
-    }
+    },
+    "cSpell.language": "en,fr"
 }

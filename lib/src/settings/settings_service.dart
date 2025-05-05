@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -32,6 +34,14 @@ class SettingsService {
   Future<String> defaultTitle() async => _prefs.getString("defaultPackName") ?? "New sticker pack";
 
   Future<String> defaultAuthor() async => _prefs.getString("defaultAuthor") ?? "auto-generated";
+  Future<String> locale() async => _prefs.getString("locale") ?? _getLocale();
+
+  /// Gets the locale from the system settings if unset in config
+  String _getLocale(){
+      if(Platform.localeName.startsWith("de")) return "de";
+      if(Platform.localeName.startsWith("fr")) return "fr";
+      return "en";
+  }
 
   /// Persists the user's preferred ThemeMode to local or remote storage.
   Future<void> updateThemeMode(ThemeMode theme) async {
@@ -48,5 +58,9 @@ class SettingsService {
 
   Future<void> updateDefaultAuthor(String defaultAuthor) async {
     _prefs.setString("defaultAuthor", defaultAuthor);
+  }
+
+  Future<void> updateLocale(String locale) async {
+    _prefs.setString("locale", locale);
   }
 }
