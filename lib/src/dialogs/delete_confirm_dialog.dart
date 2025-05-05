@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 
 class DeleteConfirmDialog extends StatefulWidget {
   const DeleteConfirmDialog(this.target, {super.key});
@@ -18,7 +19,7 @@ class _DeleteConfirmDialogState extends State<DeleteConfirmDialog> {
             onPressed: () {
               Navigator.of(context).pop(false);
             },
-            child: const Text("Cancel")),
+            child: Text(AppLocalizations.of(context)!.cancel)),
         Theme(
           data: ThemeData.from(
               colorScheme: ColorScheme.fromSeed(
@@ -29,7 +30,7 @@ class _DeleteConfirmDialogState extends State<DeleteConfirmDialog> {
             onPressed: () {
               Navigator.of(context).pop(true);
             },
-            child: const Text("Delete"),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         )
       ],

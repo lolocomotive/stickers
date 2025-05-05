@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/dialogs/create_pack_dialog.dart';
@@ -41,8 +41,7 @@ class StickerPacksPageState extends State<StickerPacksPage> {
       ],
       fab: FloatingActionButton(
         onPressed: () {
-          showDialog(context: context, builder: (_) => CreatePackDialog(packs))
-              .then(
+          showDialog(context: context, builder: (_) => CreatePackDialog(packs)).then(
             (_) => setState(() {
               savePacks(packs);
             }),
@@ -58,13 +57,13 @@ class StickerPacksPageState extends State<StickerPacksPage> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Text(
-                    "No packs",
+                    AppLocalizations.of(context)!.noPacks,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   Opacity(
                     opacity: .8,
                     child: Text(
-                      "Click on the bottom right to add a sticker pack",
+                      AppLocalizations.of(context)!.clickOnTheBottomRightToAddAStickerPack,
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -73,8 +72,7 @@ class StickerPacksPageState extends State<StickerPacksPage> {
             )
           : ListView.separated(
               separatorBuilder: (context, index) => Container(),
-              itemBuilder: (context, index) =>
-                  StickerPackPreviewCard(packs[index], () {
+              itemBuilder: (context, index) => StickerPackPreviewCard(packs[index], () {
                 setState(() {});
               }),
               itemCount: packs.length,

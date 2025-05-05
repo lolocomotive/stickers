@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_editor/image_editor.dart';
 import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
@@ -46,7 +47,7 @@ class _EditPageState extends State<EditPage> {
     return DefaultActivity(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: const Text("Edit your sticker"),
+        title: Text(AppLocalizations.of(context)!.editYourSticker),
       ),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -60,7 +61,8 @@ class _EditPageState extends State<EditPage> {
                     _currentLayer = _layers.lastOrNull;
                     print(focalPoint);
                   },
-                  onMatrixUpdate: (matrix, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) {
+                  onMatrixUpdate:
+                      (matrix, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) {
                     _currentLayer?.update(matrix);
                   },
                   child: Column(
@@ -104,7 +106,7 @@ class _EditPageState extends State<EditPage> {
             Row(
               children: [
                 IconButton(
-                  tooltip: "Add text layer",
+                  tooltip: AppLocalizations.of(context)!.addTextLayer,
                   onPressed: () {
                     EditorText text = EditorText(
                       text: "",
@@ -146,7 +148,8 @@ class _EditPageState extends State<EditPage> {
                 option.addOption(textOption);
                 option.outputFormat = const OutputFormat.webp_lossy();
 
-                final data = await ImageEditor.editFileImage(file: _source, imageEditorOption: option);
+                final data =
+                    await ImageEditor.editFileImage(file: _source, imageEditorOption: option);
                 addToPack(widget.pack, widget.index, data!);
                 if (!context.mounted) return;
                 Navigator.of(context).pop();
@@ -160,7 +163,7 @@ class _EditPageState extends State<EditPage> {
                   text.fontSize *= scaleFactor;
                 }
               },
-              child: const Text("Done"),
+              child: Text(AppLocalizations.of(context)!.done),
             )
           ],
         ),

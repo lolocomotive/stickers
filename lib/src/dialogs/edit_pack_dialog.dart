@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/select_sticker_dialog.dart';
@@ -39,7 +40,7 @@ class _EditPackDialogState extends State<EditPackDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text("Edit Sticker pack"),
+      title: Text(AppLocalizations.of(context)!.editStickerPack),
       content: SingleChildScrollView(
         child: Column(
           children: [
@@ -75,7 +76,7 @@ class _EditPackDialogState extends State<EditPackDialog> {
                                   padding: const EdgeInsets.only(right: 12.0),
                                   child: Icon(Icons.edit),
                                 ),
-                                Text("Edit"),
+                                Text(AppLocalizations.of(context)!.edit),
                               ],
                             ),
                           ),
@@ -96,15 +97,15 @@ class _EditPackDialogState extends State<EditPackDialog> {
                     TextFormField(
                       validator: titleValidator,
                       controller: _nameController,
-                      decoration: const InputDecoration(
-                        label: Text("Pack title"),
+                      decoration: InputDecoration(
+                        label: Text(AppLocalizations.of(context)!.packTitle),
                       ),
                     ),
                     TextFormField(
                       validator: authorValidator,
                       controller: _authorController,
-                      decoration: const InputDecoration(
-                        label: Text("Author"),
+                      decoration: InputDecoration(
+                        label: Text(AppLocalizations.of(context)!.author),
                       ),
                     ),
                     if (_showMore)
@@ -112,8 +113,8 @@ class _EditPackDialogState extends State<EditPackDialog> {
                         keyboardType: TextInputType.url,
                         controller: _publisherURLController,
                         validator: _urlValidator,
-                        decoration: const InputDecoration(
-                          label: Text("Publisher Website"),
+                        decoration: InputDecoration(
+                          label: Text(AppLocalizations.of(context)!.publisherWebsite),
                         ),
                       ),
                     if (_showMore)
@@ -121,8 +122,8 @@ class _EditPackDialogState extends State<EditPackDialog> {
                         keyboardType: TextInputType.url,
                         controller: _privacyPolicyURLController,
                         validator: _urlValidator,
-                        decoration: const InputDecoration(
-                          label: Text("Privacy policy website"),
+                        decoration: InputDecoration(
+                          label: Text(AppLocalizations.of(context)!.privacyPolicyWebsite),
                         ),
                       ),
                     if (_showMore)
@@ -130,8 +131,8 @@ class _EditPackDialogState extends State<EditPackDialog> {
                         keyboardType: TextInputType.url,
                         controller: _licenseAgreementURLController,
                         validator: _urlValidator,
-                        decoration: const InputDecoration(
-                          label: Text("License agreement website"),
+                        decoration: InputDecoration(
+                          label: Text(AppLocalizations.of(context)!.licenseAgreementWebsite),
                         ),
                       ),
                   ],
@@ -147,12 +148,12 @@ class _EditPackDialogState extends State<EditPackDialog> {
               onPressed: () => setState(() {
                     _showMore = true;
                   }),
-              child: Text("More")),
+              child: Text(AppLocalizations.of(context)!.more)),
         TextButton(
             onPressed: () {
               Navigator.of(context).pop();
             },
-            child: const Text("Cancel")),
+            child:  Text(AppLocalizations.of(context)!.cancel)),
         ElevatedButton(
           onPressed: () {
             if (!_formKey.currentState!.validate()) return;
@@ -164,7 +165,7 @@ class _EditPackDialogState extends State<EditPackDialog> {
             widget.pack.onEdit();
             Navigator.of(context).pop();
           },
-          child: const Text("Done"),
+          child:  Text(AppLocalizations.of(context)!.done),
         ),
       ],
     );
@@ -174,7 +175,7 @@ class _EditPackDialogState extends State<EditPackDialog> {
     if (value == null) return null;
     if (value.isEmpty) return null;
     if (isValidURL(value)) return null;
-    return "Please enter a valid URL";
+    return AppLocalizations.of(context)!.pleaseEnterAValidUrl;
   }
 
   _changeTrayIcon() {
@@ -197,7 +198,7 @@ class TrayIconMethodSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text("Change pack icon"),
+      title: Text(AppLocalizations.of(context)!.changePackIcon),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -211,7 +212,7 @@ class TrayIconMethodSelector extends StatelessWidget {
                       }));
             },
             leading: Icon(Icons.search),
-            title: Text("Choose existing sticker"),
+            title: Text(AppLocalizations.of(context)!.chooseExistingSticker),
           ),
           ListTile(
             onTap: () async {
@@ -233,7 +234,7 @@ class TrayIconMethodSelector extends StatelessWidget {
               });
             },
             leading: Icon(Icons.add),
-            title: Text("Create new"),
+            title: Text(AppLocalizations.of(context)!.createNew),
           )
         ],
       ),

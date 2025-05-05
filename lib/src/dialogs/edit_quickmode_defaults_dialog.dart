@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/settings/settings_controller.dart';
 import 'package:stickers/src/util.dart';
 
@@ -20,7 +20,7 @@ class EditQuickmodeDefaultsDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text("Edit defaults"),
+      title: Text(AppLocalizations.of(context)!.editDefaults),
       content: Form(
         key: _formkey,
         autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -31,12 +31,12 @@ class EditQuickmodeDefaultsDialog extends StatelessWidget {
               autofocus: true,
               validator: titleValidator,
               controller: _titleController,
-              decoration: InputDecoration(label: Text("Default title")),
+              decoration: InputDecoration(label: Text(AppLocalizations.of(context)!.defaultTitle)),
             ),
             TextFormField(
               validator: authorValidator,
               controller: _authorController,
-              decoration: InputDecoration(label: Text("Default author")),
+              decoration: InputDecoration(label: Text(AppLocalizations.of(context)!.defaultAuthor)),
             ),
           ],
         ),
@@ -46,15 +46,15 @@ class EditQuickmodeDefaultsDialog extends StatelessWidget {
             onPressed: () {
               Navigator.of(context).pop();
             },
-            child: Text("Cancel")),
+            child: Text(AppLocalizations.of(context)!.cancel)),
         ElevatedButton(
             onPressed: () {
-              if(!_formkey.currentState!.validate()) return;
+              if (!_formkey.currentState!.validate()) return;
               settingsController.updateDefaultTitle(_titleController.text);
               settingsController.updateDefaultAuthor(_authorController.text);
               Navigator.of(context).pop();
             },
-            child: Text("Confirm")),
+            child: Text(AppLocalizations.of(context)!.confirm)),
       ],
     );
   }

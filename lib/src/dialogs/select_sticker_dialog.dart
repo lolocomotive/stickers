@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/sticker.dart';
 import 'package:stickers/src/globals.dart';
@@ -14,7 +15,7 @@ class SelectStickerDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     var stickers = packs.expand((p) => p.stickers).toList();
     return AlertDialog(
-      title: Text("Choose a sticker"),
+      title: Text(AppLocalizations.of(context)!.chooseASticker),
       content: SizedBox(
         width: 10000, //FIXME make this dynamic
         height: 10000,
@@ -33,7 +34,9 @@ class SelectStickerDialog extends StatelessWidget {
                     BoxShadow(
                       offset: Offset(1, 1),
                       blurRadius: 3,
-                      color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.black12,
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.black26
+                          : Colors.black12,
                     )
                   ],
                 ),
