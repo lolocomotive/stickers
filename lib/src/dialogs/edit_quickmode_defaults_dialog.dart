@@ -29,12 +29,12 @@ class EditQuickmodeDefaultsDialog extends StatelessWidget {
           children: [
             TextFormField(
               autofocus: true,
-              validator: titleValidator,
+              validator: (v) => titleValidator(v, context),
               controller: _titleController,
               decoration: InputDecoration(label: Text(AppLocalizations.of(context)!.defaultTitle)),
             ),
             TextFormField(
-              validator: authorValidator,
+              validator: (v) => authorValidator(v, context),
               controller: _authorController,
               decoration: InputDecoration(label: Text(AppLocalizations.of(context)!.defaultAuthor)),
             ),

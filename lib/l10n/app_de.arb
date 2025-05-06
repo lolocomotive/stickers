@@ -54,5 +54,7 @@
     "ok": "Ok :(",
     "chooseASticker": "Sticker auswählen",
     "quickMode": "Schnell-Modus",
-    "language": "Sprache"
+    "language": "Sprache",
+    "pleaseEnterTitle": "Geben Sie ein Titel ein",
+    "pleaseEnterAuthor": "Geben Sie einen Autor ein"
 }

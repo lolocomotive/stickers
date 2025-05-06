@@ -23,14 +23,14 @@ class CreatePackDialog extends StatelessWidget {
           children: [
             TextFormField(
               autofocus: true,
-              validator: titleValidator,
+              validator: (v) => titleValidator(v, context),
               controller: _nameController,
               decoration: InputDecoration(
                 label: Text(AppLocalizations.of(context)!.packTitle),
               ),
             ),
             TextFormField(
-              validator: authorValidator,
+              validator: (v) => authorValidator(v, context),
               controller: _authorController,
               decoration: InputDecoration(
                 label: Text(AppLocalizations.of(context)!.author),

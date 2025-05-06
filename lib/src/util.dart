@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/globals.dart';
@@ -12,16 +13,16 @@ bool isValidURL(String input) {
   return url.isAbsolute;
 }
 
-String? titleValidator(String? value) {
+String? titleValidator(String? value, BuildContext context) {
   if (value == null || value.isEmpty) {
-    return 'Please enter a title';
+    return AppLocalizations.of(context)!.pleaseEnterTitle;
   }
   return null;
 }
 
-String? authorValidator(String? value) {
+String? authorValidator(String? value, BuildContext context) {
   if (value == null || value.isEmpty) {
-    return 'Please enter an author';
+    return  AppLocalizations.of(context)!.pleaseEnterAuthor;
   }
   return null;
 }

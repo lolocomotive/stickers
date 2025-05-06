@@ -96,14 +96,14 @@ class _EditPackDialogState extends State<EditPackDialog> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextFormField(
-                      validator: titleValidator,
+                      validator: (v) => titleValidator(v, context),
                       controller: _nameController,
                       decoration: InputDecoration(
                         label: Text(AppLocalizations.of(context)!.packTitle),
                       ),
                     ),
                     TextFormField(
-                      validator: authorValidator,
+                      validator: (v) => authorValidator(v, context),
                       controller: _authorController,
                       decoration: InputDecoration(
                         label: Text(AppLocalizations.of(context)!.author),
