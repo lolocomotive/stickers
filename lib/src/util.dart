@@ -40,8 +40,19 @@ Future<void> sendToWhatsappWithErrorHandling(StickerPack pack) async {
       ),
     );
   } on PlatformException catch (e) {
-    showDialog(context: navigatorKey.currentContext!, builder: (_) => ErrorDialog(message: "WhatsApp is not installed"));
+    showDialog(
+        context: navigatorKey.currentContext!, builder: (_) => ErrorDialog(message: "WhatsApp is not installed"));
   } on Exception catch (e) {
     showDialog(context: navigatorKey.currentContext!, builder: (_) => ErrorDialog(message: e.toString()));
+  }
+}
+
+int colCount(double width) {
+  if (width < 500) {
+    return 3;
+  } else if (width < 800) {
+    return 6;
+  } else {
+    return 9;
   }
 }

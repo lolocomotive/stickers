@@ -68,8 +68,8 @@ class StickerPackPageState extends State<StickerPackPage> {
               padding: const EdgeInsets.all(8.0),
               child: GridView.builder(
                   itemCount: widget.pack.stickers.length + 1,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
+                  gridDelegate:  SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: colCount(MediaQuery.of(context).size.width),
                     crossAxisSpacing: 8,
                     mainAxisSpacing: 8,
                   ),
