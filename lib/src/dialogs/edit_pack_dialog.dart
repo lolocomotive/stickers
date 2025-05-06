@@ -57,9 +57,10 @@ class _EditPackDialogState extends State<EditPackDialog> {
                   onTap: _changeTrayIcon,
                   child: Stack(
                     children: [
-                      Image.file(
-                        File(widget.pack.trayIcon ?? widget.pack.stickers.first.source),
-                      ),
+                      if (widget.pack.trayIcon != null || widget.pack.stickers.isNotEmpty)
+                        Image.file(
+                          File(widget.pack.trayIcon ?? widget.pack.stickers.first.source),
+                        ),
                       Center(
                         child: Container(
                           padding: EdgeInsets.fromLTRB(4, 0, 4, 0),
@@ -153,7 +154,7 @@ class _EditPackDialogState extends State<EditPackDialog> {
             onPressed: () {
               Navigator.of(context).pop();
             },
-            child:  Text(AppLocalizations.of(context)!.cancel)),
+            child: Text(AppLocalizations.of(context)!.cancel)),
         ElevatedButton(
           onPressed: () {
             if (!_formKey.currentState!.validate()) return;
@@ -165,7 +166,7 @@ class _EditPackDialogState extends State<EditPackDialog> {
             widget.pack.onEdit();
             Navigator.of(context).pop();
           },
-          child:  Text(AppLocalizations.of(context)!.done),
+          child: Text(AppLocalizations.of(context)!.done),
         ),
       ],
     );
