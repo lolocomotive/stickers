@@ -53,55 +53,59 @@ class _EditPageState extends State<EditPage> {
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            Stack(
-              children: [
-                MatrixGestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onGestureStart: (Offset focalPoint) {
-                    _currentLayer = _layers.lastOrNull;
-                    print(focalPoint);
-                  },
-                  onMatrixUpdate:
-                      (matrix, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) {
-                    _currentLayer?.update(matrix);
-                  },
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        color: Colors.black,
-                        child: CustomPaint(
-                          painter: CheckerPainter(context, sizeCallback: (size) {
-                            if (imageSize != size) {
-                              imageSize = size;
-                              scaleFactor = size.width / 512;
-                              if (size.aspectRatio != 1) {
-                                // That should never happen
-                                print("Aspect ratio of sticker should be 1");
+            Container(
+              decoration: BoxDecoration(),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                children: [
+                  MatrixGestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onGestureStart: (Offset focalPoint) {
+                      _currentLayer = _layers.lastOrNull;
+                      print(focalPoint);
+                    },
+                    onMatrixUpdate:
+                        (matrix, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) {
+                      _currentLayer?.update(matrix);
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          color: Colors.black,
+                          child: CustomPaint(
+                            painter: CheckerPainter(context, sizeCallback: (size) {
+                              if (imageSize != size) {
+                                imageSize = size;
+                                scaleFactor = size.width / 512;
+                                if (size.aspectRatio != 1) {
+                                  // That should never happen
+                                  print("Aspect ratio of sticker should be 1");
+                                }
+                                WidgetsBinding.instance.addPostFrameCallback(
+                                  (timeStamp) => setState(() {}),
+                                );
                               }
-                              WidgetsBinding.instance.addPostFrameCallback(
-                                (timeStamp) => setState(() {}),
-                              );
-                            }
-                          }),
-                          child: Image.file(_source),
+                            }),
+                            child: Image.file(_source),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                ..._layers.map(
-                  (e) => Positioned(
-                    top: 0,
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: e,
-                  ),
-                )
-              ],
+                  ..._layers.map(
+                    (e) => Positioned(
+                      top: 0,
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: e,
+                    ),
+                  )
+                ],
+              ),
             ),
             Row(
               children: [
