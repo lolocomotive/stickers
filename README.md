@@ -10,7 +10,7 @@ Get the latest release [here](https://github.com/lolocomotive/stickers/releases)
 
 ### Google Play store
 
-I'm planning to upload the app to the Google Play store eventually, but I want to test it a bit more before.
+Get it [here](https://play.google.com/store/apps/details?id=de.loicezt.stickers)
 
 ## Features
 
