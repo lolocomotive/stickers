@@ -20,7 +20,7 @@ class StickerPack {
   String? trayIcon;
 
   StickerPack(this.title, this.author, this.id, this.stickers, this.imageDataVersion,
-      {this.trayIcon,this.publisherWebsite, this.licenseAgreementWebsite, this.privacyPolicyWebsite});
+      {this.trayIcon, this.publisherWebsite, this.licenseAgreementWebsite, this.privacyPolicyWebsite});
 
   sendToWhatsapp() async {
     if (stickers.isEmpty) throw Exception("No stickers!");
@@ -29,7 +29,7 @@ class StickerPack {
     scale.addOption(const ScaleOption(96, 96));
     scale.outputFormat = const OutputFormat.png();
     File? trayIconFile = await ImageEditor.editFileImageAndGetFile(
-      file: File(trayIcon ??  stickers.first.source),
+      file: File(trayIcon ?? stickers.first.source),
       imageEditorOption: scale,
     );
     trayIconFile = await trayIconFile!.rename("$packsDir/$id/tray.png");
@@ -87,7 +87,9 @@ class StickerPack {
   }
 
   setTray(String source) {
-    File output = File("$packsDir/${id}/tray_${DateTime.now().millisecondsSinceEpoch}.webp");
+    Directory parent = Directory("$packsDir/$id/");
+    File output = File("$packsDir/$id/tray_${DateTime.now().millisecondsSinceEpoch}.webp");
+    if (!parent.existsSync()) parent.createSync(recursive: true);
     File(source).copySync(output.path);
     trayIcon = output.path;
   }
