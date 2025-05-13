@@ -33,6 +33,7 @@ class StickerPacksPageState extends State<StickerPacksPage> {
     return DefaultSliverActivity(
       actions: [
         IconButton(
+          tooltip: AppLocalizations.of(context)!.settings,
           onPressed: () {
             Navigator.of(context).pushNamed("/settings");
           },

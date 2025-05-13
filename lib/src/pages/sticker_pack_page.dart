@@ -36,6 +36,7 @@ class StickerPackPageState extends State<StickerPackPage> {
           child: DefaultSliverActivity(
             actions: [
               IconButton(
+                tooltip: AppLocalizations.of(context)!.edit,
                 onPressed: () {
                   showDialog(context: context, builder: (context) => EditPackDialog(widget.pack))
                       .then((value) => setState(() {}));
@@ -43,10 +44,9 @@ class StickerPackPageState extends State<StickerPackPage> {
                 icon: const Icon(Icons.edit),
               ),
               IconButton(
+                tooltip: AppLocalizations.of(context)!.delete,
                 onPressed: () {
-                  showDialog<bool>(
-                      context: context,
-                      builder: (context) => DeleteConfirmDialog(widget.pack.title)).then(
+                  showDialog<bool>(context: context, builder: (context) => DeleteConfirmDialog(widget.pack.title)).then(
                     (value) async {
                       if (value == true) {
                         packs.remove(widget.pack);
@@ -68,7 +68,7 @@ class StickerPackPageState extends State<StickerPackPage> {
               padding: const EdgeInsets.all(8.0),
               child: GridView.builder(
                   itemCount: widget.pack.stickers.length + 1,
-                  gridDelegate:  SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: colCount(MediaQuery.of(context).size.width),
                     crossAxisSpacing: 8,
                     mainAxisSpacing: 8,
@@ -90,8 +90,7 @@ class StickerPackPageState extends State<StickerPackPage> {
                               ? null
                               : () async {
                                   final ImagePicker picker = ImagePicker();
-                                  final XFile? image =
-                                      await picker.pickImage(source: ImageSource.gallery);
+                                  final XFile? image = await picker.pickImage(source: ImageSource.gallery);
                                   if (image == null) return; //TODO add Snackbar warning
                                   if (!context.mounted) return;
 
@@ -116,15 +115,13 @@ class StickerPackPageState extends State<StickerPackPage> {
                     return Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(24),
-                        color: Color.lerp(Theme.of(context).colorScheme.primary,
-                            Theme.of(context).colorScheme.surface, .7),
+                        color: Color.lerp(
+                            Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.surface, .7),
                         boxShadow: [
                           BoxShadow(
                             offset: Offset(1, 1),
                             blurRadius: 3,
-                            color: Theme.of(context).brightness == Brightness.light
-                                ? Colors.black26
-                                : Colors.black12,
+                            color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.black12,
                           )
                         ],
                       ),
@@ -175,9 +172,8 @@ class StickerPackPageState extends State<StickerPackPage> {
                     ),
                   ),
                 FilledButton(
-                  onPressed: widget.pack.stickers.length < 3
-                      ? null
-                      : () => sendToWhatsappWithErrorHandling(widget.pack),
+                  onPressed:
+                      widget.pack.stickers.length < 3 ? null : () => sendToWhatsappWithErrorHandling(widget.pack),
                   child: Text(AppLocalizations.of(context)!.addToWhatsapp),
                 ),
               ],

@@ -191,7 +191,7 @@ class SettingsPage extends StatelessWidget {
                 child: Text(AppLocalizations.of(context)!.licences)),
           ),
           ListTile(
-            onTap: (){
+            onTap: () {
               String url = "https://github.com/lolocomotive/stickers";
               launchUrl(Uri.parse(url));
             },
