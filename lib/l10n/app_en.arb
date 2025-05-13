@@ -59,5 +59,6 @@
   "quickMode": "Quick mode",
   "language": "Language",
   "pleaseEnterTitle": "Please enter a title",
-  "pleaseEnterAuthor": "Please enter an author"
+  "pleaseEnterAuthor": "Please enter an author",
+  "sourceOnGithub": "The source code for this app is available on GitHub under a GPL 3.0 License"
 }

@@ -3,6 +3,7 @@ import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/app.dart';
 import 'package:stickers/src/dialogs/edit_quickmode_defaults_dialog.dart';
 import 'package:stickers/src/globals.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'settings_controller.dart';
 
@@ -189,6 +190,19 @@ class SettingsPage extends StatelessWidget {
                     ),
                 child: Text(AppLocalizations.of(context)!.licences)),
           ),
+          ListTile(
+            onTap: (){
+              String url = "https://github.com/lolocomotive/stickers";
+              launchUrl(Uri.parse(url));
+            },
+            leading: Icon(Icons.code),
+            title: Text("GitHub"),
+            subtitle: Opacity(
+              opacity: .7,
+              child: Text(AppLocalizations.of(context)!.sourceOnGithub),
+            ),
+            trailing: Icon(Icons.open_in_new),
+          )
         ],
       ),
     );
