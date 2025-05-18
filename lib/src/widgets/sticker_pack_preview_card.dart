@@ -50,14 +50,11 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
               leading: widget.pack.stickers.isEmpty
                   ? null
                   : Container(
-                      decoration:
-                          BoxDecoration(borderRadius: BorderRadius.circular(24), boxShadow: [
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(24), boxShadow: [
                         BoxShadow(
                           offset: Offset(1, 1),
                           blurRadius: 3,
-                          color: Theme.of(context).brightness == Brightness.light
-                              ? Colors.black26
-                              : Colors.black12,
+                          color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.black12,
                         )
                       ]),
                       clipBehavior: Clip.antiAlias,
@@ -75,9 +72,7 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
                       tooltip: AppLocalizations.of(context)!.edit,
                       icon: const Icon(Icons.edit),
                       onPressed: () {
-                        showDialog(
-                            context: context,
-                            builder: (context) => EditPackDialog(widget.pack)).then(
+                        showDialog(context: context, builder: (context) => EditPackDialog(widget.pack)).then(
                           (_) => setState(() {}),
                         );
                       }),
@@ -85,9 +80,8 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
                     tooltip: AppLocalizations.of(context)!.delete,
                     icon: const Icon(Icons.delete),
                     onPressed: () {
-                      showDialog<bool>(
-                          context: context,
-                          builder: (context) => DeleteConfirmDialog(widget.pack.title)).then(
+                      showDialog<bool>(context: context, builder: (context) => DeleteConfirmDialog(widget.pack.title))
+                          .then(
                         (value) async {
                           if (value == true) {
                             packs.remove(widget.pack);
@@ -105,34 +99,34 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
             Container(
               height: 100,
               padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              child: ListView(
+              child: ListView.builder(
                 shrinkWrap: true,
                 scrollDirection: Axis.horizontal,
-                children: widget.pack.stickers
-                    .map((e) => Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Container(
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(defaultBorderRadius),
-                                boxShadow: [
-                                  BoxShadow(
-                                    offset: Offset(1, 1),
-                                    blurRadius: 3,
-                                    color: Theme.of(context).brightness == Brightness.light
-                                        ? Colors.black26
-                                        : Colors.black12,
-                                  )
-                                ]),
-                            clipBehavior: Clip.antiAlias,
-                            child: CustomPaint(
-                              painter: CheckerPainter(context),
-                              child: Image.file(
-                                File(e.source),
-                              ),
-                            ),
-                          ),
-                        ))
-                    .toList(),
+                itemBuilder: (context, index) {
+                  var sticker = widget.pack.stickers[index];
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      width: 84,
+                      height: 84,
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(defaultBorderRadius), boxShadow: [
+                        BoxShadow(
+                          offset: Offset(1, 1),
+                          blurRadius: 3,
+                          color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.black12,
+                        )
+                      ]),
+                      clipBehavior: Clip.antiAlias,
+                      child: CustomPaint(
+                        painter: CheckerPainter(context),
+                        child: Image.file(
+                          File(sticker.source),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                itemCount: widget.pack.stickers.length,
               ),
             ),
           ],
