@@ -190,6 +190,7 @@ class StickersAppState extends State<StickersApp> {late Locale _locale;
         homeState!.update();
       }
     });
-    await sendToWhatsappWithErrorHandling(pack);
+    if(!mounted) return;
+    await sendToWhatsappWithErrorHandling(pack, context);
   }
 }

@@ -28,7 +28,7 @@ String? authorValidator(String? value, BuildContext context) {
   return null;
 }
 
-Future<void> sendToWhatsappWithErrorHandling(StickerPack pack) async {
+Future<void> sendToWhatsappWithErrorHandling(StickerPack pack, BuildContext context) async {
   try {
     await pack.sendToWhatsapp();
   } on WhatsappStickersAlreadyAddedException catch (_) {
@@ -36,14 +36,19 @@ Future<void> sendToWhatsappWithErrorHandling(StickerPack pack) async {
     showDialog(
       context: navigatorKey.currentContext!,
       builder: (_) => ErrorDialog(
+        title: AppLocalizations.of(context)!.couldnTAddStickerPack,
         message: e.cause ?? e.runtimeType.toString(),
       ),
     );
   } on PlatformException catch (e) {
     showDialog(
-        context: navigatorKey.currentContext!, builder: (_) => ErrorDialog(message: "WhatsApp is not installed"));
+        context: navigatorKey.currentContext!,
+        builder: (_) => ErrorDialog(
+            title: AppLocalizations.of(context)!.couldnTAddStickerPack, message: "WhatsApp is not installed"));
   } on Exception catch (e) {
-    showDialog(context: navigatorKey.currentContext!, builder: (_) => ErrorDialog(message: e.toString()));
+    showDialog(
+        context: navigatorKey.currentContext!,
+        builder: (_) => ErrorDialog(title: AppLocalizations.of(context)!.couldnTAddStickerPack, message: e.toString()));
   }
 }
 

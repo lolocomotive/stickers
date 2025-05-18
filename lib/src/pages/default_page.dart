@@ -29,7 +29,7 @@ class DefaultActivity extends StatelessWidget {
   final Widget child;
   final bool? resizeToAvoidBottomInset;
   final PreferredSizeWidget? appBar;
-  final FloatingActionButton? fab;
+  final Widget? fab;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +55,7 @@ class DefaultSliverActivity extends StatelessWidget {
   final Widget? leading;
   final Color? titleBackground;
   final Color? titleColor;
-  final FloatingActionButton? fab;
+  final Widget? fab;
 
   const DefaultSliverActivity({
     required this.child,

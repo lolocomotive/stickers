@@ -171,10 +171,28 @@ class StickerPackPageState extends State<StickerPackPage> {
                       textAlign: TextAlign.center,
                     ),
                   ),
-                FilledButton(
-                  onPressed:
-                      widget.pack.stickers.length < 3 ? null : () => sendToWhatsappWithErrorHandling(widget.pack),
-                  child: Text(AppLocalizations.of(context)!.addToWhatsapp),
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      icon: Icon(Icons.share),
+                      onPressed: () {
+                        exportPack(widget.pack);
+                      },
+                      label: Text("Export"),
+                    ),
+                    SizedBox(
+                      width: 8,
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton(
+                        onPressed: widget.pack.stickers.length < 3
+                            ? null
+                            : () => sendToWhatsappWithErrorHandling(widget.pack, context),
+                        child: Text(AppLocalizations.of(context)!.addToWhatsapp),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

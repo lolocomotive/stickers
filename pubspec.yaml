@@ -44,6 +44,9 @@ dependencies:
       ref: c0ba5ed891298ff2a5e49fe2ebccc33f0a1d4ba6
   flutter_launcher_icons: ^0.14.3
   url_launcher: ^6.3.1
+  flutter_archive: ^6.0.3
+  share_plus: ^11.0.0
+  file_picker: ^10.1.9
 dev_dependencies:
   flutter_test:
     sdk: flutter
