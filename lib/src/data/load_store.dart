@@ -48,32 +48,91 @@ importPack(File f) async {
   //TODO show progress
   Stopwatch sw = Stopwatch()..start();
   Directory importDir = Directory("${(await getTemporaryDirectory()).path}/import/");
-  Directory packDir = Directory("${importDir.path}pack_${DateTime.timestamp().millisecondsSinceEpoch}/");
-  await packDir.create(recursive: true);
-  await ZipFile.extractToDirectory(zipFile: f, destinationDir: packDir);
+  Directory unzipDir = Directory("${importDir.path}pack_${DateTime.timestamp().millisecondsSinceEpoch}/");
+  await unzipDir.create(recursive: true);
+  await ZipFile.extractToDirectory(zipFile: f, destinationDir: unzipDir);
   debugPrint("Unzip t=${sw.elapsedMilliseconds}ms");
 
-  File jsonFile = File("${packDir.path}pack.json");
-  StickerPack pack = StickerPack.fromJson(jsonDecode(await jsonFile.readAsString()));
+  List<StickerPack> packsToAdd = [];
 
-  for (var i = 0; packs.where((p) => p.id == pack.id).isNotEmpty; i++) {
-    pack.id = "${pack.id}_$i";
+  switch (f.path.split(".").last.toLowerCase()) {
+    case "wastickers":
+      final dirContents = unzipDir.listSync();
+      final pack = StickerPack(
+          (await File("${unzipDir.path}title.txt").readAsString()).replaceAll("\n", ""),
+          (await File("${unzipDir.path}author.txt").readAsString()).replaceAll("\n", ""),
+          "pack_${DateTime.timestamp().millisecondsSinceEpoch}",
+          dirContents
+              .map((entry) => entry.path)
+              .where((path) => path.toLowerCase().endsWith(".webp"))
+              .map((path) => Sticker(path, ["❤"]))
+              .toList(),
+          "1000",
+          trayIcon: dirContents.where((entry) => entry.path.toLowerCase().endsWith(".png")).firstOrNull?.path);
+      packsToAdd.add(pack);
+      break;
+    case "stickify":
+      final dirs = unzipDir.listSync().whereType<Directory>();
+      for (final dir in dirs) {
+        final json = jsonDecode(File("${dir.path}/contents.json").readAsStringSync());
+        for (final packJson in json["sticker_packs"]) {
+          final pack = StickerPack(
+            packJson["name"],
+            packJson["publisher"],
+            packJson["identifier"],
+            (packJson["stickers"] as List)
+                .map((sticker) => Sticker(
+                      "${dir.path}/${sticker["image_file"]}",
+                      (sticker["emojis"] as List).isEmpty ? ["❤"] : sticker["emojis"],
+                    ))
+                .toList(),
+            packJson["image_data_version"],
+            publisherWebsite: packJson["publisher_website"],
+            licenseAgreementWebsite: packJson["license_agreement_website"],
+            privacyPolicyWebsite: packJson["privacy_policy_website"],
+          );
+          packsToAdd.add(pack);
+        }
+      }
+      break;
+    default:
+      //TODO support stickify's backup file format
+      File jsonFile = File("${unzipDir.path}pack.json");
+      final pack = StickerPack.fromJson(jsonDecode(await jsonFile.readAsString()));
+      for (var sticker in pack.stickers) {
+        sticker.source = unzipDir.path + sticker.source;
+      }
+      if (pack.trayIcon != null) {
+        pack.trayIcon = unzipDir.path + pack.trayIcon!;
+      }
+      packsToAdd.add(pack);
   }
-
   debugPrint("Parse t=${sw.elapsedMilliseconds}ms");
-  await Directory("$packsDir/${pack.id}").create(recursive: true);
 
-  for (var i = 0; i < pack.stickers.length; i++) {
-    await File("${packDir.path}${pack.stickers[i].source}").copy("$packsDir/${pack.id}/imported_$i.webp");
-    pack.stickers[i].source = File("$packsDir/${pack.id}/imported_$i.webp").path;
-  }
-  if (pack.trayIcon != null) {
-    await File("${packDir.path}${pack.trayIcon}").copy("$packsDir/${pack.id}/imported_tray.webp");
-    pack.trayIcon = File("$packsDir/${pack.id}/imported_tray.webp").path;
-  }
-  debugPrint("Copy t=${sw.elapsedMilliseconds}ms");
+  for (final pack in packsToAdd) {
+    while (packs.where((p) => p.id == pack.id).isNotEmpty) {
+      pack.id = "${pack.id}_";
+    }
+    await Directory("$packsDir/${pack.id}").create(recursive: true);
 
-  packs.add(pack);
+    for (var i = 0; i < pack.stickers.length; i++) {
+      await File(pack.stickers[i].source).copy("$packsDir/${pack.id}/imported_$i.webp");
+      pack.stickers[i].source = File("$packsDir/${pack.id}/imported_$i.webp").path;
+    }
+    if (pack.trayIcon != null) {
+      await File("${pack.trayIcon}").copy("$packsDir/${pack.id}/imported_tray.webp");
+      pack.trayIcon = File("$packsDir/${pack.id}/imported_tray.webp").path;
+    }
+    debugPrint("[${pack.id}] Copy t=${sw.elapsedMilliseconds}ms");
+    packs.add(pack);
+  }
+
+  // Clean up - even if the same files are imported again, they are copied again so there's no point in caching them
+  // There is no await here since we don't need to wait
+  // until the deletion of the temporary folder is complete to move on
+  unzipDir.delete(recursive: true);
+  f.parent.delete(recursive: true);
+
   savePacks(packs);
 }
 

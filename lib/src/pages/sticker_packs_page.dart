@@ -51,21 +51,23 @@ class StickerPacksPageState extends State<StickerPacksPage> {
           FloatingActionButton(
             tooltip: "Import",
             onPressed: () async {
-              FilePickerResult? result = await FilePicker.platform.pickFiles(
-                  allowedExtensions: ["zip"],
-                  type: FileType.custom,
-                  allowMultiple: false,
-                  dialogTitle: "Select a sticker pack");
+              FilePickerResult? result = await FilePicker.platform
+                  .pickFiles(type: FileType.any, allowMultiple: true, dialogTitle: "Select a sticker pack");
               if (result == null) return;
-              try {
-                await importPack(File(result.files.single.path!));
-              } on Exception catch (_) {
-                if (!context.mounted) return;
-                showDialog(
-                    context: context,
-                    builder: (context) => ErrorDialog(
-                        title: "Couldn't import sticker pack",
-                        message: "Check if the file is a valid sticker pack ZIP file"));
+              for (final f in result.files) {
+                try {
+                  await importPack(File(f.path!));
+                  setState(() {});
+                } on Exception catch (e, st) {
+                  debugPrint(e.toString());
+                  debugPrintStack(stackTrace: st);
+                  if (!context.mounted) return;
+                  showDialog(
+                      context: context,
+                      builder: (context) => ErrorDialog(
+                          title: "Couldn't import sticker pack",
+                          message: "Check if the file is a valid sticker pack file"));
+                }
               }
               setState(() {});
             },
