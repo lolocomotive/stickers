@@ -194,10 +194,11 @@ packages:
   flutter_archive:
     dependency: "direct main"
     description:
-      name: flutter_archive
-      sha256: "5ca235f304c12bf468979235f400f79846d204169d715939e39197106f5fc970"
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: "555a589a0b4def2641f02e5352f4b842ccf9164d"
+      resolved-ref: "555a589a0b4def2641f02e5352f4b842ccf9164d"
+      url: "https://github.com/lolocomotive/flutter_archive"
+    source: git
     version: "6.0.3"
   flutter_launcher_icons:
     dependency: "direct main"
