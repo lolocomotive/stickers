@@ -438,8 +438,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: e5437252a2c219c6f6139ee83c097fb27354c7b9
-      resolved-ref: e5437252a2c219c6f6139ee83c097fb27354c7b9
+      ref: "62749b7e18f6a61834ca7f5bb45f9c7ace12bdd2"
+      resolved-ref: "62749b7e18f6a61834ca7f5bb45f9c7ace12bdd2"
       url: "https://github.com/lolocomotive/matrix_gesture_detector"
     source: git
     version: "0.2.0-nullsafety"

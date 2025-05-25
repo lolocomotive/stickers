@@ -32,7 +32,7 @@ dependencies:
   matrix_gesture_detector:
     git:
       url: https://github.com/lolocomotive/matrix_gesture_detector
-      ref: e5437252a2c219c6f6139ee83c097fb27354c7b9
+      ref: 62749b7e18f6a61834ca7f5bb45f9c7ace12bdd2
   extended_image:
     git:
       url: https://github.com/lolocomotive/extended_image
