@@ -9,6 +9,7 @@ import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/widgets/text_layer.dart';
+import 'package:vector_math/vector_math_64.dart' hide Colors;
 
 class EditPage extends StatefulWidget {
   /// Path of the temporary image to edit
@@ -56,54 +57,66 @@ class _EditPageState extends State<EditPage> {
             Container(
               decoration: BoxDecoration(),
               clipBehavior: Clip.antiAlias,
-              child: Stack(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  MatrixGestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onGestureStart: (Offset focalPoint) {
-                      _currentLayer = _layers.lastOrNull;
-                      print(focalPoint);
-                    },
-                    onMatrixUpdate:
-                        (matrix, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) {
-                      _currentLayer?.update(matrix);
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          color: Colors.black,
-                          child: CustomPaint(
-                            painter: CheckerPainter(context, sizeCallback: (size) {
-                              if (imageSize != size) {
-                                imageSize = size;
-                                scaleFactor = size.width / 512;
-                                if (size.aspectRatio != 1) {
-                                  // That should never happen
-                                  print("Aspect ratio of sticker should be 1");
-                                }
-                                WidgetsBinding.instance.addPostFrameCallback(
-                                  (timeStamp) => setState(() {}),
-                                );
-                              }
-                            }),
-                            child: Image.file(_source),
+                  Container(
+                    color: Colors.black,
+                    child: CustomPaint(
+                      painter: CheckerPainter(context, sizeCallback: (size) {
+                        if (imageSize != size) {
+                          imageSize = size;
+                          scaleFactor = size.width / 512;
+                          if (size.aspectRatio != 1) {
+                            // That should never happen
+                            print("Aspect ratio of sticker should be 1");
+                          }
+                          WidgetsBinding.instance.addPostFrameCallback(
+                            (timeStamp) => setState(() {}),
+                          );
+                        }
+                      }),
+                      child: MatrixGestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onGestureStart: (Offset focalPoint) {
+                          double minDistance = double.infinity;
+                          for (final layer in _layers) {
+                            Vector4 center = Vector4(scaleFactor * 256, scaleFactor * 256, 1, 1);
+                            center.applyMatrix4(layer.text.transform);
+                            Offset position = Offset(center.x, center.y);
+                            Offset delta = position - focalPoint;
+                            if (minDistance > delta.distanceSquared) {
+                              minDistance = delta.distanceSquared;
+                              _currentLayer = layer;
+                            }
+                          }
+                        },
+                        onMatrixUpdate: (matrix, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) {
+                          if (_currentLayer == null) return;
+                          // If we just use matrix here it breaks when switching between layers
+                          var newTransform = _currentLayer!.text.transform;
+                          newTransform = translationDeltaMatrix * newTransform;
+                          newTransform = scaleDeltaMatrix * newTransform;
+                          newTransform = rotationDeltaMatrix * newTransform;
+                          _currentLayer!.update(newTransform);
+                        },
+                        child: Stack(children: [
+                          Image.file(_source),
+                          ..._layers.map(
+                            (e) => Positioned(
+                              top: 0,
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: e,
+                            ),
                           ),
-                        ),
-                      ],
+                        ]),
+                      ),
                     ),
                   ),
-                  ..._layers.map(
-                    (e) => Positioned(
-                      top: 0,
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: e,
-                    ),
-                  )
                 ],
               ),
             ),
@@ -152,8 +165,7 @@ class _EditPageState extends State<EditPage> {
                 option.addOption(textOption);
                 option.outputFormat = const OutputFormat.webp_lossy();
 
-                final data =
-                    await ImageEditor.editFileImage(file: _source, imageEditorOption: option);
+                final data = await ImageEditor.editFileImage(file: _source, imageEditorOption: option);
                 addToPack(widget.pack, widget.index, data!);
                 if (!context.mounted) return;
                 Navigator.of(context).pop();

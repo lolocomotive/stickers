@@ -92,9 +92,7 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           GestureDetector(
-            onTap: () {
-              enableEditing();
-            },
+            onTap: enableEditing,
             child: Text(
               _controller.text,
               textAlign: TextAlign.center,
