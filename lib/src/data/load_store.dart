@@ -44,7 +44,7 @@ exportPack(StickerPack pack) async {
   SharePlus.instance.share(ShareParams(files: [XFile(zipFile.path)]));
 }
 
-importPack(File f) async {
+Future<void> importPack(File f) async {
   //TODO show progress
   Stopwatch sw = Stopwatch()..start();
   Directory importDir = Directory("${(await getTemporaryDirectory()).path}/import/");

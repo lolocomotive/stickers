@@ -6,6 +6,7 @@ import 'package:share_handler/share_handler.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/edit_page.dart';
@@ -32,12 +33,13 @@ class StickersApp extends StatefulWidget {
   State<StickersApp> createState() => StickersAppState();
 }
 
-class StickersAppState extends State<StickersApp> {late Locale _locale;
+class StickersAppState extends State<StickersApp> {
+  late Locale _locale;
 
   @override
   void initState() {
     super.initState();
-    _locale = Locale.fromSubtags(languageCode:widget.settingsController.locale);
+    _locale = Locale.fromSubtags(languageCode: widget.settingsController.locale);
     initPlatformState();
   }
 
@@ -55,21 +57,17 @@ class StickersAppState extends State<StickersApp> {late Locale _locale;
     media = await handler.getInitialSharedMedia();
     if (media != null) {
       debugPrint("Initial Media received");
-      if (widget.settingsController.quickMode) {
-        _quickAdd(media!, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
-        media = null;
-      }
+      await _processMedia(media!);
+      setState(() {});
+      homeState?.setState(() {});
     }
-    handler.sharedMediaStream.listen((SharedMedia media) {
+    handler.sharedMediaStream.listen((SharedMedia media) async {
       navigatorKey.currentState!.pushNamedAndRemoveUntil('/', (Route<dynamic> route) => false);
       if (!mounted) return;
       debugPrint("Media Stream received");
-      if (widget.settingsController.quickMode) {
-        _quickAdd(media, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
-      } else {
-        this.media = media;
-      }
+      await _processMedia(media);
       setState(() {});
+      homeState?.setState(() {});
     });
     if (!mounted) return;
 
@@ -165,6 +163,41 @@ class StickersAppState extends State<StickersApp> {late Locale _locale;
     );
   }
 
+  _processMedia(SharedMedia media) async {
+    if (media.attachments!.first!.path.toLowerCase().endsWith(".stickify") ||
+        media.attachments!.first!.path.toLowerCase().endsWith(".zip") ||
+        media.attachments!.first!.path.toLowerCase().endsWith(".wastickers")) {
+      try {
+        await importPack(File(media.attachments!.first!.path));
+        if (context.mounted) setState(() {});
+      } on Exception catch (_) {
+        if (mounted) {
+          showDialog(
+              context: navigatorKey.currentState!.context,
+              builder: (context) => ErrorDialog(
+                    message: "Check if the provided file is valid.",
+                    title: "Couldn't import pack",
+                  ));
+        }
+      }
+      return;
+    }
+    if (media.attachments!.first!.type != SharedAttachmentType.image) {
+      showDialog(
+          context: navigatorKey.currentState!.context,
+          builder: (context) => ErrorDialog(
+                message: "Only sticker packs or images are supported at the moment.",
+                title: "Unrecognized file format",
+              ));
+      return;
+    }
+    this.media = media;
+    if (widget.settingsController.quickMode) {
+      _quickAdd(media, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
+      this.media = null;
+    }
+  }
+
   Future<void> _quickAdd(SharedMedia media, String defaultTitle, String defaultAuthor) async {
     final rawImageData = File(media.attachments!.first!.path).readAsBytesSync();
     final pack = packs.firstWhere((pack) => pack.stickers.length < 30, orElse: () {
@@ -190,7 +223,7 @@ class StickersAppState extends State<StickersApp> {late Locale _locale;
         homeState!.update();
       }
     });
-    if(!mounted) return;
+    if (!mounted) return;
     await sendToWhatsappWithErrorHandling(pack, context);
   }
 }
