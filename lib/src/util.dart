@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_editor/image_editor.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
@@ -60,4 +64,26 @@ int colCount(double width) {
   } else {
     return 9;
   }
+}
+
+Future<void> loadFonts() async {
+  debugPrint("Loading fonts...");
+  Stopwatch sw = Stopwatch()..start();
+  Directory fontsDir = Directory("${(await getTemporaryDirectory()).path}/fonts/");
+  if (!await fontsDir.exists()) await fontsDir.create(recursive: true);
+  for (final font in fonts) {
+    if (font.family == "sans-serif" || font.family == "monospace") continue;
+    File fontFile = File("${fontsDir.path}${font.family}.ttf");
+    if (!await fontFile.exists()) {
+      debugPrint("Copying file to ${fontFile.path}");
+      await fontFile.create();
+      await fontFile.writeAsBytes((await rootBundle
+              .load("assets/fonts/${font.family}-${font.family == "RobotoMono" ? "SemiBold" : "Regular"}.ttf"))
+          .buffer
+          .asInt8List());
+    }
+    font.fontName = await FontManager.registerFont(fontFile);
+    debugPrint("Loaded font ${font.family} with name ${font.fontName}");
+  }
+  debugPrint("${fonts.length} fonts loaded in ${sw.elapsedMilliseconds}ms");
 }

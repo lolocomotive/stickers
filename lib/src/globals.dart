@@ -8,3 +8,24 @@ final navigatorKey = GlobalKey<NavigatorState>();
 
 StickerPacksPageState? homeState;
 PackageInfo? info;
+
+class PreviewFont {
+  final String? display;
+  final String family;
+
+  /// Font name used by image editor plug-in
+  String? fontName;
+
+  PreviewFont(this.family, {this.fontName, this.display});
+}
+
+final List<PreviewFont> fonts = [
+  PreviewFont("sans-serif", display: "Classic"),
+  PreviewFont("Coiny"),
+  PreviewFont("Lobster"),
+  PreviewFont("Pacifico"),
+  PreviewFont("PressStart2P", display: "Game"),
+  PreviewFont("RacingSansOne", display: "Racing"),
+  PreviewFont("RobotoMono", display: "type"),
+  PreviewFont("DMSerifText", display: "Serif"),
+];

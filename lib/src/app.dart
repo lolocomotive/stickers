@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:image_editor/image_editor.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/load_store.dart';
@@ -40,6 +41,7 @@ class StickersAppState extends State<StickersApp> {
   void initState() {
     super.initState();
     _locale = Locale.fromSubtags(languageCode: widget.settingsController.locale);
+    loadFonts();
     initPlatformState();
   }
 
@@ -74,6 +76,7 @@ class StickersAppState extends State<StickersApp> {
     setState(() {
       // _platformVersion = platformVersion;
     });
+
   }
 
   @override
