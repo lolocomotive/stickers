@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_editor/image_editor.dart';
+import 'package:stickers/src/dialogs/edit_text_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/edit_page.dart';
 
@@ -27,6 +27,7 @@ class TextLayer extends StatefulWidget {
 class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController(text: "");
   final _focusNode = FocusNode();
+  final _editorKey = GlobalKey();
 
   @override
   void initState() {
@@ -42,6 +43,7 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
       builder: (context) => Scaffold(
         backgroundColor: Colors.transparent,
         body: TextEditingDialog(
+          key: _editorKey,
           disableEditing: disableEditing,
           controller: _controller,
           focusNode: _focusNode,
@@ -72,6 +74,7 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
               style: TextStyle(
                 inherit: false,
                 fontSize: widget.text.fontSize,
+                color: widget.text.textColor,
                 fontFamily:
                     fonts.firstWhere((font) => font.fontName == widget.text.fontName, orElse: () => fonts.first).family,
               ),
@@ -89,102 +92,6 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
 
   void disableEditing() {
     Navigator.of(context).popUntil((route) => route.settings.name == EditPage.routeName);
-  }
-}
-
-class TextEditingDialog extends StatefulWidget {
-  final Function disableEditing;
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final TextLayer parent;
-
-  TextEditingDialog(
-      {super.key,
-      required this.disableEditing,
-      required this.controller,
-      required this.focusNode,
-      required this.parent});
-
-  @override
-  State<TextEditingDialog> createState() => _TextEditingDialogState();
-}
-
-class _TextEditingDialogState extends State<TextEditingDialog> {
-  int page = 0;
-
-  final PageController _pageController = PageController(viewportFraction: .35);
-
-  @override
-  Widget build(BuildContext context) {
-    if (fonts.where((f) => f.fontName == widget.parent.text.fontName).isNotEmpty) {
-      _pageController.jumpToPage(fonts.indexWhere((f) => f.fontName == widget.parent.text.fontName));
-    }
-    return Focus(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Expanded(
-              child: GestureDetector(
-            onTap: () => widget.disableEditing(),
-          )),
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: EditableText(
-              autofocus: true,
-              onEditingComplete: () {
-                widget.disableEditing();
-              },
-              maxLines: null,
-              cursorOpacityAnimates: true,
-              scrollPhysics: const NeverScrollableScrollPhysics(),
-              controller: widget.controller,
-              textAlign: TextAlign.center,
-              focusNode: widget.focusNode,
-              style: TextStyle(
-                inherit: false,
-                fontSize: widget.parent.text.fontSize,
-                fontFamily: fonts
-                    .firstWhere((font) => font.fontName == widget.parent.text.fontName, orElse: () => fonts.first)
-                    .family, //This is stupid
-              ),
-              cursorColor: Colors.white,
-              backgroundCursorColor: Colors.white,
-            ),
-          ),
-          SizedBox(
-            height: MediaQuery.of(context).textScaler.scale(25) + 48,
-            child: PageView.builder(
-              itemCount: fonts.length,
-              onPageChanged: (page) {
-                HapticFeedback.lightImpact();
-                setState(() {
-                  this.page = page;
-                  widget.parent.text.fontName = fonts[page].fontName ?? fonts[page].family;
-                });
-              },
-              pageSnapping: true,
-              controller: _pageController,
-              itemBuilder: (context, i) {
-                return GestureDetector(
-                  onTap: () {
-                    _pageController.animateToPage(
-                      i,
-                      duration: Duration(milliseconds: 150),
-                      curve: Curves.easeInOutQuad,
-                    );
-                  },
-                  child: FontPreview(
-                    fonts[i].family,
-                    display: fonts[i].display,
-                    active: page == i,
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -207,20 +114,18 @@ class FontPreview extends StatelessWidget {
                 ? (Theme.of(context).brightness == Brightness.light
                     ? Theme.of(context).colorScheme.primary.withAlpha(100)
                     : Theme.of(context).colorScheme.primary.withAlpha(50))
-                : Theme.of(context).brightness == Brightness.light
-                    ? Colors.black12
-                    : Colors.white10,
+                : Colors.transparent,
           ),
           child: Baseline(
               baseline: family == "PressStart2P"
-                  ? MediaQuery.of(context).textScaler.scale(25) + 5
-                  : MediaQuery.of(context).textScaler.scale(25),
+                  ? MediaQuery.of(context).textScaler.scale(15) + 5
+                  : MediaQuery.of(context).textScaler.scale(15),
               baselineType: TextBaseline.alphabetic,
               child: Text(display ?? family,
                   style: TextStyle(
                     color: Colors.white,
                     fontFamily: family,
-                    fontSize: MediaQuery.of(context).textScaler.scale(25),
+                    fontSize: MediaQuery.of(context).textScaler.scale(15),
                   ))),
         ),
       ],

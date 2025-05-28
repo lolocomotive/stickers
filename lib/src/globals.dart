@@ -29,3 +29,25 @@ final List<PreviewFont> fonts = [
   PreviewFont("RobotoMono", display: "type"),
   PreviewFont("DMSerifText", display: "Serif"),
 ];
+
+final List<Color> colors = [
+  Colors.pink,
+  Colors.red,
+  Colors.deepOrange,
+  Colors.amber,
+  Colors.yellow,
+  Colors.lime,
+  Colors.lightGreen,
+  Colors.blueGrey,
+  Colors.white,
+  Colors.purple,
+  Colors.deepPurple,
+  Colors.indigo,
+  Colors.blue,
+  Colors.lightBlue,
+  Colors.cyan,
+  Colors.teal,
+  Colors.green,
+  Colors.brown,
+  Colors.black,
+];
