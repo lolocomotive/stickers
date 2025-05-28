@@ -51,11 +51,47 @@ class _EditPageState extends State<EditPage> {
         title: Text(AppLocalizations.of(context)!.editYourSticker),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: FilledButton.tonalIcon(
+                      onPressed: () {
+                        EditorText text = EditorText(
+                          text: "",
+                          transform: Matrix4.identity(),
+                          fontSize: 40 * scaleFactor,
+                          textColor: Colors.white,
+                        );
+                        _texts.add(text);
+                        _layers.add(TextLayer(text));
+
+                        setState(() {});
+                      },
+                      label: Text("Add Text"),
+                      icon: Icon(Icons.format_size),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton.tonalIcon(
+                      onPressed: () {},
+                      label: Text("Draw"),
+                      icon: Icon(Icons.draw),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             Container(
-              decoration: BoxDecoration(),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(24)),
               clipBehavior: Clip.antiAlias,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
@@ -120,35 +156,8 @@ class _EditPageState extends State<EditPage> {
                 ],
               ),
             ),
-            Row(
-              children: [
-                IconButton(
-                  tooltip: AppLocalizations.of(context)!.addTextLayer,
-                  onPressed: () {
-                    EditorText text = EditorText(
-                      text: "",
-                      transform: Matrix4.identity(),
-                      fontSize: 40 * scaleFactor,
-                      textColor: Colors.white,
-                    );
-                    _texts.add(text);
-                    _layers.add(TextLayer(text));
-
-                    setState(() {});
-                  },
-                  icon: const Row(
-                    children: [
-                      Text(
-                        "+",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Icon(Icons.text_fields),
-                    ],
-                  ),
-                )
-              ],
-            ),
-            ElevatedButton(
+            SizedBox(height: 12),
+            FilledButton(
               onPressed: () async {
                 final option = ImageEditorOption();
                 final textOption = AddTextOption();
