@@ -4,7 +4,7 @@ import 'package:stickers/src/dialogs/edit_text_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/edit_page.dart';
 
-class TextLayer extends StatefulWidget {
+class TextLayer extends StatefulWidget implements EditorLayer {
   final EditorText text;
   late final TextLayerState state;
 

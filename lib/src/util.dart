@@ -67,7 +67,7 @@ int colCount(double width) {
 }
 
 Future<void> loadFonts() async {
-  debugPrint("Loading fonts...");
+  debugPrint("Registering fonts...");
   Stopwatch sw = Stopwatch()..start();
   Directory fontsDir = Directory("${(await getTemporaryDirectory()).path}/fonts/");
   if (!await fontsDir.exists()) await fontsDir.create(recursive: true);
@@ -83,7 +83,7 @@ Future<void> loadFonts() async {
           .asInt8List());
     }
     font.fontName = await FontManager.registerFont(fontFile);
-    debugPrint("Loaded font ${font.family} with name ${font.fontName}");
+    debugPrint("Registered font ${font.family} with name ${font.fontName}");
   }
-  debugPrint("${fonts.length} fonts loaded in ${sw.elapsedMilliseconds}ms");
+  debugPrint("${fonts.length} fonts registered in ${sw.elapsedMilliseconds}ms");
 }

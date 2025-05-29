@@ -225,11 +225,14 @@ class ColorButton extends StatelessWidget {
   final GestureTapCallback? onTap;
   final bool active;
 
+  final double? size;
+
   const ColorButton(
     this.color, {
     super.key,
     this.onTap,
     required this.active,
+    this.size,
   });
 
   @override
@@ -239,14 +242,14 @@ class ColorButton extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(2.0),
         child: Container(
-          height: 23,
-          width: 23,
+          height: size ?? 23,
+          width: size ?? 23,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5),
             color: color,
             border: Border.all(
               color: active ? Theme.of(context).colorScheme.primary : Colors.transparent,
-              width:3,
+              width: 3,
             ),
           ),
         ),
