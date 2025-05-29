@@ -189,6 +189,7 @@ class _EditPageState extends State<EditPage> {
                       text,
                       onDelete: (layer) {
                         _layers.remove(layer);
+                        if (_currentTextLayer == layer) _currentTextLayer = null;
                         setState(() {});
                       },
                     ));
@@ -351,10 +352,10 @@ class _EditPageState extends State<EditPage> {
             ),
           );
         }
-        return SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Center(
+        return Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Center(
+            child: SingleChildScrollView(
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: 512),
                 child: Column(
