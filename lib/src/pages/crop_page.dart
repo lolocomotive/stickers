@@ -72,7 +72,7 @@ class _CropPageState extends State<CropPage> {
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton(
+            child: FilledButton(
               onPressed: () async {
                 final state = widget.editorKey.currentState!;
                 final cropped = await cropSticker(state.getCropRect()!, state.rawImageData, widget.pack, widget.index);

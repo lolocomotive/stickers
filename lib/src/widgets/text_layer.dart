@@ -8,9 +8,12 @@ class TextLayer extends StatefulWidget implements EditorLayer {
   final EditorText text;
   late final TextLayerState state;
 
+  final Function(TextLayer)? onDelete;
+
   TextLayer(
     this.text, {
     super.key,
+    this.onDelete,
   });
 
   @override
@@ -48,6 +51,9 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
           controller: _controller,
           focusNode: _focusNode,
           parent: widget,
+          onDelete: () {
+            widget.onDelete?.call(widget);
+          },
         ),
       ),
     ).then(
