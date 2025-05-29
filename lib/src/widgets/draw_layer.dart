@@ -34,8 +34,10 @@ class DrawLayer extends StatelessWidget implements EditorLayer {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: painter,
+    return IgnorePointer(
+      child: CustomPaint(
+        painter: painter,
+      ),
     );
   }
 }
