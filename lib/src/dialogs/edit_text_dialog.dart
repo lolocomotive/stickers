@@ -14,7 +14,7 @@ class TextEditingDialog extends StatefulWidget {
 
   final GestureTapCallback? onDelete;
 
-  TextEditingDialog({
+  const TextEditingDialog({
     super.key,
     required this.disableEditing,
     required this.controller,
@@ -66,7 +66,8 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
               fontSize: widget.parent.text.fontSize,
               color: widget.parent.text.textColor,
               fontFamily: fonts
-                  .firstWhere((font) => font.fontName == widget.parent.text.fontName, orElse: () => fonts.first)
+                  .firstWhere((font) => font.fontName == widget.parent.text.fontName,
+                      orElse: () => fonts.first)
                   .family, //This is stupid
             ),
             cursorColor: widget.parent.text.textColor,
@@ -207,7 +208,9 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                               ],
                             ),
                           ),
-                          crossFadeState: _showSizeSlider ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+                          crossFadeState: _showSizeSlider
+                              ? CrossFadeState.showFirst
+                              : CrossFadeState.showSecond,
                           duration: Duration(milliseconds: 150)),
                     ),
                     IconButton(

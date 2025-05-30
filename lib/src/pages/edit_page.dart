@@ -102,7 +102,8 @@ class _EditPageState extends State<EditPage> {
                   child: Row(
                     children: [
                       Container(
-                        decoration: BoxDecoration(color: _brushColor, borderRadius: BorderRadius.circular(10)),
+                        decoration: BoxDecoration(
+                            color: _brushColor, borderRadius: BorderRadius.circular(10)),
                         height: 7,
                         width: 7,
                       ),
@@ -119,7 +120,8 @@ class _EditPageState extends State<EditPage> {
                             }),
                       ),
                       Container(
-                        decoration: BoxDecoration(color: _brushColor, borderRadius: BorderRadius.circular(25)),
+                        decoration: BoxDecoration(
+                            color: _brushColor, borderRadius: BorderRadius.circular(25)),
                         height: 25,
                         width: 25,
                       ),
@@ -141,7 +143,7 @@ class _EditPageState extends State<EditPage> {
                       _drawing = true;
                     });
                   },
-                  label: Text("Draw"),
+                  label: Text(AppLocalizations.of(context)!.draw),
                   icon: Icon(Icons.draw),
                 ),
               ],
@@ -151,8 +153,8 @@ class _EditPageState extends State<EditPage> {
               children: [
                 Theme(
                   data: ThemeData(
-                    colorScheme:
-                        ColorScheme.fromSeed(seedColor: Colors.green, brightness: Theme.of(context).brightness),
+                    colorScheme: ColorScheme.fromSeed(
+                        seedColor: Colors.green, brightness: Theme.of(context).brightness),
                   ),
                   child: FilledButton.icon(
                     onPressed: () {
@@ -196,7 +198,7 @@ class _EditPageState extends State<EditPage> {
 
                     setState(() {});
                   },
-                  label: Text("Add Text"),
+                  label: Text(AppLocalizations.of(context)!.addText),
                   icon: Icon(Icons.format_size),
                 ),
               ),
@@ -237,8 +239,10 @@ class _EditPageState extends State<EditPage> {
                     child: MatrixGestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onGestureStart: onGestureStart,
-                      onMatrixUpdate: (_, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) =>
-                          onMatrixUpdate(translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix),
+                      onMatrixUpdate:
+                          (_, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) =>
+                              onMatrixUpdate(
+                                  translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix),
                       child: Stack(children: [
                         Image.file(_source),
                         ..._layers.map(
@@ -269,15 +273,19 @@ class _EditPageState extends State<EditPage> {
             child: Row(children: [
               Expanded(
                 child: FilledButton.tonalIcon(
-                  onPressed: _layers.whereType<DrawLayer>().where((layer) => layer.painter.strokes.isNotEmpty).isEmpty
+                  onPressed: _layers
+                          .whereType<DrawLayer>()
+                          .where((layer) => layer.painter.strokes.isNotEmpty)
+                          .isEmpty
                       ? null
                       : () {
-                          final layer =
-                              _layers.whereType<DrawLayer>().lastWhere((layer) => layer.painter.strokes.isNotEmpty);
+                          final layer = _layers
+                              .whereType<DrawLayer>()
+                              .lastWhere((layer) => layer.painter.strokes.isNotEmpty);
                           _undo.add(UndoEntry(layer.painter.strokes.removeLast(), layer.painter));
                           setState(() {});
                         },
-                  label: Text("Undo"),
+                  label: Text(AppLocalizations.of(context)!.undo),
                   icon: Icon(Icons.undo),
                 ),
               ),
@@ -294,7 +302,7 @@ class _EditPageState extends State<EditPage> {
                             entry.painter.strokes.add(entry.stroke);
                           });
                         },
-                  label: Text("Redo"),
+                  label: Text(AppLocalizations.of(context)!.redo),
                   icon: Icon(Icons.redo),
                 ),
               ),
@@ -312,7 +320,8 @@ class _EditPageState extends State<EditPage> {
           label: Text(AppLocalizations.of(context)!.addToPack),
         );
         if (isHorizontal) {
-          final double halfWidth = min(constraints.maxHeight - 16, min(500, constraints.maxWidth / 2 - 16));
+          final double halfWidth =
+              min(constraints.maxHeight - 16, min(500, constraints.maxWidth / 2 - 16));
           return Padding(
             padding: const EdgeInsets.all(8.0),
             child: Center(
@@ -416,9 +425,11 @@ class _EditPageState extends State<EditPage> {
     return;
   }
 
-  void onMatrixUpdate(Matrix4 translationDeltaMatrix, Matrix4 scaleDeltaMatrix, Matrix4 rotationDeltaMatrix) {
+  void onMatrixUpdate(
+      Matrix4 translationDeltaMatrix, Matrix4 scaleDeltaMatrix, Matrix4 rotationDeltaMatrix) {
     if (_drawing) {
-      _brushPos = Offset(_brushPos.dx + translationDeltaMatrix.row0.w, _brushPos.dy + translationDeltaMatrix.row1.w);
+      _brushPos = Offset(_brushPos.dx + translationDeltaMatrix.row0.w,
+          _brushPos.dy + translationDeltaMatrix.row1.w);
       (_layers.last as DrawLayer).painter.strokes.last.points.add(_brushPos / scaleFactor);
       setState(() {});
       return;
@@ -475,4 +486,6 @@ class UndoEntry {
   UndoEntry(this.stroke, this.painter);
 }
 
-abstract class EditorLayer extends Widget {}
+abstract class EditorLayer extends Widget {
+  const EditorLayer({super.key});
+}

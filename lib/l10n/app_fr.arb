@@ -57,6 +57,22 @@
   "language": "Langue",
   "pleaseEnterTitle": "Veuillez entrer un titre",
   "pleaseEnterAuthor": "Veuillez entrer un auteur",
-  "sourceOnGithub": "Le code source de cette application est disponible sous licence GPL 3.0 sur GitHub"
-
+  "sourceOnGithub": "Le code source de cette application est disponible sous licence GPL 3.0 sur GitHub. Signalez les bugs et suggérez des améliorations ici.",
+  "addToPack": "Ajouter au pack",
+  "checkIfFileValid": "Veuillez vérifier si le fichier est valide.",
+  "importError": "Erreur lors de l'import",
+  "unrecognizedFormat": "Format de fichier non reconnu",
+  "onlyPacksAndImagesRecognized": "Seulement les packs de stickers et les images sont pris en charge actuellement",
+  "whatsappNotInstalled": "WhatsApp n'est pas installé",
+  "deletePack": "Supprimer {pack}?",
+  "draw": "Dessiner",
+  "addText": "Ajouter du texte",
+  "undo": "Annuler",
+  "redo": "Refaire",
+  "export": "Exporter",
+  "import": "Importer",
+  "couldntImportPack": "Erreur lors de l'import du pack",
+  "checkPack": "Veuillez vérifier si le fichier du pack est valide.",
+  "selectPack": "Sélectionner un pack de stickers",
+  "createPack": "Créer le pack"
 }

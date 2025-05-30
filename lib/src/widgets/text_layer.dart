@@ -81,8 +81,10 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
                 inherit: false,
                 fontSize: widget.text.fontSize,
                 color: widget.text.textColor,
-                fontFamily:
-                    fonts.firstWhere((font) => font.fontName == widget.text.fontName, orElse: () => fonts.first).family,
+                fontFamily: fonts
+                    .firstWhere((font) => font.fontName == widget.text.fontName,
+                        orElse: () => fonts.first)
+                    .family,
               ),
             ),
           ),

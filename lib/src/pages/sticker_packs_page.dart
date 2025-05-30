@@ -49,10 +49,12 @@ class StickerPacksPageState extends State<StickerPacksPage> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           FloatingActionButton(
-            tooltip: "Import",
+            tooltip: AppLocalizations.of(context)!.import,
             onPressed: () async {
-              FilePickerResult? result = await FilePicker.platform
-                  .pickFiles(type: FileType.any, allowMultiple: true, dialogTitle: "Select a sticker pack");
+              FilePickerResult? result = await FilePicker.platform.pickFiles(
+                  type: FileType.any,
+                  allowMultiple: true,
+                  dialogTitle: AppLocalizations.of(context)!.selectPack);
               if (result == null) return;
               for (final f in result.files) {
                 try {
@@ -65,8 +67,8 @@ class StickerPacksPageState extends State<StickerPacksPage> {
                   showDialog(
                       context: context,
                       builder: (context) => ErrorDialog(
-                          title: "Couldn't import sticker pack",
-                          message: "Check if the file is a valid sticker pack file"));
+                          title: AppLocalizations.of(context)!.couldntImportPack,
+                          message: AppLocalizations.of(context)!.checkPack));
                 }
               }
               setState(() {});
@@ -91,7 +93,7 @@ class StickerPacksPageState extends State<StickerPacksPage> {
               color: Theme.of(context).colorScheme.onPrimary,
             ),
             label: Text(
-              "Create Pack",
+              AppLocalizations.of(context)!.createPack,
               style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
             ),
           ),

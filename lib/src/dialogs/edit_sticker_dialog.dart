@@ -29,7 +29,6 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      //title: const Text("Edit sticker"),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,

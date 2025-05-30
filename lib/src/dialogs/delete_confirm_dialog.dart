@@ -13,7 +13,7 @@ class _DeleteConfirmDialogState extends State<DeleteConfirmDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text("Delete ${widget.target}?"),
+      title: Text(AppLocalizations.of(context)!.deletePack(widget.target)),
       actions: [
         TextButton(
             onPressed: () {

@@ -60,6 +60,30 @@
   "language": "Language",
   "pleaseEnterTitle": "Please enter a title",
   "pleaseEnterAuthor": "Please enter an author",
-  "sourceOnGithub": "The source code for this app is available on GitHub under a GPL 3.0 License",
-  "addToPack": "Add to sticker pack"
+  "sourceOnGithub": "The source code for this app is available on GitHub under a GPL 3.0 License. Report bugs and request features there.",
+  "addToPack": "Add to sticker pack",
+  "checkIfFileValid": "Check if the provided file is valid.",
+  "importError": "Couldn't import pack",
+  "unrecognizedFormat": "Unrecognized file format",
+  "onlyPacksAndImagesRecognized": "Only sticker packs or images are supported at the moment.",
+  "whatsappNotInstalled": "WhatsApp is not installed",
+  "deletePack": "Delete {pack}?",
+  "@deletePack": {
+    "placeholders": {
+      "pack": {
+        "type": "String",
+        "example": "Bob"
+      }
+    }
+  },
+  "draw": "Draw",
+  "addText": "Add Text",
+  "undo": "Undo",
+  "redo": "Redo",
+  "export": "Export",
+  "import": "Import",
+  "couldntImportPack": "Couldn't import sticker pack",
+  "checkPack": "Check if the file is a valid sticker pack file",
+  "selectPack": "Select a sticker pack",
+  "createPack": "Create Pack"
 }

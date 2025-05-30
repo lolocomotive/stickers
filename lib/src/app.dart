@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:image_editor/image_editor.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/load_store.dart';
@@ -21,7 +20,8 @@ import 'settings/settings_page.dart';
 
 /// The Widget that configures your application.
 class StickersApp extends StatefulWidget {
-  static StickersAppState? of(BuildContext context) => context.findAncestorStateOfType<StickersAppState>();
+  static StickersAppState? of(BuildContext context) =>
+      context.findAncestorStateOfType<StickersAppState>();
 
   const StickersApp({
     super.key,
@@ -76,7 +76,6 @@ class StickersAppState extends State<StickersApp> {
     setState(() {
       // _platformVersion = platformVersion;
     });
-
   }
 
   @override
@@ -178,8 +177,8 @@ class StickersAppState extends State<StickersApp> {
           showDialog(
               context: navigatorKey.currentState!.context,
               builder: (context) => ErrorDialog(
-                    message: "Check if the provided file is valid.",
-                    title: "Couldn't import pack",
+                    message: AppLocalizations.of(context)!.checkIfFileValid,
+                    title: AppLocalizations.of(context)!.importError,
                   ));
         }
       }
@@ -189,14 +188,15 @@ class StickersAppState extends State<StickersApp> {
       showDialog(
           context: navigatorKey.currentState!.context,
           builder: (context) => ErrorDialog(
-                message: "Only sticker packs or images are supported at the moment.",
-                title: "Unrecognized file format",
+                message: AppLocalizations.of(context)!.unrecognizedFormat,
+                title: AppLocalizations.of(context)!.unrecognizedFormat,
               ));
       return;
     }
     this.media = media;
     if (widget.settingsController.quickMode) {
-      _quickAdd(media, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
+      _quickAdd(
+          media, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
       this.media = null;
     }
   }

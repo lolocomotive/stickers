@@ -44,15 +44,17 @@ Future<void> sendToWhatsappWithErrorHandling(StickerPack pack, BuildContext cont
         message: e.cause ?? e.runtimeType.toString(),
       ),
     );
-  } on PlatformException catch (e) {
+  } on PlatformException {
     showDialog(
         context: navigatorKey.currentContext!,
         builder: (_) => ErrorDialog(
-            title: AppLocalizations.of(context)!.couldnTAddStickerPack, message: "WhatsApp is not installed"));
+            title: AppLocalizations.of(context)!.couldnTAddStickerPack,
+            message: AppLocalizations.of(context)!.whatsappNotInstalled));
   } on Exception catch (e) {
     showDialog(
         context: navigatorKey.currentContext!,
-        builder: (_) => ErrorDialog(title: AppLocalizations.of(context)!.couldnTAddStickerPack, message: e.toString()));
+        builder: (_) => ErrorDialog(
+            title: AppLocalizations.of(context)!.couldnTAddStickerPack, message: e.toString()));
   }
 }
 
@@ -77,8 +79,8 @@ Future<void> loadFonts() async {
     if (!await fontFile.exists()) {
       debugPrint("Copying file to ${fontFile.path}");
       await fontFile.create();
-      await fontFile.writeAsBytes((await rootBundle
-              .load("assets/fonts/${font.family}-${font.family == "RobotoMono" ? "SemiBold" : "Regular"}.ttf"))
+      await fontFile.writeAsBytes((await rootBundle.load(
+              "assets/fonts/${font.family}-${font.family == "RobotoMono" ? "SemiBold" : "Regular"}.ttf"))
           .buffer
           .asInt8List());
     }
