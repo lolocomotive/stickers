@@ -36,7 +36,7 @@ dependencies:
   extended_image:
     git:
       url: https://github.com/lolocomotive/extended_image
-      ref: 55e9313e747a783a4795aead04af433409db0475
+      ref: 9a0a7a577c29519d3535b14db95922bb0d53b78c
   image_editor:
     git:
       url: https://github.com/lolocomotive/flutter_image_editor
@@ -58,6 +58,7 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 
 flutter:
+  generate: true
   uses-material-design: true
   fonts:
     - family: Coiny

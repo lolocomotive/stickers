@@ -56,9 +56,11 @@ class _CropPageState extends State<CropPage> {
                 cacheRawData: true,
                 initEditorConfigHandler: (state) {
                   return EditorConfig(
+                    animationCurve: Curves.ease,
+                    tickerDuration: Duration(),
                     lineHeight: 3,
                     lineColor: Theme.of(context).colorScheme.primary.withAlpha(100),
-                    animationDuration: const Duration(milliseconds: 100),
+                    animationDuration: const Duration(milliseconds: 400),
                     maxScale: 8.0,
                     cropRectPadding: const EdgeInsets.all(40.0),
                     hitTestSize: 80.0,
