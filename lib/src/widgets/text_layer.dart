@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:image_editor/image_editor.dart';
+import 'package:stickers/src/dialogs/edit_text_dialog.dart';
+import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/edit_page.dart';
 
-class TextLayer extends StatefulWidget {
+class TextLayer extends StatefulWidget implements EditorLayer {
   final EditorText text;
   late final TextLayerState state;
+
+  final Function(TextLayer)? onDelete;
 
   TextLayer(
     this.text, {
     super.key,
+    this.onDelete,
   });
 
   @override
@@ -25,6 +30,7 @@ class TextLayer extends StatefulWidget {
 class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController(text: "");
   final _focusNode = FocusNode();
+  final _editorKey = GlobalKey();
 
   @override
   void initState() {
@@ -36,43 +42,18 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
     showDialog(
       useRootNavigator: true,
       context: context,
+      barrierDismissible: false,
       builder: (context) => Scaffold(
         backgroundColor: Colors.transparent,
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Focus(
-                onFocusChange: (value) {
-                  if (!value) {
-                    disableEditing();
-                  }
-                },
-                child: EditableText(
-                  autofocus: true,
-                  onEditingComplete: () {
-                    disableEditing();
-                  },
-                  onTapOutside: (_) {
-                    disableEditing();
-                  },
-                  maxLines: null,
-                  cursorOpacityAnimates: true,
-                  scrollPhysics: const NeverScrollableScrollPhysics(),
-                  controller: _controller,
-                  textAlign: TextAlign.center,
-                  focusNode: _focusNode,
-                  style: TextStyle(
-                    inherit: false,
-                    fontSize: widget.text.fontSize,
-                  ),
-                  cursorColor: Colors.white,
-                  backgroundCursorColor: Colors.white,
-                ),
-              ),
-            ),
-          ],
+        body: TextEditingDialog(
+          key: _editorKey,
+          disableEditing: disableEditing,
+          controller: _controller,
+          focusNode: _focusNode,
+          parent: widget,
+          onDelete: () {
+            widget.onDelete?.call(widget);
+          },
         ),
       ),
     ).then(
@@ -92,15 +73,18 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           GestureDetector(
-            onTap: () {
-              enableEditing();
-            },
+            onTap: enableEditing,
             child: Text(
               _controller.text,
               textAlign: TextAlign.center,
               style: TextStyle(
                 inherit: false,
                 fontSize: widget.text.fontSize,
+                color: widget.text.textColor,
+                fontFamily: fonts
+                    .firstWhere((font) => font.fontName == widget.text.fontName,
+                        orElse: () => fonts.first)
+                    .family,
               ),
             ),
           ),
@@ -116,5 +100,43 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
 
   void disableEditing() {
     Navigator.of(context).popUntil((route) => route.settings.name == EditPage.routeName);
+  }
+}
+
+class FontPreview extends StatelessWidget {
+  final String family;
+  final String? display;
+  final bool active;
+
+  const FontPreview(this.family, {super.key, this.display, this.active = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.fromLTRB(12, 8, 12, 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: active
+                ? (Theme.of(context).brightness == Brightness.light
+                    ? Theme.of(context).colorScheme.primary.withAlpha(100)
+                    : Theme.of(context).colorScheme.primary.withAlpha(50))
+                : Colors.transparent,
+          ),
+          child: Baseline(
+              baseline: family == "PressStart2P"
+                  ? MediaQuery.of(context).textScaler.scale(15) + 5
+                  : MediaQuery.of(context).textScaler.scale(15),
+              baselineType: TextBaseline.alphabetic,
+              child: Text(display ?? family,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontFamily: family,
+                    fontSize: MediaQuery.of(context).textScaler.scale(15),
+                  ))),
+        ),
+      ],
+    );
   }
 }

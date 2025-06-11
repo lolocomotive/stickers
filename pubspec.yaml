@@ -4,7 +4,7 @@ description: "A minimal WhatsApp sticker maker"
 # Prevent accidental publishing to pub.dev.
 publish_to: 'none'
 
-version: 1.0.1+5
+version: 1.1.0-alpha+6
 
 environment:
   sdk: '>=3.3.1 <4.0.0'
@@ -32,11 +32,11 @@ dependencies:
   matrix_gesture_detector:
     git:
       url: https://github.com/lolocomotive/matrix_gesture_detector
-      ref: e5437252a2c219c6f6139ee83c097fb27354c7b9
+      ref: 62749b7e18f6a61834ca7f5bb45f9c7ace12bdd2
   extended_image:
     git:
       url: https://github.com/lolocomotive/extended_image
-      ref: 55e9313e747a783a4795aead04af433409db0475
+      ref: 9a0a7a577c29519d3535b14db95922bb0d53b78c
   image_editor:
     git:
       url: https://github.com/lolocomotive/flutter_image_editor
@@ -58,5 +58,29 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 
 flutter:
+  generate: true
   uses-material-design: true
+  fonts:
+    - family: Coiny
+      fonts:
+        - asset: assets/fonts/Coiny-Regular.ttf
+    - family: DMSerifText
+      fonts:
+        - asset: assets/fonts/DMSerifText-Regular.ttf
+    - family: Lobster
+      fonts:
+        - asset: assets/fonts/Lobster-Regular.ttf
+    - family: Pacifico
+      fonts:
+        - asset: assets/fonts/Pacifico-Regular.ttf
+    - family: PressStart2P
+      fonts:
+        - asset: assets/fonts/PressStart2P-Regular.ttf
+    - family: RacingSansOne
+      fonts:
+        - asset: assets/fonts/RacingSansOne-Regular.ttf
+    - family: RobotoMono
+      fonts:
+        - asset: assets/fonts/RobotoMono-SemiBold.ttf
+
 

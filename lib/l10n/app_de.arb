@@ -57,6 +57,22 @@
     "language": "Sprache",
     "pleaseEnterTitle": "Geben Sie ein Titel ein",
     "pleaseEnterAuthor": "Geben Sie einen Autor ein",
-    "sourceOnGithub": "Der Quellcode dieser App ist unter einer GPL 3.0 Lizenz auf GitHub verfügbar"
-
+    "sourceOnGithub": "Der Quellcode dieser App ist unter einer GPL 3.0 Lizenz auf GitHub verfügbar. Melden Sie Fehler und schlagen Sie Verbesserungsvorschlage hier vor.",
+    "addToPack": "Zum Stickerpack hinzufügen",
+    "checkIfFileValid": "Bitte überprüfen Sie, ob die gegebene Datei gültig ist.",
+    "importError": "Pack konnte nicht importiert werden",
+    "unrecognizedFormat": "Unbekanntes Dateiformat",
+    "onlyPacksAndImagesRecognized": "Es sind zur Zeit nur Bilder und Stickerpacks unterstützt",
+    "whatsappNotInstalled": "WhatsApp ist nicht installiert",
+    "deletePack": "{pack} löschen?",
+    "draw": "Zeichnen",
+    "addText": "Text hinzufügen",
+    "undo": "Rückgängig",
+    "redo": "Wiederherstellen",
+    "export": "Exportieren",
+    "import": "Importieren",
+    "couldntImportPack": "Stickerpack konnte nicht importiert werden",
+    "checkPack": "Überprüfen Sie ob die Datei eine gültige Stickerpack-Datei ist",
+    "selectPack": "Ein Stickerpack auswählen",
+    "createPack": "Pack erstellen"
 }
