@@ -68,6 +68,7 @@ Future<void> importPack(File f) async {
               .map((path) => Sticker(path, ["❤"]))
               .toList(),
           "1000",
+          false, // It's not possible to directly export animated packs from that app.
           trayIcon: dirContents.where((entry) => entry.path.toLowerCase().endsWith(".png")).firstOrNull?.path);
       packsToAdd.add(pack);
       break;
@@ -87,6 +88,7 @@ Future<void> importPack(File f) async {
                     ))
                 .toList(),
             packJson["image_data_version"],
+            packJson["animated_sticker_pack"],
             publisherWebsite: packJson["publisher_website"],
             licenseAgreementWebsite: packJson["license_agreement_website"],
             privacyPolicyWebsite: packJson["privacy_policy_website"],

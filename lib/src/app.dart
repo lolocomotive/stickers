@@ -20,8 +20,7 @@ import 'settings/settings_page.dart';
 
 /// The Widget that configures your application.
 class StickersApp extends StatefulWidget {
-  static StickersAppState? of(BuildContext context) =>
-      context.findAncestorStateOfType<StickersAppState>();
+  static StickersAppState? of(BuildContext context) => context.findAncestorStateOfType<StickersAppState>();
 
   const StickersApp({
     super.key,
@@ -176,7 +175,8 @@ class StickersAppState extends State<StickersApp> {
         if (mounted) {
           showDialog(
               context: navigatorKey.currentState!.context,
-              builder: (context) => ErrorDialog(
+              builder: (context) =>
+                  ErrorDialog(
                     message: AppLocalizations.of(context)!.checkIfFileValid,
                     title: AppLocalizations.of(context)!.importError,
                   ));
@@ -185,18 +185,20 @@ class StickersAppState extends State<StickersApp> {
       return;
     }
     if (media.attachments!.first!.type != SharedAttachmentType.image) {
-      showDialog(
-          context: navigatorKey.currentState!.context,
-          builder: (context) => ErrorDialog(
-                message: AppLocalizations.of(context)!.unrecognizedFormat,
-                title: AppLocalizations.of(context)!.unrecognizedFormat,
-              ));
+      if (mounted) {
+        showDialog(
+            context: navigatorKey.currentState!.context,
+            builder: (context) =>
+                ErrorDialog(
+                  message: AppLocalizations.of(context)!.unrecognizedFormat,
+                  title: AppLocalizations.of(context)!.unrecognizedFormat,
+                ));
+      }
       return;
     }
     this.media = media;
     if (widget.settingsController.quickMode) {
-      _quickAdd(
-          media, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
+      _quickAdd(media, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
       this.media = null;
     }
   }
@@ -207,9 +209,12 @@ class StickersAppState extends State<StickersApp> {
       final pack = StickerPack(
         defaultTitle,
         defaultAuthor,
-        "pack_${DateTime.now().millisecondsSinceEpoch}",
+        "pack_${DateTime
+            .now()
+            .millisecondsSinceEpoch}",
         [],
         "0",
+        false, // TODO add support for animated stickers in auto-generated
       );
       packs.add(pack);
       savePacks(packs);

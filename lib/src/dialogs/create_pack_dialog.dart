@@ -54,6 +54,7 @@ class CreatePackDialog extends StatelessWidget {
               "pack_${DateTime.now().millisecondsSinceEpoch}",
               [],
               "0",
+              false, // TODO support creation of animated sticker packs
             ));
             Navigator.of(context).pop();
           },

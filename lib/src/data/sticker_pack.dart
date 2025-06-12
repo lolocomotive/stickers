@@ -13,13 +13,14 @@ class StickerPack {
   String author;
   String id;
   String imageDataVersion;
+  bool animated;
   String? publisherWebsite;
   String? privacyPolicyWebsite;
   String? licenseAgreementWebsite;
   List<Sticker> stickers;
   String? trayIcon;
 
-  StickerPack(this.title, this.author, this.id, this.stickers, this.imageDataVersion,
+  StickerPack(this.title, this.author, this.id, this.stickers, this.imageDataVersion, this.animated,
       {this.trayIcon, this.publisherWebsite, this.licenseAgreementWebsite, this.privacyPolicyWebsite});
 
   sendToWhatsapp() async {
@@ -43,6 +44,7 @@ class StickerPack {
       publisherWebsite: publisherWebsite,
       privacyPolicyWebsite: privacyPolicyWebsite,
       licenseAgreementWebsite: licenseAgreementWebsite,
+      animatedStickerPack: animated,
     );
 
     for (var sticker in stickers) {
@@ -64,6 +66,7 @@ class StickerPack {
       "title": title,
       "author": author,
       "imageDataVersion": imageDataVersion,
+      "animated": animated,
       "stickers": stickers.map((sticker) => sticker.toJson()).toList(),
       "trayIcon": trayIcon,
       "publisherWebsite": publisherWebsite,
@@ -79,6 +82,7 @@ class StickerPack {
       json["id"],
       (json["stickers"] as List).map((sticker) => Sticker.fromJson(sticker)).toList(),
       json["imageDataVersion"],
+      json["animated"] ?? false,
       trayIcon: json["trayIcon"],
       publisherWebsite: json["publisherWebsite"],
       privacyPolicyWebsite: json["privacyPolicyWebsite"],
