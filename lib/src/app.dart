@@ -175,8 +175,7 @@ class StickersAppState extends State<StickersApp> {
         if (mounted) {
           showDialog(
               context: navigatorKey.currentState!.context,
-              builder: (context) =>
-                  ErrorDialog(
+              builder: (context) => ErrorDialog(
                     message: AppLocalizations.of(context)!.checkIfFileValid,
                     title: AppLocalizations.of(context)!.importError,
                   ));
@@ -188,8 +187,7 @@ class StickersAppState extends State<StickersApp> {
       if (mounted) {
         showDialog(
             context: navigatorKey.currentState!.context,
-            builder: (context) =>
-                ErrorDialog(
+            builder: (context) => ErrorDialog(
                   message: AppLocalizations.of(context)!.unrecognizedFormat,
                   title: AppLocalizations.of(context)!.unrecognizedFormat,
                 ));
@@ -209,9 +207,7 @@ class StickersAppState extends State<StickersApp> {
       final pack = StickerPack(
         defaultTitle,
         defaultAuthor,
-        "pack_${DateTime
-            .now()
-            .millisecondsSinceEpoch}",
+        "pack_${DateTime.now().millisecondsSinceEpoch}",
         [],
         "0",
         false, // TODO add support for animated stickers in auto-generated
