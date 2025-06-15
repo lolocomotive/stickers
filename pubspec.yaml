@@ -61,9 +61,21 @@ flutter:
   generate: true
   uses-material-design: true
   fonts:
-    - family: Coiny
+    - family: PassionsConflict
       fonts:
-        - asset: assets/fonts/Coiny-Regular.ttf
+        - asset: assets/fonts/PassionsConflict-Regular.ttf
+    - family: IslandMoments
+      fonts:
+        - asset: assets/fonts/IslandMoments-Regular.ttf
+    - family: SairaStencilOne
+      fonts:
+        - asset: assets/fonts/SairaStencilOne-Regular.ttf
+    - family: Sacramento
+      fonts:
+        - asset: assets/fonts/Sacramento-Regular.ttf
+    - family: PirataOne
+      fonts:
+        - asset: assets/fonts/PirataOne-Regular.ttf
     - family: DMSerifText
       fonts:
         - asset: assets/fonts/DMSerifText-Regular.ttf

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:image_editor/image_editor.dart';
 import 'package:stickers/src/dialogs/edit_text_dialog.dart';
@@ -79,12 +81,10 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
               textAlign: TextAlign.center,
               style: TextStyle(
                 inherit: false,
-                fontSize: widget.text.fontSize,
+                fontSize: widget.text.fontSize * (fontsMap[widget.text.fontName]?.sizeMultiplier ?? 1),
                 color: widget.text.textColor,
-                fontFamily: fonts
-                    .firstWhere((font) => font.fontName == widget.text.fontName,
-                        orElse: () => fonts.first)
-                    .family,
+                fontFamily:
+                    fonts.firstWhere((font) => font.fontName == widget.text.fontName, orElse: () => fonts.first).family,
               ),
             ),
           ),
@@ -104,18 +104,18 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
 }
 
 class FontPreview extends StatelessWidget {
-  final String family;
-  final String? display;
+  final PreviewFont font;
   final bool active;
 
-  const FontPreview(this.family, {super.key, this.display, this.active = false});
+  const FontPreview(this.font, {super.key, this.active = false});
 
   @override
   Widget build(BuildContext context) {
+    final double paddingDiff = MediaQuery.of(context).textScaler.scale(max(15 * (font.sizeMultiplier - 1), 0)) / 2;
     return Column(
       children: [
         Container(
-          padding: EdgeInsets.fromLTRB(12, 8, 12, 8),
+          padding: EdgeInsets.fromLTRB(12, 8 - paddingDiff, 12, 8 - paddingDiff),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             color: active
@@ -125,16 +125,17 @@ class FontPreview extends StatelessWidget {
                 : Colors.transparent,
           ),
           child: Baseline(
-              baseline: family == "PressStart2P"
+              baseline: font == "PressStart2P"
                   ? MediaQuery.of(context).textScaler.scale(15) + 5
                   : MediaQuery.of(context).textScaler.scale(15),
               baselineType: TextBaseline.alphabetic,
-              child: Text(display ?? family,
-                  style: TextStyle(
+              child: Text(
+                font.display ?? font.family,
+                style: TextStyle(
                     color: Colors.white,
-                    fontFamily: family,
-                    fontSize: MediaQuery.of(context).textScaler.scale(15),
-                  ))),
+                    fontFamily: font.family,
+                    fontSize: MediaQuery.of(context).textScaler.scale(15 * font.sizeMultiplier)),
+              )),
         ),
       ],
     );

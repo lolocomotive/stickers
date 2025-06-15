@@ -195,7 +195,7 @@ class _EditPageState extends State<EditPage> {
                       EditorText text = EditorText(
                         text: "",
                         transform: Matrix4.identity(),
-                        fontSize: 40 * scaleFactor,
+                        fontSize: 40,
                         textColor: Colors.white,
                       );
                       _texts.add(text);

@@ -91,6 +91,7 @@ Future<void> loadFonts() async {
           .asInt8List());
     }
     font.fontName = await FontManager.registerFont(fontFile);
+    fontsMap[font.fontName!] = font;
     debugPrint("Registered font ${font.family} with name ${font.fontName}");
   }
   debugPrint("${fonts.length} fonts registered in ${sw.elapsedMilliseconds}ms");

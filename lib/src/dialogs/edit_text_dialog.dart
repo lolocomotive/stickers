@@ -63,11 +63,10 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
             focusNode: widget.focusNode,
             style: TextStyle(
               inherit: false,
-              fontSize: widget.parent.text.fontSize,
+              fontSize: widget.parent.text.fontSize * (fontsMap[widget.parent.text.fontName]?.sizeMultiplier ?? 1),
               color: widget.parent.text.textColor,
               fontFamily: fonts
-                  .firstWhere((font) => font.fontName == widget.parent.text.fontName,
-                      orElse: () => fonts.first)
+                  .firstWhere((font) => font.fontName == widget.parent.text.fontName, orElse: () => fonts.first)
                   .family, //This is stupid
             ),
             cursorColor: widget.parent.text.textColor,
@@ -134,8 +133,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                   );
                 },
                 child: FontPreview(
-                  fonts[i].family,
-                  display: fonts[i].display,
+                  fonts[i],
                   active: page == i,
                 ),
               );
@@ -208,9 +206,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                               ],
                             ),
                           ),
-                          crossFadeState: _showSizeSlider
-                              ? CrossFadeState.showFirst
-                              : CrossFadeState.showSecond,
+                          crossFadeState: _showSizeSlider ? CrossFadeState.showFirst : CrossFadeState.showSecond,
                           duration: Duration(milliseconds: 150)),
                     ),
                     IconButton(
@@ -245,15 +241,11 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                 ),
               )
             : Column(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   topActionBar,
-                  Expanded(
-                      child: GestureDetector(
-                    onTap: () => widget.disableEditing(),
-                  )),
-                  textField,
+                  Expanded(child: SingleChildScrollView(child: textField, reverse: true,)),
                   fontSelector,
                   sliderAndColors,
                   SizedBox(
