@@ -404,6 +404,7 @@ class _EditPageState extends State<EditPage> {
         transform[12] = transform[12] / scaleFactor;
         transform[13] = transform[13] / scaleFactor;
         layer.text.fontSize /= scaleFactor;
+        layer.text.fontSize *= fontsMap[layer.text.fontName]?.sizeMultiplier ?? 1;
         (layerOption as AddTextOption).addText(layer.text);
       } else if (layer is DrawLayer) {
         layerOption = layer.drawOption;
@@ -427,6 +428,7 @@ class _EditPageState extends State<EditPage> {
       transform[12] = transform[12] * scaleFactor;
       transform[13] = transform[13] * scaleFactor;
       text.fontSize *= scaleFactor;
+      text.fontSize /= fontsMap[text.fontName]?.sizeMultiplier ?? 1;
     }
     return;
   }
