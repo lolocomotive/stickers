@@ -75,7 +75,7 @@ class StickerPackPageState extends State<StickerPackPage> {
                   ),
                   itemBuilder: (context, index) {
                     if (index == widget.pack.stickers.length) {
-                      bool disabled = widget.pack.stickers.length >= 30;
+                      bool disabled = widget.pack.stickers.length >= 30 || widget.pack.animated;
                       return Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(24),
@@ -130,8 +130,7 @@ class StickerPackPageState extends State<StickerPackPage> {
                           ? null
                           : CustomPaint(
                               painter: CheckerPainter(context),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(24),
+                              child: GestureDetector(
                                 child: Image.file(File(widget.pack.stickers[index].source)),
                                 onTap: () {
                                   showDialog(
