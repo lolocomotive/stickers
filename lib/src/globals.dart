@@ -31,7 +31,7 @@ final List<PreviewFont> fonts = [
   PreviewFont("Lobster"),
   PreviewFont("PressStart2P", display: "Game", sizeMultiplier: .7),
   PreviewFont("RacingSansOne", display: "Racing"),
-  PreviewFont("PirataOne", display: "Pirata"),
+  PreviewFont("UnifrakturMaguntia-Regular", display: "Gothic"),
   PreviewFont("RobotoMono", display: "type", sizeMultiplier: .8),
   PreviewFont("DMSerifText", display: "Serif"),
   PreviewFont("Pacifico"),
