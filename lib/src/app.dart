@@ -203,7 +203,7 @@ class StickersAppState extends State<StickersApp> {
 
   Future<void> _quickAdd(SharedMedia media, String defaultTitle, String defaultAuthor) async {
     final rawImageData = File(media.attachments!.first!.path).readAsBytesSync();
-    final pack = packs.firstWhere((pack) => pack.stickers.length < 30, orElse: () {
+    final pack = packs.firstWhere((pack) => pack.stickers.length < 30 && !pack.animated, orElse: () {
       final pack = StickerPack(
         defaultTitle,
         defaultAuthor,

@@ -27,7 +27,32 @@ class CropPage extends StatefulWidget {
   State<CropPage> createState() => _CropPageState();
 }
 
-class _CropPageState extends State<CropPage> {
+class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
+  late final AnimationController _maskColorController;
+
+  bool _previousPtrVal = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _maskColorController = AnimationController(vsync: this);
+    Tween<double> tween = Tween(begin: 0.0, end: 1.0);
+    Animation anim = CurvedAnimation(parent: _maskColorController, curve: Curves.ease, reverseCurve: Curves.ease);
+    anim.drive(tween);
+    _maskColorController.addListener(_animationListener);
+  }
+
+  void _animationListener() {
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _maskColorController.removeListener(_animationListener);
+    _maskColorController.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultActivity(
@@ -56,6 +81,20 @@ class _CropPageState extends State<CropPage> {
                 cacheRawData: true,
                 initEditorConfigHandler: (state) {
                   return EditorConfig(
+                    editorMaskColorHandler: (ctx, pointerDown) {
+                      if (_previousPtrVal && !pointerDown) {
+                        _maskColorController.animateTo(1, duration: Duration(milliseconds: 150));
+                      }
+                      if (!_previousPtrVal && pointerDown) {
+                        _maskColorController.animateTo(0, duration: Duration(milliseconds: 150));
+                      }
+                      _previousPtrVal = pointerDown;
+                      return Color.lerp(
+                        Theme.of(context).colorScheme.surface.withAlpha(50),
+                        Theme.of(context).colorScheme.surface.withAlpha(200),
+                        _maskColorController.value,
+                      )!;
+                    },
                     animationCurve: Curves.ease,
                     tickerDuration: Duration(),
                     lineHeight: 3,
