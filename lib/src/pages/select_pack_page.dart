@@ -36,42 +36,76 @@ class _SelectPackPageState extends State<SelectPackPage> {
       title: AppLocalizations.of(context)!.selectStickerPack,
       child: ListView.separated(
         separatorBuilder: (context, index) => Container(),
-        itemBuilder: (context, index) => Stack(
-          children: [
-            IgnorePointer(
-              child: StickerPackPreviewCard(packs[index], () {
-                setState(() {});
-              }),
-            ),
-            Positioned(
-              top: 0,
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: InkWell(
-                onTap: () {
-                  Navigator.pushNamed(
-                    context,
-                    "/crop",
-                    arguments: EditArguments(
-                      pack: packs[index],
-                      index: packs[index].stickers.length,
-                      imagePath: widget.media.attachments!.first!.path,
-                    ),
-                  ).then(
-                    (value) => setState(
-                      () {
-                        Navigator.of(context).pop();
-                        Navigator.of(context).pushNamed("/");
-                        Navigator.of(context).pushNamed("/pack", arguments: packs[index]);
-                      },
-                    ),
-                  );
-                },
+        itemBuilder: (context, index) {
+          bool disabled = packs[index].animated || packs[index].stickers.length >= 30;
+          debugPrint("disabled: $disabled");
+          return Stack(
+            children: [
+// dart format off
+              ColorFiltered(
+                colorFilter: disabled
+                    ? ColorFilter.matrix(<double>[
+                        0.2126,
+                        0.7152,
+                        0.0722,
+                        0,
+                        0,
+                        0.2126,
+                        0.7152,
+                        0.0722,
+                        0,
+                        0,
+                        0.2126,
+                        0.7152,
+                        0.0722,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        0
+                      ])
+                    : ColorFilter.matrix(<double>[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]),
+                child: IgnorePointer(
+                  child: StickerPackPreviewCard(packs[index], () {
+                    setState(() {});
+                  }),
+                ),
               ),
-            ),
-          ],
-        ),
+// dart format on
+              Positioned(
+                top: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: disabled
+                      ? null
+                      : () {
+                          Navigator.pushNamed(
+                            context,
+                            "/crop",
+                            arguments: EditArguments(
+                              pack: packs[index],
+                              index: packs[index].stickers.length,
+                              imagePath: widget.media.attachments!.first!.path,
+                            ),
+                          ).then(
+                            (value) => setState(
+                              () {
+                                Navigator.of(context).pop();
+                                Navigator.of(context).pushNamed("/");
+                                Navigator.of(context).pushNamed("/pack", arguments: packs[index]);
+                              },
+                            ),
+                          );
+                        },
+                ),
+              ),
+            ],
+          );
+        },
         itemCount: packs.length,
       ),
     );
