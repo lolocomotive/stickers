@@ -8,7 +8,7 @@ import 'package:stickers/src/pages/edit_page.dart';
 
 class TextLayer extends StatefulWidget implements EditorLayer {
   final EditorText text;
-  late final TextLayerState state;
+  TextLayerState? state;
 
   final Function(TextLayer)? onDelete;
 
@@ -21,11 +21,11 @@ class TextLayer extends StatefulWidget implements EditorLayer {
   @override
   State<TextLayer> createState() {
     state = TextLayerState();
-    return state;
+    return state!;
   }
 
   void update(Matrix4 matrix) {
-    state.update(matrix);
+    state?.update(matrix);
   }
 }
 
