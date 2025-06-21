@@ -27,7 +27,7 @@ class StickerPacksPageState extends State<StickerPacksPage> {
     homeState = this;
   }
 
-  update() {
+  void update() {
     if (!mounted) return;
     setState(() {});
   }

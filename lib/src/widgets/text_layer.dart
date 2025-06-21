@@ -81,10 +81,13 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
               textAlign: TextAlign.center,
               style: TextStyle(
                 inherit: false,
-                fontSize: widget.text.fontSize * (fontsMap[widget.text.fontName]?.sizeMultiplier ?? 1),
+                fontSize:
+                    widget.text.fontSize * (fontsMap[widget.text.fontName]?.sizeMultiplier ?? 1),
                 color: widget.text.textColor,
-                fontFamily:
-                    fonts.firstWhere((font) => font.fontName == widget.text.fontName, orElse: () => fonts.first).family,
+                fontFamily: fonts
+                    .firstWhere((font) => font.fontName == widget.text.fontName,
+                        orElse: () => fonts.first)
+                    .family,
               ),
             ),
           ),
@@ -111,7 +114,8 @@ class FontPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double paddingDiff = MediaQuery.of(context).textScaler.scale(max(15 * (font.sizeMultiplier - 1), 0)) / 2;
+    final double paddingDiff =
+        MediaQuery.of(context).textScaler.scale(max(15 * (font.sizeMultiplier - 1), 0)) / 2;
     return Column(
       children: [
         Container(
@@ -125,9 +129,7 @@ class FontPreview extends StatelessWidget {
                 : Colors.transparent,
           ),
           child: Baseline(
-              baseline: font == "PressStart2P"
-                  ? MediaQuery.of(context).textScaler.scale(15) + 5
-                  : MediaQuery.of(context).textScaler.scale(15),
+              baseline: MediaQuery.of(context).textScaler.scale(15),
               baselineType: TextBaseline.alphabetic,
               child: Text(
                 font.display ?? font.family,
