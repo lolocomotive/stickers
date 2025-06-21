@@ -74,5 +74,6 @@
     "couldntImportPack": "Stickerpack konnte nicht importiert werden",
     "checkPack": "Überprüfen Sie ob die Datei eine gültige Stickerpack-Datei ist",
     "selectPack": "Ein Stickerpack auswählen",
-    "createPack": "Pack erstellen"
+    "createPack": "Pack erstellen", 
+    "cannotAddToAnimated": "Es können keine sticker zu animierten packs hinzugefügt werden"
 }

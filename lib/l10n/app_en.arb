@@ -85,5 +85,6 @@
   "couldntImportPack": "Couldn't import sticker pack",
   "checkPack": "Check if the file is a valid sticker pack file",
   "selectPack": "Select a sticker pack",
-  "createPack": "Create Pack"
+  "createPack": "Create Pack", 
+  "cannotAddToAnimated": "Cannot add stickers to animated packs (yet)"
 }
