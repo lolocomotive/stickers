@@ -76,19 +76,39 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
         children: [
           GestureDetector(
             onTap: enableEditing,
-            child: Text(
-              _controller.text,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                inherit: false,
-                fontSize:
+            child: Stack(
+              children: [
+                Text(
+                  widget.text.text,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    inherit: false,
+                    fontSize:
                     widget.text.fontSize * (fontsMap[widget.text.fontName]?.sizeMultiplier ?? 1),
-                color: widget.text.textColor,
-                fontFamily: fonts
-                    .firstWhere((font) => font.fontName == widget.text.fontName,
-                        orElse: () => fonts.first)
-                    .family,
-              ),
+                    foreground: Paint()
+                      ..strokeJoin = StrokeJoin.round
+                      ..strokeCap = StrokeCap.round
+                      ..color = widget.text.outlineColor
+                      ..style = PaintingStyle.stroke
+                      ..strokeWidth = widget.text.outlineWidth,
+                    fontFamily: fontsMap[widget.text.fontName]?.family ?? fonts.first.family, //This is stupid
+                  ),
+                ),
+                Text(
+                  _controller.text,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    inherit: false,
+                    fontSize:
+                        widget.text.fontSize * (fontsMap[widget.text.fontName]?.sizeMultiplier ?? 1),
+                    color: widget.text.textColor,
+                    fontFamily: fonts
+                        .firstWhere((font) => font.fontName == widget.text.fontName,
+                            orElse: () => fonts.first)
+                        .family,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

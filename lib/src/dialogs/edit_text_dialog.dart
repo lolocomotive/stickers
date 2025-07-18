@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
@@ -29,7 +30,6 @@ class TextEditingDialog extends StatefulWidget {
 
 class _TextEditingDialogState extends State<TextEditingDialog> {
   int page = 0;
-  bool _showSizeSlider = true;
 
   late final PageController _pageController;
 
@@ -42,6 +42,9 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
     super.initState();
   }
 
+  int _currentTool = 0;
+  var _tools = <Widget>[];
+
   @override
   Widget build(BuildContext context) {
     return BackdropFilter(
@@ -50,27 +53,53 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
         final isHorizontal = constraints.maxWidth > constraints.maxHeight;
         final textField = Padding(
           padding: const EdgeInsets.all(24.0),
-          child: EditableText(
-            autofocus: true,
-            onEditingComplete: () {
-              widget.disableEditing();
-            },
-            maxLines: null,
-            cursorOpacityAnimates: true,
-            scrollPhysics: const NeverScrollableScrollPhysics(),
-            controller: widget.controller,
-            textAlign: TextAlign.center,
-            focusNode: widget.focusNode,
-            style: TextStyle(
-              inherit: false,
-              fontSize: widget.parent.text.fontSize * (fontsMap[widget.parent.text.fontName]?.sizeMultiplier ?? 1),
-              color: widget.parent.text.textColor,
-              fontFamily: fonts
-                  .firstWhere((font) => font.fontName == widget.parent.text.fontName, orElse: () => fonts.first)
-                  .family, //This is stupid
-            ),
-            cursorColor: widget.parent.text.textColor,
-            backgroundCursorColor: widget.parent.text.textColor,
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 3.0),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Text(
+                    widget.controller.text,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      inherit: false,
+                      fontSize:
+                          widget.parent.text.fontSize * (fontsMap[widget.parent.text.fontName]?.sizeMultiplier ?? 1),
+                      foreground: Paint()
+                        ..strokeJoin = StrokeJoin.round
+                        ..strokeCap = StrokeCap.round
+                        ..color = widget.parent.text.outlineColor
+                        ..style = PaintingStyle.stroke
+                        ..strokeWidth = widget.parent.text.outlineWidth,
+                      fontFamily: fontsMap[widget.parent.text.fontName]?.family ?? fonts.first.family, //This is stupid
+                    ),
+                  ),
+                ]),
+              ),
+              EditableText(
+                autofocus: true,
+                onChanged: (_) {
+                  setState(() {});
+                },
+                onEditingComplete: () {
+                  widget.disableEditing();
+                },
+                maxLines: null,
+                cursorOpacityAnimates: true,
+                scrollPhysics: const NeverScrollableScrollPhysics(),
+                controller: widget.controller,
+                textAlign: TextAlign.center,
+                focusNode: widget.focusNode,
+                style: TextStyle(
+                  inherit: false,
+                  fontSize: widget.parent.text.fontSize * (fontsMap[widget.parent.text.fontName]?.sizeMultiplier ?? 1),
+                  color: widget.parent.text.textColor,
+                  fontFamily: fontsMap[widget.parent.text.fontName]?.family ?? fonts.first.family, //This is stupid
+                ),
+                cursorColor: widget.parent.text.textColor,
+                backgroundCursorColor: widget.parent.text.textColor,
+              ),
+            ],
           ),
         );
         final topActionBar = GestureDetector(
@@ -140,88 +169,208 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
             },
           ),
         );
-        final sliderAndColors = Padding(
+        final actions = Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            LabeledIconButton(
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                child: Text(
+                  "A",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: "Lobster",
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              "Font",
+              active: _currentTool == 0,
+              onTap: () {
+                _setTool(0);
+              },
+            ),
+            LabeledIconButton(
+              Padding(
+                padding: const EdgeInsets.all(3.0),
+                child: Icon(Icons.format_size, color: Colors.white),
+              ),
+              "Font size",
+              active: _currentTool == 1,
+              onTap: () {
+                _setTool(1);
+              },
+            ),
+            LabeledIconButton(
+              Padding(
+                padding: const EdgeInsets.all(3.0),
+                child: Icon(Icons.palette, color: Colors.white),
+              ),
+              "Color",
+              active: _currentTool == 2,
+              onTap: () {
+                _setTool(2);
+              },
+            ),
+            LabeledIconButton(
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                child: Stack(
+                  children: [
+                    Text(
+                      "A",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        foreground: Paint()
+                          ..style = PaintingStyle.stroke
+                          ..strokeWidth = 3
+                          ..color = Colors.white
+                          ..strokeCap = StrokeCap.round
+                          ..strokeJoin = StrokeJoin.round,
+                      ),
+                    ),
+                    Text(
+                      "A",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              "Outline",
+              active: _currentTool == 3,
+              onTap: () {
+                _setTool(3);
+              },
+            ),
+          ],
+        );
+        final fontSizeSlider = Slider(
+          thumbColor: Colors.white,
+          activeColor: Colors.white,
+          min: 10,
+          max: 120,
+          value: widget.parent.text.fontSize,
+          onChanged: (newSize) {
+            if (newSize == 10 || newSize == 120) {
+              HapticFeedback.lightImpact();
+            }
+            setState(() {
+              widget.parent.text.fontSize = newSize;
+            });
+          },
+        );
+        final outlineWidthSlider = Slider(
+          thumbColor: Colors.white,
+          activeColor: Colors.white,
+          min: 0,
+          max: 50,
+          value: widget.parent.text.outlineWidth,
+          onChanged: (newWidth) {
+            if (newWidth == 0 || newWidth == 10) {
+              HapticFeedback.lightImpact();
+            }
+            setState(() {
+              widget.parent.text.outlineWidth = newWidth;
+            });
+          },
+        );
+        final textColorPicker = Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: LayoutBuilder(builder: (context, constraints) {
+            return Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: colors
+                      .getRange(0, (colors.length / 2).floor())
+                      .map((c) => ColorButton(
+                            c,
+                            size: constraints.maxWidth / 10 - 4,
+                            onTap: () => _setTextColor(c),
+                            active: c == widget.parent.text.textColor,
+                          ))
+                      .toList(),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: colors
+                      .getRange((colors.length / 2).floor() + 1, colors.length)
+                      .map((c) => ColorButton(
+                            size: constraints.maxWidth / 10 - 4,
+                            c,
+                            onTap: () => _setTextColor(c),
+                            active: c == widget.parent.text.textColor,
+                          ))
+                      .toList(),
+                )
+              ],
+            );
+          }),
+        );
+        final outlineColorPicker = Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: LayoutBuilder(builder: (context, constraints) {
+            return Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: colors
+                      .getRange(0, (colors.length / 2).floor())
+                      .map((c) => ColorButton(
+                            c,
+                            size: constraints.maxWidth / 10 - 4,
+                            onTap: () => _setOutlineColor(c),
+                            active: c == widget.parent.text.outlineColor,
+                          ))
+                      .toList(),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: colors
+                      .getRange((colors.length / 2).floor() + 1, colors.length)
+                      .map((c) => ColorButton(
+                            size: constraints.maxWidth / 10 - 4,
+                            c,
+                            onTap: () => _setOutlineColor(c),
+                            active: c == widget.parent.text.outlineColor,
+                          ))
+                      .toList(),
+                )
+              ],
+            );
+          }),
+        );
+
+        final outlineConfigurator = Column(
+          children: [outlineColorPicker, outlineWidthSlider],
+        );
+
+        _tools = [fontSelector, fontSizeSlider, textColorPicker, outlineConfigurator];
+
+        final toolbar = Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Column(
             children: [
               ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: 512),
-                child: Row(
-                  mainAxisSize: MainAxisSize.max,
+                child: Column(
                   children: [
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _showSizeSlider = true;
-                        });
-                      },
-                      icon: Icon(
-                        Icons.format_size,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Expanded(
-                      child: AnimatedCrossFade(
-                          firstChild: Slider(
-                            thumbColor: Colors.white,
-                            activeColor: Colors.white,
-                            min: 10,
-                            max: 120,
-                            value: widget.parent.text.fontSize,
-                            onChanged: (newSize) {
-                              if (newSize == 10 || newSize == 120) {
-                                HapticFeedback.lightImpact();
-                              }
-                              setState(() {
-                                widget.parent.text.fontSize = newSize;
-                              });
-                            },
-                          ),
-                          secondChild: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: colors
-                                      .getRange(0, (colors.length / 2).floor())
-                                      .map((c) => ColorButton(
-                                            c,
-                                            onTap: () => _setColor(c),
-                                            active: c == widget.parent.text.textColor,
-                                          ))
-                                      .toList(),
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: colors
-                                      .getRange((colors.length / 2).floor() + 1, colors.length)
-                                      .map((c) => ColorButton(
-                                            c,
-                                            onTap: () => _setColor(c),
-                                            active: c == widget.parent.text.textColor,
-                                          ))
-                                      .toList(),
-                                )
-                              ],
-                            ),
-                          ),
-                          crossFadeState: _showSizeSlider ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-                          duration: Duration(milliseconds: 150)),
-                    ),
-                    IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _showSizeSlider = false;
-                          });
-                        },
-                        icon: Icon(Icons.palette))
+                    AnimatedSwitcher(duration: Duration(milliseconds: 150), child: _tools[_currentTool]),
+                    actions,
                   ],
                 ),
               ),
             ],
           ),
         );
+
         return isHorizontal
             ? SizedBox(
                 child: Row(
@@ -232,8 +381,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                       child: Column(
                         children: [
                           topActionBar,
-                          fontSelector,
-                          sliderAndColors,
+                          toolbar,
                         ],
                       ),
                     ))
@@ -245,9 +393,12 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   topActionBar,
-                  Expanded(child: SingleChildScrollView(child: textField, reverse: true,)),
-                  fontSelector,
-                  sliderAndColors,
+                  Expanded(
+                      child: SingleChildScrollView(
+                    reverse: true,
+                    child: textField,
+                  )),
+                  toolbar,
                   SizedBox(
                     height: 16,
                   )
@@ -257,10 +408,68 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
     );
   }
 
-  _setColor(Color color) {
+  void _setTool(int tool) {
+    setState(() {});
+    HapticFeedback.lightImpact();
+    _currentTool = tool;
+  }
+
+  void _setTextColor(Color color) {
     setState(() {
       widget.parent.text.textColor = color;
     });
+  }
+
+  void _setOutlineColor(Color color) {
+    setState(() {
+      widget.parent.text.outlineColor = color;
+    });
+  }
+}
+
+class LabeledIconButton extends StatelessWidget {
+  final Widget icon;
+  final String label;
+  final bool active;
+
+  final GestureDoubleTapCallback? onTap;
+
+  const LabeledIconButton(this.icon, this.label, {super.key, this.active = false, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque ,
+        child: Padding(
+          padding: const EdgeInsets.all(4.0).copyWith(bottom: 0, top: 8),
+          child: AnimatedContainer(
+            duration: Duration(milliseconds: 200),
+            transform: Matrix4.identity() * (active ? 1.1 : 1.0),
+            transformAlignment: Alignment.center,
+            curve: Curves.ease,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedContainer(
+                    duration: Duration(milliseconds: 200),
+                    transform: Matrix4.identity() * (active ? 1.2 : 1.0),
+                    transformAlignment: Alignment.center,
+                    curve: Curves.ease,
+                    padding: EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(100),
+                      color: active ? Theme.of(context).colorScheme.primary.withAlpha(100) : null,
+                    ),
+                    child: icon),
+                Padding(
+                  padding: const EdgeInsets.all(8.0).copyWith(bottom: 0),
+                  child: Text(label),
+                )
+              ],
+            ),
+          ),
+        ));
   }
 }
 
