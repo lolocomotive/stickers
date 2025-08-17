@@ -83,10 +83,7 @@ class GoogleFontPreview extends StatefulWidget {
 class _GoogleFontPreviewState extends State<GoogleFontPreview> {
   @override
   void initState() {
-    debugPrint("InitState for ${widget.font.family}");
     if (!FontsRegistry.contains(widget.font.family)) {
-      debugPrint("InitState for ${widget.font.family} - downlaodgin");
-
       downloadAndRegisterFontPreview(widget.font).then((_) {
         if (!mounted) return;
         setState(() {});

@@ -50,9 +50,9 @@ Future<void> loadFonts(List<FontsRegistryEntry> fonts) async {
   final futures = <Future>[];
   for (final font in fonts) {
     futures.add((() async {
-      if(font.type == FontType.bundled) {
+      if (font.type == FontType.bundled) {
         font.fontFile = await _registerBundledFont(font.family, fontsDir);
-      }else{
+      } else {
         await registerFont(font);
       }
     }).call());
@@ -161,10 +161,10 @@ class FontsRegistry {
             }
             if (f.type != FontType.bundled) {
               if (f.previewFile != null) {
-                registerTasks.add(_registerFontToEngine(f, "-PREVIEW"));
+                registerTasks.add(_registerFontToEngine(f, true));
               }
               if (f.fontFile != null) {
-                registerTasks.add(_registerFontToEngine(f, ""));
+                registerTasks.add(_registerFontToEngine(f, false));
               }
             }
             f.isLoaded = true;
@@ -195,9 +195,10 @@ class FontsRegistry {
     }
   }
 
-  static Future<void> _registerFontToEngine(FontsRegistryEntry f, String appendix) async {
-    final loader = FontLoader("${f.family}$appendix");
-    loader.addFont(Future.value(ByteData.view((await File(f.previewFile!).readAsBytes()).buffer)));
+  static Future<void> _registerFontToEngine(FontsRegistryEntry f, bool preview) async {
+    final loader = FontLoader("${f.family}${preview ? '-PREVIEW' : ''}");
+    loader.addFont(
+        Future.value(ByteData.view((await File(preview ? f.previewFile! : f.fontFile!).readAsBytes()).buffer)));
     await loader.load();
   }
 

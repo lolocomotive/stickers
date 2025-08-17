@@ -46,8 +46,8 @@ class SettingsController with ChangeNotifier {
   }
 
   Future<void> updateGoogleFonts(bool googleFonts) async {
-    if (googleFonts == _quickMode) return;
-    _quickMode = googleFonts;
+    if (googleFonts == _googleFonts) return;
+    _googleFonts = googleFonts;
     notifyListeners();
     await _settingsService.updateGoogleFonts(googleFonts);
   }
