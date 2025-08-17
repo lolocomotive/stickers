@@ -31,16 +31,19 @@ class SettingsService {
 
   Future<bool> quickMode() async => _prefs.getBool("quickMode") ?? false;
 
+  Future<bool> googleFonts() async => _prefs.getBool("googleFonts") ?? false;
+
   Future<String> defaultTitle() async => _prefs.getString("defaultPackName") ?? "New sticker pack";
 
   Future<String> defaultAuthor() async => _prefs.getString("defaultAuthor") ?? "auto-generated";
+
   Future<String> locale() async => _prefs.getString("locale") ?? _getLocale();
 
   /// Gets the locale from the system settings if unset in config
-  String _getLocale(){
-      if(Platform.localeName.startsWith("de")) return "de";
-      if(Platform.localeName.startsWith("fr")) return "fr";
-      return "en";
+  String _getLocale() {
+    if (Platform.localeName.startsWith("de")) return "de";
+    if (Platform.localeName.startsWith("fr")) return "fr";
+    return "en";
   }
 
   /// Persists the user's preferred ThemeMode to local or remote storage.
@@ -62,5 +65,9 @@ class SettingsService {
 
   Future<void> updateLocale(String locale) async {
     _prefs.setString("locale", locale);
+  }
+
+  Future<void> updateGoogleFonts(bool googleFonts) async {
+    _prefs.setBool("googleFonts", googleFonts);
   }
 }

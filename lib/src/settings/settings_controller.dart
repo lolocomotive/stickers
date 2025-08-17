@@ -22,6 +22,10 @@ class SettingsController with ChangeNotifier {
   late String _defaultAuthor;
   late String _defaultTitle;
   late String _locale;
+  late bool _googleFonts;
+
+  // Whether the user has agreed or not to use the google fonts service
+  bool get googleFonts => _googleFonts;
 
   String get defaultTitle => _defaultTitle;
 
@@ -39,6 +43,13 @@ class SettingsController with ChangeNotifier {
     _quickMode = quickMode;
     notifyListeners();
     await _settingsService.updateQuickMode(quickMode);
+  }
+
+  Future<void> updateGoogleFonts(bool googleFonts) async {
+    if (googleFonts == _quickMode) return;
+    _quickMode = googleFonts;
+    notifyListeners();
+    await _settingsService.updateGoogleFonts(googleFonts);
   }
 
   Future<void> updateDefaultAuthor(String defaultAuthor) async {
@@ -71,6 +82,7 @@ class SettingsController with ChangeNotifier {
     _defaultTitle = await _settingsService.defaultTitle();
     _defaultAuthor = await _settingsService.defaultAuthor();
     _locale = await _settingsService.locale();
+    _googleFonts = await _settingsService.googleFonts();
 
     notifyListeners();
   }

@@ -17,7 +17,7 @@ void savePacks(List<StickerPack> packs) async {
   output.writeAsString(jsonEncode(packs.map((pack) => pack.toJson()).toList()));
 }
 
-exportPack(StickerPack pack) async {
+Future<void> exportPack(StickerPack pack) async {
   Stopwatch sw = Stopwatch()..start();
   Directory exportDir = Directory("${(await getTemporaryDirectory()).path}/export/");
   Directory packDir = Directory("${exportDir.path}/pack_${DateTime.timestamp().millisecondsSinceEpoch}/");

@@ -9,6 +9,8 @@ import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/fonts_search_page.dart';
 import 'package:stickers/src/widgets/text_layer.dart';
 
+import '../pages/fonts_manager_page.dart';
+
 class TextEditingDialog extends StatefulWidget {
   final Function disableEditing;
   final TextEditingController controller;
@@ -156,8 +158,18 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
             itemBuilder: (context, i) {
               if (i == FontsRegistry.fontCount) {
                 return TextButton(
-                    onPressed: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => FontsSearchPage()));
+                    onPressed: () async {
+                      final answer = settingsController.googleFonts || await showDialog(
+                        context: context,
+                        builder: (_) => GoogleFontsConfirmationDialog(),
+                      );
+                      if (!context.mounted) return;
+                      if (answer != true) return;
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => FontsSearchPage(),
+                        ),
+                      );
                     },
                     child: Text("More fonts"));
               }

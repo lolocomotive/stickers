@@ -30,7 +30,6 @@ void main() async {
   });
 
   final service = SettingsService();
-  late SettingsController settingsController;
   tasks.add(
     service.waitForInit().then((value) {
       settingsController = SettingsController(service);
