@@ -49,7 +49,13 @@ Future<void> loadFonts(List<FontsRegistryEntry> fonts) async {
   if (!await fontsDir.exists()) await fontsDir.create(recursive: true);
   final futures = <Future>[];
   for (final font in fonts) {
-    futures.add((() async => font.fontFile = await _registerBundledFont(font.family, fontsDir)).call());
+    futures.add((() async {
+      if(font.type == FontType.bundled) {
+        font.fontFile = await _registerBundledFont(font.family, fontsDir);
+      }else{
+        await registerFont(font);
+      }
+    }).call());
   }
   await Future.wait(futures);
   debugPrint("${fonts.length} fonts registered in ${sw.elapsedMilliseconds}ms");
@@ -242,6 +248,21 @@ class FontsRegistry {
     await _config.create(recursive: true);
     await _config.writeAsString(jsonEncode(data));
     debugPrint("Saved Fonts registry to ${_config.path} in ${sw.elapsedMilliseconds}ms");
+  }
+
+  // Delete a font from the registry
+  // Also removes associated TTF files
+  static void delete(String fontName) {
+    final entry = _entries.remove(fontName);
+    if (entry == null) return;
+    if (entry.fontFile != null) {
+      File(entry.fontFile!).delete();
+    }
+    if (entry.previewFile != null) {
+      File(entry.fontFile!).delete();
+    }
+    _orderedEntries.remove(entry);
+    enqueueSave();
   }
 
   /// Make sure to call put again when the font is downloaded

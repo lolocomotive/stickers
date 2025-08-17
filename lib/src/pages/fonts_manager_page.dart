@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:stickers/src/dialogs/delete_confirm_dialog.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/settings/settings_page.dart';
@@ -43,7 +44,17 @@ class _FontsManagerPageState extends State<FontsManagerPage> {
               index: i,
               key: ValueKey(i),
               child: ListTile(
-                leading: IconButton(onPressed: () {}, icon: Icon(Icons.delete)),
+                leading: IconButton(
+                  onPressed: () async {
+                    final shouldDelete = await showDialog(
+                        context: context, builder: (context) => DeleteConfirmDialog(FontsRegistry.at(i).family));
+                    if (shouldDelete) {
+                      FontsRegistry.delete(FontsRegistry.at(i).family);
+                      setState(() {});
+                    }
+                  },
+                  icon: Icon(Icons.delete),
+                ),
                 title: Text(
                   FontsRegistry.at(i).family,
                   style: TextStyle(fontFamily: FontsRegistry.at(i).family),
