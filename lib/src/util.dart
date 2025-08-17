@@ -74,25 +74,3 @@ int colCount(double width) {
   }
 }
 
-Future<void> loadFonts() async {
-  debugPrint("Registering fonts...");
-  Stopwatch sw = Stopwatch()..start();
-  Directory fontsDir = Directory("${(await getTemporaryDirectory()).path}/fonts/");
-  if (!await fontsDir.exists()) await fontsDir.create(recursive: true);
-  for (final font in fonts) {
-    if (font.family == "sans-serif" || font.family == "monospace") continue;
-    File fontFile = File("${fontsDir.path}${font.family}.ttf");
-    if (!await fontFile.exists()) {
-      debugPrint("Copying file to ${fontFile.path}");
-      await fontFile.create();
-      await fontFile.writeAsBytes((await rootBundle
-              .load("assets/fonts/${font.family}-${font.family == "RobotoMono" ? "SemiBold" : "Regular"}.ttf"))
-          .buffer
-          .asInt8List());
-    }
-    font.fontName = await FontManager.registerFont(fontFile);
-    fontsMap[font.fontName!] = font;
-    debugPrint("Registered font ${font.family} with name ${font.fontName}");
-  }
-  debugPrint("${fonts.length} fonts registered in ${sw.elapsedMilliseconds}ms");
-}

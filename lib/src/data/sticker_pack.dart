@@ -23,7 +23,7 @@ class StickerPack {
   StickerPack(this.title, this.author, this.id, this.stickers, this.imageDataVersion, this.animated,
       {this.trayIcon, this.publisherWebsite, this.licenseAgreementWebsite, this.privacyPolicyWebsite});
 
-  sendToWhatsapp() async {
+  Future<void> sendToWhatsapp() async {
     if (stickers.isEmpty) throw Exception("No stickers!");
 
     ImageEditorOption scale = ImageEditorOption();
@@ -55,12 +55,12 @@ class StickerPack {
     await stickerPack.sendToWhatsApp();
   }
 
-  onEdit() {
+  void onEdit() {
     savePacks(packs);
     imageDataVersion = (int.parse(imageDataVersion) + 1).toString();
   }
 
-  toJson() {
+  Map<String, Object?> toJson() {
     return {
       "id": id,
       "title": title,
@@ -75,7 +75,7 @@ class StickerPack {
     };
   }
 
-  static StickerPack fromJson(Map<String, dynamic> json) {
+  factory StickerPack.fromJson(Map<String, dynamic> json) {
     return StickerPack(
       json["title"],
       json["author"],

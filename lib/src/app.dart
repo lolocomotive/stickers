@@ -10,6 +10,7 @@ import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/edit_page.dart';
+import 'package:stickers/src/pages/fonts_manager_page.dart';
 import 'package:stickers/src/pages/select_pack_page.dart';
 import 'package:stickers/src/pages/sticker_pack_page.dart';
 import 'package:stickers/src/pages/sticker_packs_page.dart';
@@ -40,7 +41,6 @@ class StickersAppState extends State<StickersApp> {
   void initState() {
     super.initState();
     _locale = Locale.fromSubtags(languageCode: widget.settingsController.locale);
-    loadFonts();
     initPlatformState();
   }
 
@@ -136,6 +136,8 @@ class StickersAppState extends State<StickersApp> {
                   return page;
                 }
                 switch (routeSettings.name) {
+                  case FontsManagerPage.routeName:
+                    return FontsManagerPage();
                   case SettingsPage.routeName:
                     return SettingsPage(controller: widget.settingsController);
                   case CropPage.routeName:
@@ -164,7 +166,7 @@ class StickersAppState extends State<StickersApp> {
     );
   }
 
-  _processMedia(SharedMedia media) async {
+  Future<void> _processMedia(SharedMedia media) async {
     if (media.attachments!.first!.path.toLowerCase().endsWith(".stickify") ||
         media.attachments!.first!.path.toLowerCase().endsWith(".zip") ||
         media.attachments!.first!.path.toLowerCase().endsWith(".wastickers")) {

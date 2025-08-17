@@ -10,6 +10,7 @@ import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/confirm_leave_dialog.dart';
 import 'package:stickers/src/dialogs/edit_text_dialog.dart';
+import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/widgets/draw_layer.dart';
@@ -407,7 +408,7 @@ class _EditPageState extends State<EditPage> {
         transform[13] = transform[13] / scaleFactor;
         layer.text.fontSize /= scaleFactor;
         layer.text.outlineWidth /= scaleFactor;
-        layer.text.fontSize *= fontsMap[layer.text.fontName]?.sizeMultiplier ?? 1;
+        layer.text.fontSize *= FontsRegistry.sizeMultiplier(layer.text.fontName) ?? 1;
         (layerOption as AddTextOption).addText(layer.text);
       } else if (layer is DrawLayer) {
         layerOption = layer.drawOption;
@@ -432,7 +433,7 @@ class _EditPageState extends State<EditPage> {
       transform[13] = transform[13] * scaleFactor;
       text.fontSize *= scaleFactor;
       text.outlineWidth *= scaleFactor;
-      text.fontSize /= fontsMap[text.fontName]?.sizeMultiplier ?? 1;
+      text.fontSize /= FontsRegistry.sizeMultiplier(text.fontName) ?? 1;
     }
     return;
   }

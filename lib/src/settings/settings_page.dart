@@ -166,6 +166,17 @@ class SettingsPage extends StatelessWidget {
                   onPressed: () => _showQuickModeDefaultsDialog(context),
                   child: Text(AppLocalizations.of(context)!.edit)),
             ),
+          ListTile(
+            onTap: () {
+              Navigator.of(context).pushNamed("/settings/fonts");
+            },
+            leading: Icon(Icons.text_fields),
+            title: Text("Font manager"),
+            subtitle: Opacity(
+              opacity: .7,
+              child: Text("Add/remove fonts of the app"),
+            ),
+          ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 24, vertical: 4),
             child: Divider(),

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:image_editor/image_editor.dart';
 import 'package:stickers/src/dialogs/edit_text_dialog.dart';
+import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/edit_page.dart';
 
@@ -84,14 +85,14 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
                   style: TextStyle(
                     inherit: false,
                     fontSize:
-                    widget.text.fontSize * (fontsMap[widget.text.fontName]?.sizeMultiplier ?? 1),
+                    widget.text.fontSize * (FontsRegistry.sizeMultiplier(widget.text.fontName) ?? 1),
                     foreground: Paint()
                       ..strokeJoin = StrokeJoin.round
                       ..strokeCap = StrokeCap.round
                       ..color = widget.text.outlineColor
                       ..style = PaintingStyle.stroke
                       ..strokeWidth = widget.text.outlineWidth,
-                    fontFamily: fontsMap[widget.text.fontName]?.family ?? fonts.first.family, //This is stupid
+                    fontFamily: widget.text.fontName,
                   ),
                 ),
                 Text(
@@ -100,12 +101,9 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
                   style: TextStyle(
                     inherit: false,
                     fontSize:
-                        widget.text.fontSize * (fontsMap[widget.text.fontName]?.sizeMultiplier ?? 1),
+                        widget.text.fontSize * (FontsRegistry.sizeMultiplier(widget.text.fontName) ?? 1),
                     color: widget.text.textColor,
-                    fontFamily: fonts
-                        .firstWhere((font) => font.fontName == widget.text.fontName,
-                            orElse: () => fonts.first)
-                        .family,
+                    fontFamily: widget.text.fontName,
                   ),
                 ),
               ],
@@ -127,7 +125,7 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
 }
 
 class FontPreview extends StatelessWidget {
-  final PreviewFont font;
+  final FontsRegistryEntry font;
   final bool active;
 
   const FontPreview(this.font, {super.key, this.active = false});
@@ -153,6 +151,8 @@ class FontPreview extends StatelessWidget {
               baselineType: TextBaseline.alphabetic,
               child: Text(
                 font.display ?? font.family,
+                overflow: TextOverflow.fade,
+                softWrap: false,
                 style: TextStyle(
                     color: Colors.white,
                     fontFamily: font.family,

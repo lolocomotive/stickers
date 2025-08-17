@@ -4,7 +4,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
+import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
+import 'package:stickers/src/pages/fonts_search_page.dart';
 import 'package:stickers/src/widgets/text_layer.dart';
 
 class TextEditingDialog extends StatefulWidget {
@@ -35,9 +37,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
 
   @override
   void initState() {
-    if (fonts.where((f) => f.fontName == widget.parent.text.fontName).isNotEmpty) {
-      page = fonts.indexWhere((f) => f.fontName == widget.parent.text.fontName);
-    }
+    page = FontsRegistry.indexOf(widget.parent.text.fontName);
     _pageController = PageController(viewportFraction: .25, initialPage: page);
     super.initState();
   }
@@ -63,15 +63,15 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       inherit: false,
-                      fontSize:
-                          widget.parent.text.fontSize * (fontsMap[widget.parent.text.fontName]?.sizeMultiplier ?? 1),
+                      fontSize: widget.parent.text.fontSize *
+                          (FontsRegistry.sizeMultiplier(widget.parent.text.fontName) ?? 1),
                       foreground: Paint()
                         ..strokeJoin = StrokeJoin.round
                         ..strokeCap = StrokeCap.round
                         ..color = widget.parent.text.outlineColor
                         ..style = PaintingStyle.stroke
                         ..strokeWidth = widget.parent.text.outlineWidth,
-                      fontFamily: fontsMap[widget.parent.text.fontName]?.family ?? fonts.first.family, //This is stupid
+                      fontFamily: widget.parent.text.fontName,
                     ),
                   ),
                 ]),
@@ -92,9 +92,10 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                 focusNode: widget.focusNode,
                 style: TextStyle(
                   inherit: false,
-                  fontSize: widget.parent.text.fontSize * (fontsMap[widget.parent.text.fontName]?.sizeMultiplier ?? 1),
+                  fontSize:
+                      widget.parent.text.fontSize * (FontsRegistry.sizeMultiplier(widget.parent.text.fontName) ?? 1),
                   color: widget.parent.text.textColor,
-                  fontFamily: fontsMap[widget.parent.text.fontName]?.family ?? fonts.first.family, //This is stupid
+                  fontFamily: widget.parent.text.fontName,
                 ),
                 cursorColor: widget.parent.text.textColor,
                 backgroundCursorColor: widget.parent.text.textColor,
@@ -143,16 +144,23 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
         final fontSelector = SizedBox(
           height: MediaQuery.of(context).textScaler.scale(15) + 24,
           child: PageView.builder(
-            itemCount: fonts.length,
+            itemCount: FontsRegistry.fontCount + 1,
             onPageChanged: (page) {
               HapticFeedback.lightImpact();
               setState(() {});
               this.page = page;
-              widget.parent.text.fontName = fonts[page].fontName ?? fonts[page].family;
+              widget.parent.text.fontName = FontsRegistry.at(page).family;
             },
             pageSnapping: false,
             controller: _pageController,
             itemBuilder: (context, i) {
+              if (i == FontsRegistry.fontCount) {
+                return TextButton(
+                    onPressed: () {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => FontsSearchPage()));
+                    },
+                    child: Text("More fonts"));
+              }
               return GestureDetector(
                 onTap: () {
                   _pageController.animateToPage(
@@ -162,7 +170,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                   );
                 },
                 child: FontPreview(
-                  fonts[i],
+                  FontsRegistry.at(i),
                   active: page == i,
                 ),
               );
@@ -440,7 +448,7 @@ class LabeledIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
         onTap: onTap,
-        behavior: HitTestBehavior.opaque ,
+        behavior: HitTestBehavior.opaque,
         child: Padding(
           padding: const EdgeInsets.all(4.0).copyWith(bottom: 0, top: 8),
           child: AnimatedContainer(

@@ -1,10 +1,13 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/data/load_store.dart';
+import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
 
 import 'src/app.dart';
@@ -17,6 +20,14 @@ void main() async {
   PackageInfo.fromPlatform().then((result) => info = result);
 
   List<Future> tasks = [];
+
+  LicenseRegistry.addLicense(() async* {
+    final license = await rootBundle.loadString('assets/fonts/OFL.txt');
+    yield LicenseEntryWithLineBreaks(
+      ['Google fonts'],
+      'SIL Open Font License\n\n$license',
+    );
+  });
 
   final service = SettingsService();
   late SettingsController settingsController;
@@ -39,12 +50,15 @@ void main() async {
   );
   tasks.add(getApplicationCacheDirectory().then((value) => imageCacheDir = "${value.path}/images"));
 
-  // Calling this twice because the list is modified inbetween.
+  // It's okay to not wait for this to be finished before we start the app
+  // We assume the user will not create text in stickers in the first 500ms when the app is started
+  FontsRegistry.init();
+
+  // Calling this twice because the list is modified in between.
   // Not an elegant solution
   await Future.wait(tasks);
   await Future.wait(tasks);
 
-  debugPrint(packsDir);
   debugPrint("Startup: ${sw.elapsedMilliseconds}ms");
 
   // Run the app and pass in the SettingsController. The app listens to the
