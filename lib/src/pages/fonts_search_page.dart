@@ -3,6 +3,7 @@ import 'package:stickers/src/fonts_api/fonts_models.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/fonts_api/google_fonts.dart';
 import 'package:stickers/src/pages/default_page.dart';
+import 'package:stickers/src/pages/fonts_search_delegate.dart';
 
 class FontsSearchPage extends StatefulWidget {
   const FontsSearchPage({super.key});
@@ -24,6 +25,20 @@ class _FontsSearchPageState extends State<FontsSearchPage> {
   Widget build(BuildContext context) {
     return DefaultSliverActivity(
       title: "Search for fonts",
+      actions: [
+        FutureBuilder(
+            future: _future,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return IconButton(
+                    onPressed: () {
+                      showSearch(context: context, delegate: GoogleFontsSearchDelegate(snapshot.data!.items));
+                    },
+                    icon: Icon(Icons.search));
+              }
+              return SizedBox();
+            })
+      ],
       child: FutureBuilder(
           future: _future,
           builder: (context, snapshot) {
@@ -68,7 +83,10 @@ class GoogleFontPreview extends StatefulWidget {
 class _GoogleFontPreviewState extends State<GoogleFontPreview> {
   @override
   void initState() {
+    debugPrint("InitState for ${widget.font.family}");
     if (!FontsRegistry.contains(widget.font.family)) {
+      debugPrint("InitState for ${widget.font.family} - downlaodgin");
+
       downloadAndRegisterFontPreview(widget.font).then((_) {
         if (!mounted) return;
         setState(() {});
