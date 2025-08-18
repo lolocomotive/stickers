@@ -40,7 +40,7 @@ dependencies:
   image_editor:
     git:
       url: https://github.com/lolocomotive/flutter_image_editor
-      ref: de30887fa216133e9afbb728ee5f5f6d397800bf
+      ref: ba076d4f2b535bd5ad61eafa499c2c40476c5a19
       path: image_editor
   whatsapp_stickers_plus:
     git:
