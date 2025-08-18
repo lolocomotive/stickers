@@ -5,10 +5,10 @@ import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:stickers/src/api_keys.dart';
 import 'package:stickers/src/fonts_api/fonts_models.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
 
-String apiKey = "AIzaSyCt-_-CNTnKn_01wBrRZl33LUC1XmfsWUw";
 String apiURL = "https://www.googleapis.com/webfonts/v1/webfonts";
 /*
  * https://developers.google.com/fonts/docs/developer_api/?apix=true
@@ -32,7 +32,7 @@ Future<GoogleFontsReply> getFonts({String? family, String? category}) async {
     }
   }
   Uri uri = Uri.parse(apiURL).replace(queryParameters: {
-    "key": apiKey,
+    "key": fontsKey,
     if (family != null) "family": family,
     if (category != null) "category": category,
   });
