@@ -26,10 +26,11 @@ class _FontsManagerPageState extends State<FontsManagerPage> {
         child: ReorderableListView.builder(
           footer: ListTile(
             onTap: () async {
-              final answer = settingsController.googleFonts || await showDialog(
-                context: context,
-                builder: (_) => GoogleFontsConfirmationDialog(),
-              );
+              final answer = settingsController.googleFonts ||
+                  await showDialog(
+                    context: context,
+                    builder: (_) => GoogleFontsConfirmationDialog(),
+                  );
 
               if (!context.mounted) return;
               if (answer != true) return;
@@ -54,6 +55,9 @@ class _FontsManagerPageState extends State<FontsManagerPage> {
               index: i,
               key: ValueKey(i),
               child: ListTile(
+                onTap: () async {
+                  await showDialog(context: context, builder: (context) => EditFontDialog(FontsRegistry.at(i)));
+                },
                 leading: IconButton(
                   onPressed: () async {
                     final shouldDelete = await showDialog(
@@ -87,6 +91,60 @@ class _FontsManagerPageState extends State<FontsManagerPage> {
   }
 }
 
+class EditFontDialog extends StatefulWidget {
+  final FontsRegistryEntry entry;
+
+  const EditFontDialog(
+    this.entry, {
+    super.key,
+  });
+
+  @override
+  State<EditFontDialog> createState() => _EditFontDialogState();
+}
+
+class _EditFontDialogState extends State<EditFontDialog> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    _controller = TextEditingController(text: widget.entry.display);
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Center(
+        child: Text(
+          widget.entry.family,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontFamily: widget.entry.family),
+        ),
+      ),
+      content: TextField(
+        controller: _controller,
+        style: TextStyle(fontFamily: widget.entry.family),
+        decoration: InputDecoration(label: Text("Display name")),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: Text("Cancel"),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.of(context).pop(_controller.text);
+          },
+          child: Text("Done"),
+        ),
+      ],
+    );
+  }
+}
+
 class GoogleFontsConfirmationDialog extends StatelessWidget {
   const GoogleFontsConfirmationDialog({
     super.key,
@@ -103,7 +161,9 @@ class GoogleFontsConfirmationDialog extends StatelessWidget {
           Text(
             "This feature uses the free Google Fonts service to offer you many new fonts for your stickers.\nIf you continue, the app will connect to Google to load the fonts. During this process, technical data like your IP address will be transmitted.",
           ),
-          SizedBox(height: 24,),
+          SizedBox(
+            height: 24,
+          ),
           TextButton.icon(
             icon: Icon(Icons.open_in_new),
             onPressed: () {

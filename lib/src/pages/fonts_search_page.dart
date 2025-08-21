@@ -94,17 +94,21 @@ class _GoogleFontPreviewState extends State<GoogleFontPreview> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: GestureDetector(
-        onTap: () async {
-          await showDialog(
-            context: context,
-            builder: (context) => DownloadFontDialog(widget: widget),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
+    bool inRegistry = FontsRegistry.get(widget.font.family)?.fontFile != null;
+    return Opacity(
+      opacity: inRegistry ? .7 : 1,
+      child: Card(
+        child: ListTile(
+          subtitle: inRegistry ? Center(child: Text("Already downloaded")) : null,
+          onTap: inRegistry
+              ? null
+              : () async {
+                  await showDialog(
+                    context: context,
+                    builder: (context) => DownloadFontDialog(widget: widget),
+                  );
+                },
+          title: Text(
             widget.font.family,
             textAlign: TextAlign.center,
             style: TextStyle(
