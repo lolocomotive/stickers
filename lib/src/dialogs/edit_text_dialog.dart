@@ -2,8 +2,10 @@ import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
+import 'package:stickers/src/dialogs/eyedropper_dialog.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/fonts_search_page.dart';
@@ -19,6 +21,8 @@ class TextEditingDialog extends StatefulWidget {
 
   final GestureTapCallback? onDelete;
 
+  final GlobalKey rbKey;
+
   const TextEditingDialog({
     super.key,
     required this.disableEditing,
@@ -26,6 +30,7 @@ class TextEditingDialog extends StatefulWidget {
     required this.focusNode,
     required this.parent,
     this.onDelete,
+    required this.rbKey,
   });
 
   @override
@@ -46,6 +51,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
 
   int _currentTool = 0;
   var _tools = <Widget>[];
+  Color? _pickedColor;
 
   @override
   Widget build(BuildContext context) {
@@ -159,10 +165,11 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
               if (i == FontsRegistry.fontCount) {
                 return TextButton(
                     onPressed: () async {
-                      final answer = settingsController.googleFonts || await showDialog(
-                        context: context,
-                        builder: (_) => GoogleFontsConfirmationDialog(),
-                      );
+                      final answer = settingsController.googleFonts ||
+                          await showDialog(
+                            context: context,
+                            builder: (_) => GoogleFontsConfirmationDialog(),
+                          );
                       if (!context.mounted) return;
                       if (answer != true) return;
                       Navigator.of(context).push(
@@ -305,6 +312,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: LayoutBuilder(builder: (context, constraints) {
             return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -329,7 +337,42 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                             active: c == widget.parent.text.textColor,
                           ))
                       .toList(),
-                )
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                  child: FilledButton.tonalIcon(
+                    icon: Row(
+                      children: [
+                        Icon(Icons.colorize),
+                        SizedBox(
+                          width: 10,
+                        ),
+                        if (_pickedColor != null)
+                          Container(
+                            height: 30,
+                            width: 60,
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                color: _pickedColor,
+                                border: Border.all(
+                                  width: 1,
+                                  color: Colors.black,
+                                )),
+                          ),
+                      ],
+                    ),
+                    iconAlignment: IconAlignment.end,
+                    onPressed: () async {
+                      _pickedColor = await showDialog(
+                          context: context,
+                          builder: (context) => EyedropperDialog(
+                              widget.rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
+                      _setTextColor(_pickedColor!);
+                      setState(() {});
+                    },
+                    label: Text("Pick a color"),
+                  ),
+                ),
               ],
             );
           }),
@@ -338,6 +381,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: LayoutBuilder(builder: (context, constraints) {
             return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -362,7 +406,42 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                             active: c == widget.parent.text.outlineColor,
                           ))
                       .toList(),
-                )
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                  child: FilledButton.tonalIcon(
+                    icon: Row(
+                      children: [
+                        Icon(Icons.colorize),
+                        SizedBox(
+                          width: 10,
+                        ),
+                        if (_pickedColor != null)
+                          Container(
+                            height: 30,
+                            width: 60,
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                color: _pickedColor,
+                                border: Border.all(
+                                  width: 1,
+                                  color: Colors.black,
+                                )),
+                          ),
+                      ],
+                    ),
+                    iconAlignment: IconAlignment.end,
+                    onPressed: () async {
+                      _pickedColor = await showDialog(
+                          context: context,
+                          builder: (context) => EyedropperDialog(
+                              widget.rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
+                      _setOutlineColor(_pickedColor!);
+                      setState(() {});
+                    },
+                    label: Text("Pick a color"),
+                  ),
+                ),
               ],
             );
           }),

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:image_editor/image_editor.dart';
 import 'package:stickers/src/dialogs/edit_text_dialog.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
-import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/edit_page.dart';
 
 class TextLayer extends StatefulWidget implements EditorLayer {
@@ -13,10 +12,13 @@ class TextLayer extends StatefulWidget implements EditorLayer {
 
   final Function(TextLayer)? onDelete;
 
+  final GlobalKey rbKey;
+
   TextLayer(
     this.text, {
     super.key,
     this.onDelete,
+    required this.rbKey,
   });
 
   @override
@@ -50,6 +52,7 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
         backgroundColor: Colors.transparent,
         body: TextEditingDialog(
           key: _editorKey,
+          rbKey: widget.rbKey,
           disableEditing: disableEditing,
           controller: _controller,
           focusNode: _focusNode,
@@ -84,8 +87,7 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     inherit: false,
-                    fontSize:
-                    widget.text.fontSize * (FontsRegistry.sizeMultiplier(widget.text.fontName) ?? 1),
+                    fontSize: widget.text.fontSize * (FontsRegistry.sizeMultiplier(widget.text.fontName) ?? 1),
                     foreground: Paint()
                       ..strokeJoin = StrokeJoin.round
                       ..strokeCap = StrokeCap.round
@@ -100,8 +102,7 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     inherit: false,
-                    fontSize:
-                        widget.text.fontSize * (FontsRegistry.sizeMultiplier(widget.text.fontName) ?? 1),
+                    fontSize: widget.text.fontSize * (FontsRegistry.sizeMultiplier(widget.text.fontName) ?? 1),
                     color: widget.text.textColor,
                     fontFamily: widget.text.fontName,
                   ),
@@ -132,8 +133,7 @@ class FontPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double paddingDiff =
-        MediaQuery.of(context).textScaler.scale(max(15 * (font.sizeMultiplier - 1), 0)) / 2;
+    final double paddingDiff = MediaQuery.of(context).textScaler.scale(max(15 * (font.sizeMultiplier - 1), 0)) / 2;
     return Column(
       children: [
         Container(

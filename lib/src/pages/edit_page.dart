@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:image_editor/image_editor.dart';
 import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
@@ -10,6 +11,7 @@ import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/confirm_leave_dialog.dart';
 import 'package:stickers/src/dialogs/edit_text_dialog.dart';
+import 'package:stickers/src/dialogs/eyedropper_dialog.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/default_page.dart';
@@ -38,6 +40,7 @@ class _EditPageState extends State<EditPage> {
   Color _brushColor = Colors.white;
   double _brushSize = 15;
   Offset _brushPos = Offset(0, 0);
+  Color? _pickedColor;
   final Curve _curve = Curves.ease;
   final List<UndoEntry> _undo = [];
   final double maxWidth = 200;
@@ -55,6 +58,8 @@ class _EditPageState extends State<EditPage> {
     _source = File(widget.imagePath);
     //_sticker = _pack.stickers[widget.index];
   }
+
+  final GlobalKey _rbKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -88,6 +93,7 @@ class _EditPageState extends State<EditPage> {
               secondCurve: _curve,
               firstChild: Container(),
               secondChild: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -111,6 +117,41 @@ class _EditPageState extends State<EditPage> {
                               active: c == _brushColor,
                             ))
                         .toList(),
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  FilledButton.tonalIcon(
+                    icon: Row(
+                      children: [
+                        Icon(Icons.colorize),
+                        SizedBox(
+                          width: 10,
+                        ),
+                        if (_pickedColor != null)
+                          Container(
+                            height: 30,
+                            width: 60,
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                color: _pickedColor,
+                                border: Border.all(
+                                  width: 1,
+                                  color: Colors.black,
+                                )),
+                          ),
+                      ],
+                    ),
+                    iconAlignment: IconAlignment.end,
+                    onPressed: () async {
+                      _pickedColor = await showDialog(
+                          context: context,
+                          builder: (context) =>
+                              EyedropperDialog(_rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
+                      _brushColor = _pickedColor!;
+                      setState(() {});
+                    },
+                    label: Text("Pick a color"),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -204,6 +245,7 @@ class _EditPageState extends State<EditPage> {
                       _texts.add(text);
                       _layers.add(TextLayer(
                         text,
+                        rbKey: _rbKey,
                         onDelete: (layer) {
                           _layers.remove(layer);
                           if (_currentTextLayer == layer) _currentTextLayer = null;
@@ -228,51 +270,54 @@ class _EditPageState extends State<EditPage> {
           final imageDisplay = Container(
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(24)),
             clipBehavior: Clip.antiAlias,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  color: Colors.black,
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: CustomPaint(
-                      painter: CheckerPainter(context, sizeCallback: (size) {
-                        if (imageSize != size) {
-                          imageSize = size;
-                          scaleFactor = size.width / 512;
-                          if (size.aspectRatio != 1) {
-                            // That should never happen
-                            print("Aspect ratio of sticker should be 1");
+            child: RepaintBoundary(
+              key: _rbKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    color: Colors.black,
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: CustomPaint(
+                        painter: CheckerPainter(context, sizeCallback: (size) {
+                          if (imageSize != size) {
+                            imageSize = size;
+                            scaleFactor = size.width / 512;
+                            if (size.aspectRatio != 1) {
+                              // That should never happen
+                              print("Aspect ratio of sticker should be 1");
+                            }
+                            WidgetsBinding.instance.addPostFrameCallback(
+                              (timeStamp) => setState(() {}),
+                            );
                           }
-                          WidgetsBinding.instance.addPostFrameCallback(
-                            (timeStamp) => setState(() {}),
-                          );
-                        }
-                      }),
-                      child: MatrixGestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onGestureStart: onGestureStart,
-                        onMatrixUpdate: (_, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) =>
-                            onMatrixUpdate(translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix),
-                        child: Stack(children: [
-                          Image.file(_source),
-                          ..._layers.map(
-                            (e) => Positioned(
-                              top: 0,
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: e,
+                        }),
+                        child: MatrixGestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onGestureStart: onGestureStart,
+                          onMatrixUpdate: (_, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) =>
+                              onMatrixUpdate(translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix),
+                          child: Stack(children: [
+                            Image.file(_source),
+                            ..._layers.map(
+                              (e) => Positioned(
+                                top: 0,
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                child: e,
+                              ),
                             ),
-                          ),
-                        ]),
+                          ]),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
 
