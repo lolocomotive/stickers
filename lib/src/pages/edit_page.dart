@@ -483,7 +483,7 @@ class _EditPageState extends State<EditPage> {
     return;
   }
 
-  _setColor(Color c) {
+  void _setColor(Color c) {
     setState(() {
       _brushColor = c;
     });

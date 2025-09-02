@@ -81,13 +81,26 @@ class GoogleFontPreview extends StatefulWidget {
 }
 
 class _GoogleFontPreviewState extends State<GoogleFontPreview> {
+  Future? _future;
+  bool _delayOver = false;
+
   @override
   void initState() {
-    if (!FontsRegistry.contains(widget.font.family)) {
-      downloadAndRegisterFontPreview(widget.font).then((_) {
-        if (!mounted) return;
-        setState(() {});
+    Future.delayed(Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      setState(() {
+        _delayOver = true;
       });
+    });
+    if (!FontsRegistry.contains(widget.font.family)) {
+      _future = downloadAndRegisterFontPreview(widget.font).then((_) {
+        // We have to return something here or the FutureBuilder doesn't work as it should
+        if (!mounted) return 1;
+        setState(() {});
+        return 0;
+      });
+    } else {
+      _future = Future.value(0);
     }
     super.initState();
   }
@@ -98,25 +111,46 @@ class _GoogleFontPreviewState extends State<GoogleFontPreview> {
     return Opacity(
       opacity: inRegistry ? .7 : 1,
       child: Card(
-        child: ListTile(
-          subtitle: inRegistry ? Center(child: Text("Already downloaded")) : null,
-          onTap: inRegistry
-              ? null
-              : () async {
-                  await showDialog(
-                    context: context,
-                    builder: (context) => DownloadFontDialog(widget: widget),
-                  );
-                },
-          title: Text(
-            widget.font.family,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: "${widget.font.family}-PREVIEW",
-              fontSize: 25,
-            ),
-          ),
-        ),
+        child: FutureBuilder(
+            future: _future,
+            builder: (context, asyncSnapshot) {
+              return Stack(
+                children: [
+                  ListTile(
+                    subtitle: inRegistry
+                        ? Center(child: Text("Already downloaded"))
+                        : (asyncSnapshot.hasError ? Center(child: Text("Error downloading font preview")) : null),
+                    onTap: inRegistry
+                        ? null
+                        : () async {
+                            await showDialog(
+                              context: context,
+                              builder: (context) => DownloadFontDialog(widget: widget),
+                            );
+                          },
+                    title: Text(
+                      widget.font.family,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: "${widget.font.family}-PREVIEW",
+                        fontSize: 25,
+                      ),
+                    ),
+                  ),
+                  AnimatedOpacity(
+                    opacity: (!asyncSnapshot.hasData && _future != null && _delayOver && !asyncSnapshot.hasError) ? .7 : 0,
+                    duration: Duration(milliseconds: 300),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: CircularProgressIndicator(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        strokeCap: StrokeCap.round,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }),
       ),
     );
   }

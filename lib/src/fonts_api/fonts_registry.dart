@@ -156,12 +156,20 @@ class FontsRegistry {
           final registerTasks = <Future>[];
           for (final f in data) {
             _entries[f.family] = f;
-            if (f.fontFile != null) {
+            if (f.fontFile != null || f.type == FontType.bundled) {
               _orderedEntries.add(f);
             }
             if (f.type != FontType.bundled) {
               if (f.previewFile != null) {
-                registerTasks.add(_registerFontToEngine(f, true));
+                // The cache has been deleted in between
+                if (!File(f.previewFile!).existsSync()) {
+                  f.previewFile = null;
+                  if (f.fontFile == null) {
+                    _entries.remove(f.family);
+                  }
+                } else {
+                  registerTasks.add(_registerFontToEngine(f, true));
+                }
               }
               if (f.fontFile != null) {
                 registerTasks.add(_registerFontToEngine(f, false));
@@ -242,9 +250,9 @@ class FontsRegistry {
     List data = [];
 
     data.addAll(_orderedEntries.map((e) => e.toJson()));
-// The logic here is that all entries that have a font file (not only preview) should already in the list,
-// so this should be sufficient to deduplicate the data.
-    data.addAll(_entries.values.where((f) => f.fontFile == null).map((e) => e.toJson()));
+// The logic here is that all entries that have a font file (not only preview) should already be in the list,
+// so this should be sufficient to deduplicate the data. (except for sans-serif)
+    data.addAll(_entries.values.where((f) => f.fontFile == null && f.family != "sans-serif").map((e) => e.toJson()));
 
     await _config.create(recursive: true);
     await _config.writeAsString(jsonEncode(data));
