@@ -78,7 +78,6 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                   return false;
                 },
                 mode: ExtendedImageMode.editor,
-
                 extendedImageEditorKey: widget.editorKey,
                 cacheRawData: true,
                 initEditorConfigHandler: (state) {
@@ -102,14 +101,13 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                     lineHeight: 3,
                     lineColor: Theme.of(context).colorScheme.primary.withAlpha(100),
                     animationDuration: const Duration(milliseconds: 400),
-                    maxScale: 8.0,
+                    maxScale: double.infinity,
                     cropRectPadding: const EdgeInsets.all(40.0),
                     hitTestSize: 80.0,
                     cropAspectRatio: null,
                     cornerColor: Theme.of(context).colorScheme.primary,
                     cornerSize: const Size(30, 5),
                     controller: _editorController,
-
                   );
                 },
               ),
@@ -139,8 +137,21 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                 child: FilledButton(
                   onPressed: () async {
                     final state = widget.editorKey.currentState!;
-                    final cropped =
-                        await cropSticker(state.getCropRect()!, state.rawImageData, widget.pack, widget.index, _editorController.rotateDegrees);
+                    if (state.getCropRect()!.height < .5 || state.getCropRect()!.width < .5) {
+                      showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                                title: Text("Crop area too small"),
+                                content: Text("Must be at least 1x1 pixel"),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.of(context).pop(), child: Text("Okay 💗")),
+                                  FilledButton(onPressed: () => Navigator.of(context).pop(), child: Text("Yay 💗")),
+                                ],
+                              ));
+                      return;
+                    }
+                    final cropped = await cropSticker(state.getCropRect()!, state.rawImageData, widget.pack,
+                        widget.index, _editorController.rotateDegrees);
                     final output = await saveTemp(cropped);
                     if (!context.mounted) return;
                     Navigator.of(context).pushNamed(
