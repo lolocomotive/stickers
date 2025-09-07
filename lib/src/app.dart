@@ -221,7 +221,7 @@ class StickersAppState extends State<StickersApp> {
     final index = pack.stickers.length;
     final img = await decodeImageFromList(rawImageData);
     final cropRect = Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble());
-    final cropped = await cropSticker(cropRect, rawImageData, pack, index);
+    final cropped = await cropSticker(cropRect, rawImageData, pack, index, 0);
     addToPack(pack, index, cropped);
 
     navigatorKey.currentState!.pushNamed("/pack", arguments: pack).then((value) {

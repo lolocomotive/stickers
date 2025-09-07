@@ -29,6 +29,7 @@ class CropPage extends StatefulWidget {
 
 class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
   late final AnimationController _maskColorController;
+  final ImageEditorController _editorController = ImageEditorController();
 
   bool _previousPtrVal = false;
 
@@ -77,6 +78,7 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                   return false;
                 },
                 mode: ExtendedImageMode.editor,
+
                 extendedImageEditorKey: widget.editorKey,
                 cacheRawData: true,
                 initEditorConfigHandler: (state) {
@@ -106,30 +108,54 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                     cropAspectRatio: null,
                     cornerColor: Theme.of(context).colorScheme.primary,
                     cornerSize: const Size(30, 5),
+                    controller: _editorController,
+
                   );
                 },
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: FilledButton(
-              onPressed: () async {
-                final state = widget.editorKey.currentState!;
-                final cropped = await cropSticker(state.getCropRect()!, state.rawImageData, widget.pack, widget.index);
-                final output = await saveTemp(cropped);
-                if (!context.mounted) return;
-                Navigator.of(context).pushNamed(
-                  "/edit",
-                  arguments: EditArguments(
-                    pack: widget.pack,
-                    index: widget.index,
-                    imagePath: output.path,
+          Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      _editorController.rotate(degree: -90, animation: true);
+                    },
+                    icon: Icon(Icons.rotate_left),
                   ),
-                );
-              },
-              child: Text(AppLocalizations.of(context)!.done),
-            ),
+                  IconButton(
+                    onPressed: () {
+                      _editorController.rotate(degree: 90, animation: true);
+                    },
+                    icon: Icon(Icons.rotate_right),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: FilledButton(
+                  onPressed: () async {
+                    final state = widget.editorKey.currentState!;
+                    final cropped =
+                        await cropSticker(state.getCropRect()!, state.rawImageData, widget.pack, widget.index, _editorController.rotateDegrees);
+                    final output = await saveTemp(cropped);
+                    if (!context.mounted) return;
+                    Navigator.of(context).pushNamed(
+                      "/edit",
+                      arguments: EditArguments(
+                        pack: widget.pack,
+                        index: widget.index,
+                        imagePath: output.path,
+                      ),
+                    );
+                  },
+                  child: Text(AppLocalizations.of(context)!.done),
+                ),
+              ),
+            ],
           ),
         ],
       ),
