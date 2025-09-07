@@ -31,7 +31,6 @@ class _EyedropperDialogState extends State<EyedropperDialog> {
       _samplePosition = Offset(image.width / 2 / MediaQuery.of(context).devicePixelRatio,
           image.height / 2 / MediaQuery.of(context).devicePixelRatio);
     }
-    print(_samplePosition);
     _decodeImage(image);
     return image;
   }
@@ -68,9 +67,7 @@ class _EyedropperDialogState extends State<EyedropperDialog> {
                       decoration: BoxDecoration(), // For the clip to work
                       child: GestureDetector(
                         onPanUpdate: (details) {
-                          _samplePosition = details.localPosition;
-                          print(_samplePosition);
-
+                          _samplePosition += details.delta;
                           _sampleColor(img);
                           setState(() {});
                         },
