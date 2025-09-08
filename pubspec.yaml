@@ -60,6 +60,10 @@ dev_dependencies:
 flutter:
   generate: true
   uses-material-design: true
+  shaders:
+    - assets/shaders/hue_gradient.frag
+    - assets/shaders/saturation_gradient.frag
+    - assets/shaders/lightness_gradient.frag
   assets:
     - assets/fonts/OFL.txt
   fonts:
