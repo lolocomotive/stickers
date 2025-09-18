@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
@@ -156,8 +157,8 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
             onPageChanged: (page) {
               HapticFeedback.lightImpact();
               setState(() {});
-              this.page = page;
-              widget.parent.text.fontName = FontsRegistry.at(page).family;
+              this.page = min(page, FontsRegistry.fontCount - 1);
+              widget.parent.text.fontName = FontsRegistry.at(this.page).family;
             },
             pageSnapping: false,
             controller: _pageController,
@@ -172,11 +173,19 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                           );
                       if (!context.mounted) return;
                       if (answer != true) return;
-                      Navigator.of(context).push(
+                      Navigator.of(context)
+                          .push(
                         MaterialPageRoute(
                           builder: (_) => FontsSearchPage(),
                         ),
-                      );
+                      )
+                          .then((_) {
+                        _pageController.animateToPage(
+                          FontsRegistry.fontCount - 1,
+                          duration: Duration(milliseconds: 300),
+                          curve: Curves.ease,
+                        );
+                      });
                     },
                     child: Text("More fonts"));
               }
