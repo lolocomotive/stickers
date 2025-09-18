@@ -409,37 +409,57 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-                  child: FilledButton.tonalIcon(
-                    icon: Row(
-                      children: [
-                        Icon(Icons.colorize),
-                        SizedBox(
-                          width: 10,
-                        ),
-                        if (_pickedColor != null)
-                          Container(
-                            height: 30,
-                            width: 60,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: _pickedColor,
-                                border: Border.all(
-                                  width: 1,
-                                  color: Colors.black,
-                                )),
+                  child: Row(
+                    children: [
+                      widget.parent.text.outlineColor == Colors.transparent
+                          ? FilledButton(
+                              onPressed: () {},
+                              child: Text("Off"),
+                            )
+                          : FilledButton.tonal(
+                              onPressed: () {
+                                _setOutlineColor(Colors.transparent);
+                              },
+                              child: Text("Off"),
+                            ),
+                      SizedBox(
+                        width: 10,
+                      ),
+                      Expanded(
+                        child: FilledButton.tonalIcon(
+                          icon: Row(
+                            children: [
+                              Icon(Icons.colorize),
+                              SizedBox(
+                                width: 10,
+                              ),
+                              if (_pickedColor != null)
+                                Container(
+                                  height: 30,
+                                  width: 60,
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      color: _pickedColor,
+                                      border: Border.all(
+                                        width: 1,
+                                        color: Colors.black,
+                                      )),
+                                ),
+                            ],
                           ),
-                      ],
-                    ),
-                    iconAlignment: IconAlignment.end,
-                    onPressed: () async {
-                      _pickedColor = await showDialog(
-                          context: context,
-                          builder: (context) => EyedropperDialog(
-                              widget.rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
-                      _setOutlineColor(_pickedColor!);
-                      setState(() {});
-                    },
-                    label: Text("Pick a color"),
+                          iconAlignment: IconAlignment.end,
+                          onPressed: () async {
+                            _pickedColor = await showDialog(
+                                context: context,
+                                builder: (context) => EyedropperDialog(
+                                    widget.rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
+                            _setOutlineColor(_pickedColor!);
+                            setState(() {});
+                          },
+                          label: Text("Pick a color"),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

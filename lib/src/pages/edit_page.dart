@@ -236,7 +236,7 @@ class _EditPageState extends State<EditPage> {
                       _drawing = false;
                       EditorText text = EditorText(
                         outlineWidth: 10,
-                        outlineColor: Colors.black,
+                        outlineColor: Colors.transparent,
                         text: "",
                         transform: Matrix4.identity(),
                         fontSize: 40,
