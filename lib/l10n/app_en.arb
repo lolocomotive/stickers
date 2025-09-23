@@ -60,7 +60,7 @@
   "language": "Language",
   "pleaseEnterTitle": "Please enter a title",
   "pleaseEnterAuthor": "Please enter an author",
-  "sourceOnGithub": "The source code for this app is available on GitHub under a GPL 3.0 License. Report bugs and request features there.",
+  "sourceOnGithub": "The source code for this app is available on GitHub under a GPL 3.0 License. Report bugs, request features or make a donation there.",
   "addToPack": "Add to sticker pack",
   "checkIfFileValid": "Check if the provided file is valid.",
   "importError": "Couldn't import pack",
@@ -68,14 +68,6 @@
   "onlyPacksAndImagesRecognized": "Only sticker packs or images are supported at the moment.",
   "whatsappNotInstalled": "WhatsApp is not installed",
   "deletePack": "Delete {pack}?",
-  "@deletePack": {
-    "placeholders": {
-      "pack": {
-        "type": "String",
-        "example": "Bob"
-      }
-    }
-  },
   "draw": "Draw",
   "addText": "Add Text",
   "undo": "Undo",

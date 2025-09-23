@@ -57,7 +57,7 @@
   "language": "Langue",
   "pleaseEnterTitle": "Veuillez entrer un titre",
   "pleaseEnterAuthor": "Veuillez entrer un auteur",
-  "sourceOnGithub": "Le code source de cette application est disponible sous licence GPL 3.0 sur GitHub. Signalez les bugs et suggérez des améliorations ici.",
+  "sourceOnGithub": "Le code source de cette application est disponible sous licence GPL 3.0 sur GitHub. Signalez les bugs, suggérez des améliorations ou faites un don ici.",
   "addToPack": "Ajouter au pack",
   "checkIfFileValid": "Veuillez vérifier si le fichier est valide.",
   "importError": "Erreur lors de l'import",

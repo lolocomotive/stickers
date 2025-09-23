@@ -57,7 +57,7 @@
     "language": "Sprache",
     "pleaseEnterTitle": "Geben Sie ein Titel ein",
     "pleaseEnterAuthor": "Geben Sie einen Autor ein",
-    "sourceOnGithub": "Der Quellcode dieser App ist unter einer GPL 3.0 Lizenz auf GitHub verfügbar. Melden Sie Fehler und schlagen Sie Verbesserungsvorschlage hier vor.",
+    "sourceOnGithub": "Der Quellcode dieser App ist unter einer GPL 3.0 Lizenz auf GitHub verfügbar. Melden Sie Fehler, machen Sie Verbesserungsvorschläge oder unterstützen Sie das Projekt hier.",
     "addToPack": "Zum Stickerpack hinzufügen",
     "checkIfFileValid": "Bitte überprüfen Sie, ob die gegebene Datei gültig ist.",
     "importError": "Pack konnte nicht importiert werden",
