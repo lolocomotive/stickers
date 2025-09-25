@@ -14,6 +14,7 @@ import 'package:stickers/src/pages/fonts_manager_page.dart';
 import 'package:stickers/src/pages/select_pack_page.dart';
 import 'package:stickers/src/pages/sticker_pack_page.dart';
 import 'package:stickers/src/pages/sticker_packs_page.dart';
+import 'package:stickers/src/pages/video_crop_page.dart';
 import 'package:stickers/src/util.dart';
 
 import 'settings/settings_controller.dart';
@@ -140,6 +141,13 @@ class StickersAppState extends State<StickersApp> {
                     return FontsManagerPage();
                   case SettingsPage.routeName:
                     return SettingsPage(controller: widget.settingsController);
+                  case VideoCropPage.routeName:
+                    final args = routeSettings.arguments as EditArguments;
+                    return VideoCropPage(
+                      pack: args.pack,
+                      index: args.index,
+                      imagePath: args.imagePath,
+                    );
                   case CropPage.routeName:
                     final args = routeSettings.arguments as EditArguments;
                     return CropPage(

@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/pages/default_page.dart';
+import 'package:stickers/src/video/crop_scale.dart';
 
 class CropPage extends StatefulWidget {
   final StickerPack pack;
@@ -114,6 +116,7 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
             ),
           ),
           Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

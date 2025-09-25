@@ -3,13 +3,23 @@ import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/util.dart';
 
-class CreatePackDialog extends StatelessWidget {
+class CreatePackDialog extends StatefulWidget {
   CreatePackDialog(this.packs, {super.key});
 
-  final _nameController = TextEditingController();
-  final _authorController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
   final List<StickerPack> packs;
+
+  @override
+  State<CreatePackDialog> createState() => _CreatePackDialogState();
+}
+
+class _CreatePackDialogState extends State<CreatePackDialog> {
+  final _nameController = TextEditingController();
+
+  final _authorController = TextEditingController();
+
+  final _formKey = GlobalKey<FormState>();
+
+  bool _animated = false;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +46,22 @@ class CreatePackDialog extends StatelessWidget {
                 label: Text(AppLocalizations.of(context)!.author),
               ),
             ),
+            SizedBox(height: 10,),
+            CheckboxListTile(
+                dense: true,
+                enableFeedback: true,
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                title: Text("Animated"),
+                subtitle: Opacity(
+                  opacity: .7,
+                  child: Text("If enabled, the pack may only contain animated stickers"),
+                ),
+                value: _animated,
+                onChanged: (value) {
+                  _animated = value ?? false;
+                  setState(() {});
+                })
           ],
         ),
       ),
@@ -48,13 +74,13 @@ class CreatePackDialog extends StatelessWidget {
         ElevatedButton(
           onPressed: () {
             if (!_formKey.currentState!.validate()) return;
-            packs.add(StickerPack(
+            widget.packs.add(StickerPack(
               _nameController.text,
               _authorController.text,
               "pack_${DateTime.now().millisecondsSinceEpoch}",
               [],
               "0",
-              false, // TODO support creation of animated sticker packs
+              _animated,
             ));
             Navigator.of(context).pop();
           },
