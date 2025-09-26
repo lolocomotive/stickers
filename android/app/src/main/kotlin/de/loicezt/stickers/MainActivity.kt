@@ -1,6 +1,8 @@
 package de.loicezt.stickers
 
+import android.os.Build
 import androidx.annotation.NonNull
+import androidx.annotation.RequiresApi
 import de.loicezt.stickers.video.CropAndScale
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -14,40 +16,51 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.io.File
 
-class MainActivity: FlutterActivity(){
+class MainActivity : FlutterActivity() {
     private val METHOD_CHANNEL_NAME = "de.loicezt.stickers/methods"
     private val EVENT_CHANNEL_NAME = "de.loicezt.stickers/events"
 
     private lateinit var cropAndScale: CropAndScale
     private val scope = CoroutineScope(
-        Dispatchers.Main + SupervisorJob())
+        Dispatchers.Main + SupervisorJob()
+    )
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
         cropAndScale = CropAndScale()
 
         // 1. Setup the MethodChannel to receive commands from Flutter
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, METHOD_CHANNEL_NAME).setMethodCallHandler {
-                call, result ->
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            METHOD_CHANNEL_NAME
+        ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "start" -> {
                     val args = call.arguments as Map<String, String>
                     val inputFile = File(args["inputFile"]!!)
                     val outputFile = File(args["outputFile"]!!)
-                    cropAndScale.start(inputFile, outputFile)
+                    val startTimeUs = args["startTimeUs"]!!.toLong()
+                    val endTimeUs = args["endTimeUs"]!!.toLong()
+                    cropAndScale.start(inputFile, outputFile, startTimeUs, endTimeUs)
                     result.success(null)
                 }
+
                 "cancel" -> {
                     cropAndScale.cancel()
                     result.success(null)
                 }
+
                 else -> result.notImplemented()
             }
         }
 
         // 2. Setup the EventChannel to stream updates to Flutter
-        EventChannel(flutterEngine.dartExecutor.binaryMessenger, EVENT_CHANNEL_NAME).setStreamHandler(
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            EVENT_CHANNEL_NAME
+        ).setStreamHandler(
             object : EventChannel.StreamHandler {
                 private var eventScope: CoroutineScope? = null
 

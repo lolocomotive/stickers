@@ -262,7 +262,12 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
 
   Future<void> doCrop() async {
     final output = "${(await getTemporaryDirectory()).path}/temp.mp4";
-    await service.start(inputFile: widget.imagePath, outputFile: output);
+    await service.start(
+      inputFile: widget.imagePath,
+      outputFile: output,
+      start: _controller.value.duration * _range.start,
+      end: _controller.value.duration * _range.end,
+    );
     await for (final s in service.progressStream) {
       if (s.status == TranscoderStatus.SUCCESS) {
         break;

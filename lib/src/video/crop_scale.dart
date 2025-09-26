@@ -57,11 +57,15 @@ class CropAndScaleService {
   Future<void> start({
     required String inputFile,
     required String outputFile,
+    required Duration start,
+    required Duration end,
   }) async {
     try {
       await _methodChannel.invokeMethod('start', {
         'inputFile': inputFile,
         'outputFile': outputFile,
+        'startTimeUs': start.inMicroseconds.toString(),
+        'endTimeUs': end.inMicroseconds.toString(),
       });
     } on PlatformException catch (e) {
       print("Failed to start transcoding: '${e.message}'.");
