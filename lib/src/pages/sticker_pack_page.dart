@@ -194,7 +194,7 @@ class StickerPackPageState extends State<StickerPackPage> {
           arguments: EditArguments(
             pack: widget.pack,
             index: index,
-            imagePath: video.path,
+            mediaPath: video.path,
           ));
     } else {
       final XFile? image = await picker.pickImage(source: ImageSource.gallery);
@@ -206,7 +206,7 @@ class StickerPackPageState extends State<StickerPackPage> {
         arguments: EditArguments(
           pack: widget.pack,
           index: index,
-          imagePath: image.path,
+          mediaPath: image.path,
         ),
       ).then((value) => setState(() {}));
     }

@@ -14,10 +14,12 @@ import 'package:stickers/src/dialogs/edit_text_dialog.dart';
 import 'package:stickers/src/dialogs/eyedropper_dialog.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
+import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/widgets/draw_layer.dart';
 import 'package:stickers/src/widgets/text_layer.dart';
 import 'package:vector_math/vector_math_64.dart' hide Colors;
+import 'package:video_player/video_player.dart';
 
 class EditPage extends StatefulWidget {
   /// Path of the temporary image to edit
@@ -25,9 +27,11 @@ class EditPage extends StatefulWidget {
   final StickerPack pack;
   final int index;
 
-  const EditPage(this.pack, this.index, this.imagePath, {super.key});
+  const EditPage(this.pack, this.index, this.imagePath, this.mediaType, {super.key});
 
   static const routeName = "/edit";
+
+  final MediaType mediaType;
 
   @override
   State<EditPage> createState() => _EditPageState();
@@ -56,10 +60,23 @@ class _EditPageState extends State<EditPage> {
   void initState() {
     super.initState();
     _source = File(widget.imagePath);
+    if (widget.mediaType == MediaType.video) {
+      _controller = VideoPlayerController.file(_source, viewType: VideoViewType.platformView);
+      _controller.setLooping(true);
+      _controller.initialize().then((_) {
+        print("Rotation correction: ${_controller.value.rotationCorrection}");
+        print("Size: ${_controller.value.size}");
+        print(_controller);
+        _controller.play();
+        setState(() {});
+      });
+    }
     //_sticker = _pack.stickers[widget.index];
   }
 
   final GlobalKey _rbKey = GlobalKey();
+
+  late VideoPlayerController _controller;
 
   @override
   Widget build(BuildContext context) {
@@ -301,7 +318,15 @@ class _EditPageState extends State<EditPage> {
                           onMatrixUpdate: (_, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) =>
                               onMatrixUpdate(translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix),
                           child: Stack(children: [
-                            Image.file(_source),
+                            if (widget.mediaType == MediaType.picture)
+                              Image.file(_source)
+                            else
+                              Center(
+                                child: AspectRatio(
+                                  aspectRatio:_controller.value.aspectRatio,
+                                  child: VideoPlayer(_controller),
+                                ),
+                              ),
                             ..._layers.map(
                               (e) => Positioned(
                                 top: 0,

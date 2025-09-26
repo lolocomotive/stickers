@@ -2,13 +2,11 @@ import 'dart:io';
 
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/pages/default_page.dart';
-import 'package:stickers/src/video/crop_scale.dart';
 
 class CropPage extends StatefulWidget {
   final StickerPack pack;
@@ -162,7 +160,7 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                       arguments: EditArguments(
                         pack: widget.pack,
                         index: widget.index,
-                        imagePath: output.path,
+                        mediaPath: output.path,
                       ),
                     );
                   },
@@ -177,12 +175,18 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
   }
 }
 
+enum MediaType {
+  video,
+  picture,
+}
+
 class EditArguments {
   StickerPack pack;
 
   // Index 30 is tray icon
   int index;
-  String imagePath;
+  String mediaPath;
+  MediaType type;
 
-  EditArguments({required this.pack, required this.index, required this.imagePath});
+  EditArguments({required this.pack, required this.index, required this.mediaPath, this.type = MediaType.picture});
 }

@@ -1,10 +1,25 @@
 package de.loicezt.stickers.video
 
-import android.media.*
+import android.media.MediaCodec
+import android.media.MediaCodecInfo
+import android.media.MediaExtractor
+import android.media.MediaFormat
+import android.media.MediaMuxer
+import android.os.Build
 import android.util.Log
-import kotlinx.coroutines.*
+import androidx.annotation.RequiresApi
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeoutException
@@ -54,6 +69,7 @@ class CropAndScale {
      * @param inputFile The source video file.
      * @param outputFile The destination for the transcoded MP4 file.
      */
+    @RequiresApi(Build.VERSION_CODES.M)
     fun start(inputFile: File, outputFile: File) {
         if (_status.value == State.RUNNING) {
             Log.w(LOG_TAG, "Transcoding is already in progress. Ignoring new request.")
@@ -76,7 +92,8 @@ class CropAndScale {
             } finally {
                 // On completion, failure, or cancellation, set progress to 100%
                 val finalState = _progress.value
-                _progress.value = finalState.copy(progress = 1f, currentFrame = finalState.totalFrames)
+                _progress.value =
+                    finalState.copy(progress = 1f, currentFrame = finalState.totalFrames)
             }
         }
     }
@@ -95,6 +112,7 @@ class CropAndScale {
         scope.cancel()
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     private suspend fun doTranscode(inputFile: File, outputFile: File) {
         val extractor = MediaExtractor()
         var decoder: MediaCodec? = null
@@ -132,14 +150,35 @@ class CropAndScale {
             // ---
 
             // Calculate output dimensions
+
+            // --- FIX: Acknowledge video rotation ---
+            val rotation = if (inputFormat.containsKey(MediaFormat.KEY_ROTATION)) {
+                inputFormat.getInteger(MediaFormat.KEY_ROTATION)
+            } else {
+                0
+            }
+
+            // Swap dimensions if the video is rotated 90 or 270 degrees
+            val rotatedWidth: Int
+            val rotatedHeight: Int
+            if (rotation == 90 || rotation == 270) {
+                rotatedWidth = videoHeight
+                rotatedHeight = videoWidth
+            } else {
+                rotatedWidth = videoWidth
+                rotatedHeight = videoHeight
+            }
+
             val outputWidth: Int
             val outputHeight: Int
-            if (videoWidth > videoHeight) {
+            if (rotatedWidth > rotatedHeight) {
                 outputWidth = TARGET_LONGEST_SIDE
-                outputHeight = (TARGET_LONGEST_SIDE * (videoHeight.toFloat() / videoWidth.toFloat())).toInt()
+                outputHeight =
+                    (TARGET_LONGEST_SIDE * (rotatedHeight.toFloat() / rotatedWidth.toFloat())).toInt()
             } else {
                 outputHeight = TARGET_LONGEST_SIDE
-                outputWidth = (TARGET_LONGEST_SIDE * (videoWidth.toFloat() / videoHeight.toFloat())).toInt()
+                outputWidth =
+                    (TARGET_LONGEST_SIDE * (rotatedWidth.toFloat() / rotatedHeight.toFloat())).toInt()
             }
             val finalOutputWidth = if (outputWidth % 2 == 1) outputWidth - 1 else outputWidth
             val finalOutputHeight = if (outputHeight % 2 == 1) outputHeight - 1 else outputHeight
@@ -149,7 +188,10 @@ class CropAndScale {
             val outputFormat = MediaFormat.createVideoFormat(
                 MediaFormat.MIMETYPE_VIDEO_AVC, finalOutputWidth, finalOutputHeight
             ).apply {
-                setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
+                setInteger(
+                    MediaFormat.KEY_COLOR_FORMAT,
+                    MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface
+                )
                 setInteger(MediaFormat.KEY_BIT_RATE, 6_000_000)
                 setInteger(MediaFormat.KEY_FRAME_RATE, 30)
                 setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
@@ -197,12 +239,25 @@ class CropAndScale {
                 if (!isInputDone) {
                     val inputBufferIndex = decoder.dequeueInputBuffer(10000L)
                     if (inputBufferIndex >= 0) {
-                        val sampleSize = extractor.readSampleData(decoder.getInputBuffer(inputBufferIndex)!!, 0)
+                        val sampleSize =
+                            extractor.readSampleData(decoder.getInputBuffer(inputBufferIndex)!!, 0)
                         if (sampleSize < 0) {
-                            decoder.queueInputBuffer(inputBufferIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                            decoder.queueInputBuffer(
+                                inputBufferIndex,
+                                0,
+                                0,
+                                0,
+                                MediaCodec.BUFFER_FLAG_END_OF_STREAM
+                            )
                             isInputDone = true
                         } else {
-                            decoder.queueInputBuffer(inputBufferIndex, 0, sampleSize, extractor.sampleTime, 0)
+                            decoder.queueInputBuffer(
+                                inputBufferIndex,
+                                0,
+                                sampleSize,
+                                extractor.sampleTime,
+                                0
+                            )
                             extractor.advance()
                         }
                     }
@@ -224,8 +279,10 @@ class CropAndScale {
 
                             // Update progress with frame count
                             currentFrame++
-                            val progressPercentage = decoderBufferInfo.presentationTimeUs.toFloat() / durationUs.toFloat()
-                            _progress.value = ProgressState(progressPercentage, currentFrame, totalFrames)
+                            val progressPercentage =
+                                decoderBufferInfo.presentationTimeUs.toFloat() / durationUs.toFloat()
+                            _progress.value =
+                                ProgressState(progressPercentage, currentFrame, totalFrames)
 
                         } catch (e: TimeoutException) {
                             Log.w(LOG_TAG, "Timeout waiting for frame.")

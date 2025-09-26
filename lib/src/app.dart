@@ -146,18 +146,18 @@ class StickersAppState extends State<StickersApp> {
                     return VideoCropPage(
                       pack: args.pack,
                       index: args.index,
-                      imagePath: args.imagePath,
+                      imagePath: args.mediaPath,
                     );
                   case CropPage.routeName:
                     final args = routeSettings.arguments as EditArguments;
                     return CropPage(
                       pack: args.pack,
                       index: args.index,
-                      imagePath: args.imagePath,
+                      imagePath: args.mediaPath,
                     );
                   case EditPage.routeName:
                     final args = routeSettings.arguments as EditArguments;
-                    return EditPage(args.pack, args.index, args.imagePath);
+                    return EditPage(args.pack, args.index, args.mediaPath, args.type);
                   case StickerPackPage.routeName:
                     return StickerPackPage(routeSettings.arguments as StickerPack, () {
                       setState(() {});

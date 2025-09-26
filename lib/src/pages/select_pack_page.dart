@@ -89,7 +89,7 @@ class _SelectPackPageState extends State<SelectPackPage> {
                             arguments: EditArguments(
                               pack: packs[index],
                               index: packs[index].stickers.length,
-                              imagePath: widget.media.attachments!.first!.path,
+                              mediaPath: widget.media.attachments!.first!.path,
                             ),
                           ).then(
                             (value) => setState(

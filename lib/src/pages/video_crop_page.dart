@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/video/crop_scale.dart';
 import 'package:video_player/video_player.dart';
@@ -260,6 +261,20 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
   bool _editing = false;
 
   Future<void> doCrop() async {
-    service.start(inputFile: widget.imagePath, outputFile: "${(await getTemporaryDirectory()).path}/temp.mp4");
+    final output = "${(await getTemporaryDirectory()).path}/temp.mp4";
+    await service.start(inputFile: widget.imagePath, outputFile: output);
+    await for (final s in service.progressStream) {
+      if (s.status == TranscoderStatus.SUCCESS) {
+        break;
+      }
+    }
+    if (!mounted) return;
+    Navigator.of(context).pushNamed("/edit",
+        arguments: EditArguments(
+          pack: widget.pack,
+          index: widget.index,
+          mediaPath: output,
+          type: MediaType.video,
+        ));
   }
 }

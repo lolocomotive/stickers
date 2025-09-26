@@ -227,7 +227,7 @@ class TrayIconMethodSelector extends StatelessWidget {
                 arguments: EditArguments(
                   pack: pack,
                   index: 30,
-                  imagePath: image.path,
+                  mediaPath: image.path,
                 ),
               ).then((value) {
                 if (!context.mounted) return;
