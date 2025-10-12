@@ -1,30 +1,16 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
 
-// Enums and classes to mirror the Kotlin side
-enum TranscoderStatus { IDLE, RUNNING, SUCCESS, FAILED, CANCELLED }
+import 'common.dart';
 
-class TranscoderProgress {
-  final TranscoderStatus status;
-  final double progress;
-  final int currentFrame;
-  final int totalFrames;
-
-  TranscoderProgress({
-    this.status = TranscoderStatus.IDLE,
-    this.progress = 0.0,
-    this.currentFrame = 0,
-    this.totalFrames = 0,
-  });
-}
 
 class CropAndScaleService {
   static const _methodChannel = MethodChannel('de.loicezt.stickers/methods');
-  static const _eventChannel = EventChannel('de.loicezt.stickers/events');
+  static const _eventChannel = EventChannel('de.loicezt.stickers/progress_trim');
 
   // A stream controller to expose a single, unified progress stream
-  final _progressController = StreamController<TranscoderProgress>.broadcast();
-  Stream<TranscoderProgress> get progressStream => _progressController.stream;
+  final _progressController = StreamController<Progress>.broadcast();
+  Stream<Progress> get progressStream => _progressController.stream;
 
   CropAndScaleService() {
     // Listen to the native event channel as soon as the service is created
@@ -34,12 +20,12 @@ class CropAndScaleService {
   void _onProgress(dynamic data) {
     if (data is Map) {
       final statusString = data['status'] as String?;
-      final status = TranscoderStatus.values.firstWhere(
-            (e) => e.toString() == 'TranscoderStatus.$statusString',
-        orElse: () => TranscoderStatus.IDLE,
+      final status = Status.values.firstWhere(
+            (e) => e.toString() == 'Status.$statusString',
+        orElse: () => Status.IDLE,
       );
 
-      final progress = TranscoderProgress(
+      final progress = Progress(
         status: status,
         progress: (data['progress'] as num?)?.toDouble() ?? 0.0,
         currentFrame: data['currentFrame'] as int? ?? 0,
@@ -51,7 +37,7 @@ class CropAndScaleService {
 
   void _onError(Object error) {
     print("Error on EventChannel: $error");
-    _progressController.add(TranscoderProgress(status: TranscoderStatus.FAILED));
+    _progressController.add(Progress(status: Status.FAILED));
   }
 
   Future<void> start({
@@ -61,7 +47,7 @@ class CropAndScaleService {
     required Duration end,
   }) async {
     try {
-      await _methodChannel.invokeMethod('start', {
+      await _methodChannel.invokeMethod('startTrim', {
         'inputFile': inputFile,
         'outputFile': outputFile,
         'startTimeUs': start.inMicroseconds.toString(),
@@ -74,7 +60,7 @@ class CropAndScaleService {
 
   Future<void> cancel() async {
     try {
-      await _methodChannel.invokeMethod('cancel');
+      await _methodChannel.invokeMethod('cancelTrim');
     } on PlatformException catch (e) {
       print("Failed to cancel transcoding: '${e.message}'.");
     }

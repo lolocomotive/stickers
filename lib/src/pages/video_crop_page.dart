@@ -8,6 +8,7 @@ import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
+import 'package:stickers/src/video/common.dart';
 import 'package:stickers/src/video/crop_scale.dart';
 import 'package:video_player/video_player.dart';
 
@@ -37,7 +38,6 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
   double _btnOpacity = 1;
 
   RangeValues _range = RangeValues(0, 1);
-  bool _previousPtrVal = false;
   Duration _seekTarget = Duration();
 
   @override
@@ -269,8 +269,12 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
       end: _controller.value.duration * _range.end,
     );
     await for (final s in service.progressStream) {
-      if (s.status == TranscoderStatus.SUCCESS) {
+      print(s);
+      if (s.status == Status.SUCCESS) {
         break;
+      } else if (s.status == Status.FAILED) {
+        print("Transcoding failed!");
+        throw Exception();
       }
     }
     if (!mounted) return;

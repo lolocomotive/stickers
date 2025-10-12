@@ -33,7 +33,6 @@ class CropScaleGL : SurfaceTexture.OnFrameAvailableListener {
 
     private val frameSemaphore = Semaphore(0)
 
-    // --- NEW: Store target dimensions ---
     private var targetWidth: Int = 0
     private var targetHeight: Int = 0
 
@@ -52,7 +51,6 @@ class CropScaleGL : SurfaceTexture.OnFrameAvailableListener {
     }
 
     fun setup(encoderSurface: Surface, width: Int, height: Int) {
-        // --- Store the target dimensions ---
         this.targetWidth = width
         this.targetHeight = height
 
@@ -96,9 +94,8 @@ class CropScaleGL : SurfaceTexture.OnFrameAvailableListener {
         decoderSurfaceTexture.updateTexImage()
         decoderSurfaceTexture.getTransformMatrix(transformMatrix)
 
-        // --- SIMPLIFIED: No more letterboxing. Render to the full surface. ---
         GLES20.glViewport(0, 0, targetWidth, targetHeight)
-        GLES20.glClearColor(0f, 0f, 0f, 1f) // Background is black
+        GLES20.glClearColor(0f, 0f, 0f, 1f)
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 
         GLES20.glUseProgram(programHandle)

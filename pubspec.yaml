@@ -67,6 +67,7 @@ flutter:
     - assets/shaders/lightness_gradient.frag
   assets:
     - assets/fonts/OFL.txt
+    - assets/transparent.webp
   fonts:
     - family: Passions Conflict
       fonts:

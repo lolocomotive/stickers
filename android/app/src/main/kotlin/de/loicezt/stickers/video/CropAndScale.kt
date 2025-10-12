@@ -31,9 +31,6 @@ import kotlin.math.min
  * @param currentFrame The number of frames processed so far.
  * @param totalFrames The estimated total number of frames in the source video.
  */
-data class ProgressState(
-    val progress: Float = 0f, val currentFrame: Int = 0, val totalFrames: Int = 0
-)
 
 class CropAndScale {
 
@@ -41,11 +38,11 @@ class CropAndScale {
      * Represents the current state of the transcoder.
      */
     enum class State {
-        IDLE,       // Not doing anything.
-        RUNNING,    // Transcoding is in progress.
-        SUCCESS,    // Transcoding finished successfully.
-        FAILED,     // Transcoding failed with an error.
-        CANCELLED   // Transcoding was cancelled by the user.
+        IDLE,       // Not doing anything
+        RUNNING,    // Transcoding is in progress
+        SUCCESS,    // Transcoding finished successfully
+        FAILED,     // Transcoding failed with an error
+        CANCELLED   // Transcoding was cancelled by the user
     }
 
     private val _status = MutableStateFlow(State.IDLE)
@@ -69,11 +66,14 @@ class CropAndScale {
      * @param outputFile The destination for the transcoded MP4 file.
      * @param startTimeUs The start time for the trim in microseconds. If null, starts from the beginning.
      * @param endTimeUs The end time for the trim in microseconds. If null, goes to the end.
+     * @param maxFps The maximum frames per second for the output video. If null, uses original FPS.
      */
-    @RequiresApi(Build.VERSION_CODES.M)
-    // MODIFIED: Added startTimeUs and endTimeUs parameters
     fun start(
-        inputFile: File, outputFile: File, startTimeUs: Long? = null, endTimeUs: Long? = null
+        inputFile: File,
+        outputFile: File,
+        startTimeUs: Long,
+        endTimeUs: Long,
+        maxFps: Int
     ) {
         if (_status.value == State.RUNNING) {
             Log.w(LOG_TAG, "Transcoding is already in progress. Ignoring new request.")
@@ -82,10 +82,9 @@ class CropAndScale {
 
         transcodeJob = scope.launch {
             _status.value = State.RUNNING
-            _progress.value = ProgressState() // Reset progress
+            _progress.value = ProgressState()
             try {
-                // MODIFIED: Pass timestamps to the transcoding function
-                doTranscode(inputFile, outputFile, startTimeUs, endTimeUs)
+                doTranscode(inputFile, outputFile, startTimeUs, endTimeUs, maxFps)
                 _status.value = State.SUCCESS
                 Log.d(LOG_TAG, "Transcoding finished successfully.")
             } catch (e: CancellationException) {
@@ -95,7 +94,6 @@ class CropAndScale {
                 _status.value = State.FAILED
                 Log.e(LOG_TAG, "Transcoding failed with an exception.", e)
             } finally {
-                // On completion, failure, or cancellation, set progress to 100%
                 val finalState = _progress.value
                 _progress.value =
                     finalState.copy(progress = 1f, currentFrame = finalState.totalFrames)
@@ -117,13 +115,12 @@ class CropAndScale {
         scope.cancel()
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
-    // MODIFIED: Added startTimeUs and endTimeUs parameters
     private suspend fun doTranscode(
         inputFile: File,
         outputFile: File,
-        startTimeUs: Long?,
-        endTimeUs: Long?
+        startTimeUs: Long,
+        endTimeUs: Long,
+        maxFps: Int
     ) {
         val extractor = MediaExtractor()
         var decoder: MediaCodec? = null
@@ -133,7 +130,6 @@ class CropAndScale {
         val transcoderExecutor = Executors.newSingleThreadExecutor()
 
         try {
-            // 1. Extractor Setup
             extractor.setDataSource(inputFile.absolutePath)
             var videoTrackIndex = -1
             for (i in 0 until extractor.trackCount) {
@@ -148,31 +144,26 @@ class CropAndScale {
             val inputFormat = extractor.getTrackFormat(videoTrackIndex)
             extractor.selectTrack(videoTrackIndex)
 
-            // --- NEW: Determine effective trim range ---
             val originalDurationUs = inputFormat.getLong(MediaFormat.KEY_DURATION)
-            val effectiveStartTimeUs = startTimeUs ?: 0L
-            val effectiveEndTimeUs = min(endTimeUs ?: originalDurationUs, originalDurationUs)
+            val effectiveStartTimeUs = startTimeUs
+            val effectiveEndTimeUs = min(endTimeUs, originalDurationUs)
             val trimmedDurationUs = effectiveEndTimeUs - effectiveStartTimeUs
             if (trimmedDurationUs <= 0) throw IllegalArgumentException("End time must be after start time.")
 
-            // --- NEW: Seek extractor to the start of the trim range ---
-            // Seek to the sync frame right before the desired start time
             extractor.seekTo(effectiveStartTimeUs, MediaExtractor.SEEK_TO_PREVIOUS_SYNC)
 
             val videoWidth = inputFormat.getInteger(MediaFormat.KEY_WIDTH)
             val videoHeight = inputFormat.getInteger(MediaFormat.KEY_HEIGHT)
 
-            // --- MODIFIED: Calculate total frames for progress based on trimmed duration ---
-            val frameRate = if (inputFormat.containsKey(MediaFormat.KEY_FRAME_RATE)) {
+            val originalFrameRate = if (inputFormat.containsKey(MediaFormat.KEY_FRAME_RATE)) {
                 inputFormat.getInteger(MediaFormat.KEY_FRAME_RATE)
             } else {
-                30 // A reasonable fallback if frame rate is not in metadata
+                24
             }
-            val totalFrames = ((trimmedDurationUs / 1_000_000.0) * frameRate).toInt()
+            val targetFrameRate = maxFps?.let { min(it, originalFrameRate) } ?: originalFrameRate
+            val totalFrames = ((trimmedDurationUs / 1_000_000.0) * targetFrameRate).toInt()
             _progress.value = ProgressState(totalFrames = totalFrames)
-            // ---
 
-            // Calculate output dimensions
             val rotation = if (inputFormat.containsKey(MediaFormat.KEY_ROTATION)) {
                 inputFormat.getInteger(MediaFormat.KEY_ROTATION)
             } else {
@@ -203,7 +194,6 @@ class CropAndScale {
             val finalOutputWidth = if (outputWidth % 2 == 1) outputWidth - 1 else outputWidth
             val finalOutputHeight = if (outputHeight % 2 == 1) outputHeight - 1 else outputHeight
 
-            // 2. Muxer and Encoder Setup
             muxer = MediaMuxer(outputFile.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
             val outputFormat = MediaFormat.createVideoFormat(
                 MediaFormat.MIMETYPE_VIDEO_AVC, finalOutputWidth, finalOutputHeight
@@ -213,7 +203,7 @@ class CropAndScale {
                     MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface
                 )
                 setInteger(MediaFormat.KEY_BIT_RATE, 6_000_000)
-                setInteger(MediaFormat.KEY_FRAME_RATE, 30)
+                setInteger(MediaFormat.KEY_FRAME_RATE, targetFrameRate)
                 setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
             }
             encoder = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC)
@@ -221,13 +211,11 @@ class CropAndScale {
             val encoderInputSurface = encoder.createInputSurface()
             encoder.start()
 
-            // 3. Decoder and GL Setup
             glProcessor.setup(encoderInputSurface, finalOutputWidth, finalOutputHeight)
             decoder = MediaCodec.createDecoderByType(inputFormat.getString(MediaFormat.KEY_MIME)!!)
             decoder.configure(inputFormat, glProcessor.decoderInputSurface, null, 0)
             decoder.start()
 
-            // 4. Start Encoder Consumer
             var videoTrackMuxerIndex = -1
             var isMuxerStarted = false
             val encoderDone = Job()
@@ -250,17 +238,18 @@ class CropAndScale {
                 encoderDone.complete()
             }
 
-            // 5. Start Decoder-Renderer Producer
             val decoderBufferInfo = MediaCodec.BufferInfo()
             var isInputDone = false
             var isDecoderOutputDone = false
             var currentFrame = 0
+            var lastRenderedTimestampNs = -1L
+            val frameIntervalNs = 1_000_000_000L / targetFrameRate
+
             while (!isDecoderOutputDone && currentCoroutineContext().isActive) {
                 if (!isInputDone) {
                     val inputBufferIndex = decoder.dequeueInputBuffer(10000L)
                     if (inputBufferIndex >= 0) {
                         val sampleTime = extractor.sampleTime
-                        // MODIFIED: Stop when we reach the end time or end of file
                         if (sampleTime < 0 || sampleTime > effectiveEndTimeUs) {
                             decoder.queueInputBuffer(
                                 inputBufferIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM
@@ -284,22 +273,31 @@ class CropAndScale {
                         encoder.signalEndOfInputStream()
                         isDecoderOutputDone = true
                     }
-                    // MODIFIED: Only render frames that are within our desired time range
-                    val shouldRender =
-                        decoderBufferInfo.size > 0 && decoderBufferInfo.presentationTimeUs >= effectiveStartTimeUs
 
-                    decoder.releaseOutputBuffer(outputBufferIndex, shouldRender)
+                    val isFrameInRange = decoderBufferInfo.size > 0 &&
+                            decoderBufferInfo.presentationTimeUs >= effectiveStartTimeUs
 
-                    if (shouldRender) {
+                    // Frame dropping
+                    var renderThisFrame = isFrameInRange
+                    if (isFrameInRange) {
+                        val currentTimestampNs = decoderBufferInfo.presentationTimeUs * 1000
+                        if (lastRenderedTimestampNs != -1L && currentTimestampNs - lastRenderedTimestampNs < frameIntervalNs) {
+                            renderThisFrame = false
+                        } else {
+                            lastRenderedTimestampNs = currentTimestampNs
+                        }
+                    }
+
+                    decoder.releaseOutputBuffer(outputBufferIndex, renderThisFrame)
+
+                    if (renderThisFrame) {
                         try {
                             glProcessor.awaitNewFrame()
-                            // NEW: Adjust timestamp to be relative to the start of the trim
                             val adjustedTimestampUs =
                                 decoderBufferInfo.presentationTimeUs - effectiveStartTimeUs
                             val timestampNs = adjustedTimestampUs * 1000
                             glProcessor.drawFrame(timestampNs)
 
-                            // MODIFIED: Update progress based on the trimmed duration
                             currentFrame++
                             val progressPercentage =
                                 adjustedTimestampUs.toFloat() / trimmedDurationUs.toFloat()

@@ -3,8 +3,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:image_editor/image_editor.dart';
 import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/load_store.dart';
@@ -16,6 +18,8 @@ import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
+import 'package:stickers/src/video/common.dart';
+import 'package:stickers/src/video/overlay_encode.dart';
 import 'package:stickers/src/widgets/draw_layer.dart';
 import 'package:stickers/src/widgets/text_layer.dart';
 import 'package:vector_math/vector_math_64.dart' hide Colors;
@@ -48,6 +52,8 @@ class _EditPageState extends State<EditPage> {
   final Curve _curve = Curves.ease;
   final List<UndoEntry> _undo = [];
   final double maxWidth = 200;
+  String? _message;
+  double? _exportProgress;
 
   /// The sticker is 512x512 as opposed to the canvas, which is why we need a scale factor
   double scaleFactor = 0;
@@ -61,12 +67,14 @@ class _EditPageState extends State<EditPage> {
     super.initState();
     _source = File(widget.imagePath);
     if (widget.mediaType == MediaType.video) {
-      _controller = VideoPlayerController.file(_source, viewType: VideoViewType.platformView);
+      _controller = VideoPlayerController.file(
+        _source,
+        viewType: VideoViewType.textureView,
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
       _controller.setLooping(true);
+      _controller.setVolume(0);
       _controller.initialize().then((_) {
-        print("Rotation correction: ${_controller.value.rotationCorrection}");
-        print("Size: ${_controller.value.size}");
-        print(_controller);
         _controller.play();
         setState(() {});
       });
@@ -323,7 +331,7 @@ class _EditPageState extends State<EditPage> {
                             else
                               Center(
                                 child: AspectRatio(
-                                  aspectRatio:_controller.value.aspectRatio,
+                                  aspectRatio: _controller.value.aspectRatio,
                                   child: VideoPlayer(_controller),
                                 ),
                               ),
@@ -336,6 +344,38 @@ class _EditPageState extends State<EditPage> {
                                 child: e,
                               ),
                             ),
+                            if (_message != null)
+                              Positioned(
+                                top: 0,
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                child: Container(
+                                  color: Theme.of(context).colorScheme.surface.withAlpha(200),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        "Exporting",
+                                        style: Theme.of(context).textTheme.displaySmall,
+                                      ),
+                                      SizedBox(
+                                        height: 12,
+                                      ),
+                                      SizedBox(
+                                        height: 64,
+                                        width: 64,
+                                        child: CircularProgressIndicator(
+                                          year2023: false,
+                                          value: _exportProgress,
+                                        ),
+                                      ),
+                                      Text(_message ?? ""),
+                                    ],
+                                  ),
+                                ),
+                              )
                           ]),
                         ),
                       ),
@@ -468,7 +508,6 @@ class _EditPageState extends State<EditPage> {
 
   Future<void> onDone(BuildContext context) async {
     final option = ImageEditorOption();
-
     for (EditorLayer layer in _layers) {
       final Option layerOption;
       if (layer is TextLayer) {
@@ -490,8 +529,13 @@ class _EditPageState extends State<EditPage> {
 
     option.outputFormat = const OutputFormat.webp_lossy();
 
-    final data = await ImageEditor.editFileImage(file: _source, imageEditorOption: option);
-    addToPack(widget.pack, widget.index, data!);
+    final Uint8List data;
+    if (widget.mediaType == MediaType.picture) {
+      data = (await ImageEditor.editFileImage(file: _source, imageEditorOption: option))!;
+    } else {
+      data = await exportAnimatedSticker(option, context);
+    }
+    addToPack(widget.pack, widget.index, data);
     if (!context.mounted) return;
     Navigator.of(context).pop();
     Navigator.of(context).pop();
@@ -506,6 +550,85 @@ class _EditPageState extends State<EditPage> {
       text.fontSize /= FontsRegistry.sizeMultiplier(text.fontName) ?? 1;
     }
     return;
+  }
+
+  Future<Uint8List> exportAnimatedSticker(ImageEditorOption option, BuildContext context) async {
+    final transparent = await rootBundle.load("assets/transparent.webp");
+    final out =
+        await ImageEditor.editImageAndGetFile(image: transparent.buffer.asUint8List(), imageEditorOption: option);
+    final service = OverlayAndEncodeService();
+    final output =
+        File("${(await getTemporaryDirectory()).path}/exported_${DateTime.now().millisecondsSinceEpoch}.webp");
+    Stopwatch sw = Stopwatch()..start();
+    Uint8List? data;
+    double quality = 60;
+    int fps = 24;
+
+    for (int attempt = 0; attempt < 3; attempt++) {
+      switch (attempt) {
+        case 0:
+          _message = "First attempt";
+        case 1:
+          _message = "Result too big, re-encoding with lower quality";
+        case 2:
+          _message = "Last attempt";
+      }
+      setState(() {});
+      var config = WebPConfig(
+        lossless: false,
+        quality: quality,
+        alphaCompression: 1,
+        method: 4,
+      );
+      await service.start(videoFile: _source.path, overlayFile: out.path, outputFile: output.path, config: config, fps: fps);
+      await for (final update in service.progressStream) {
+        if (update.status == Status.SUCCESS) {
+          break;
+        } else {
+          _exportProgress = update.progress;
+          setState(() {});
+        }
+      }
+      print("Exported WebP in ${sw.elapsedMilliseconds}ms");
+      data = await output.readAsBytes();
+      print("Output size: ${data.lengthInBytes / 1024}kiB");
+      if (data.lengthInBytes / 1024 < 512) {
+        break;
+      } else {
+        print("Result is ${data.lengthInBytes / 512 / 1024} times too big");
+        if (data.lengthInBytes / 1024 > 570) {
+          // If the sticker is really too large, the only solution is to drop frames
+          fps = (fps / (data.lengthInBytes / 1024) * 570).round();
+        }
+        quality -= 20;
+        print("New configuration: q=$quality fps=$fps");
+      }
+    }
+    if (data!.lengthInBytes / 1024 > 400) {
+      if (!context.mounted) throw Exception();
+      Navigator.of(context).pop();
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Sticker too large"),
+          content: Text(
+              "Even when encoding at very low quality settings, the sticker still exceeds the maximum size requirement of 512kB. Please use a shorter video."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                "Okay",
+              ),
+            )
+          ],
+        ),
+      );
+      throw Exception("Sticker too large");
+    }
+
+    return data;
   }
 
   void onMatrixUpdate(Matrix4 translationDeltaMatrix, Matrix4 scaleDeltaMatrix, Matrix4 rotationDeltaMatrix) {
