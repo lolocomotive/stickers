@@ -36,7 +36,8 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
   final ImageEditorController _editorController = ImageEditorController();
   late final VideoPlayerController _controller;
   double _btnOpacity = 1;
-
+  bool _ready = false;
+  bool _exporting = false;
   RangeValues _range = RangeValues(0, 1);
   Duration _seekTarget = Duration();
 
@@ -49,7 +50,9 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
     anim.drive(tween);
     _maskColorController.addListener(_animationListener);
     _controller = VideoPlayerController.file(File(widget.imagePath), viewType: VideoViewType.platformView);
-    _controller.initialize().then((_) => setState(() {}));
+    _controller.initialize().then((_) => setState(() {
+          _ready = true;
+        }));
     _controller.addListener(_videoListener);
     _controller.setVolume(0);
   }
@@ -170,7 +173,7 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                         _range = values;
                         setState(() {});
                       }),
-                  if (!_editing)
+                  if (!_editing && _ready)
                     IgnorePointer(
                       child: Slider(
                         thumbColor: Theme.of(context).colorScheme.onSurface,
@@ -207,19 +210,20 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                   style: ButtonStyle(
                     padding: WidgetStateProperty.all(EdgeInsets.zero),
                   ),
-                  onPressed: () => doCrop(),
+                  onPressed: _exporting ? null : () => doCrop(),
                   child: Column(
                     children: [
                       SizedBox(height: 8),
                       Text(AppLocalizations.of(context)!.done),
                       SizedBox(height: 8),
-                      StreamBuilder(
-                          stream: service.progressStream,
-                          builder: (context, asyncSnapshot) {
-                            return LinearProgressIndicator(
-                              value: asyncSnapshot.data?.progress,
-                            );
-                          })
+                      if (_exporting)
+                        StreamBuilder(
+                            stream: service.progressStream,
+                            builder: (context, asyncSnapshot) {
+                              return LinearProgressIndicator(
+                                value: asyncSnapshot.data?.progress,
+                              );
+                            })
                     ],
                   ),
                 ),
@@ -261,29 +265,38 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
   bool _editing = false;
 
   Future<void> doCrop() async {
-    final output = "${(await getTemporaryDirectory()).path}/temp.mp4";
-    await service.start(
-      inputFile: widget.imagePath,
-      outputFile: output,
-      start: _controller.value.duration * _range.start,
-      end: _controller.value.duration * _range.end,
-    );
-    await for (final s in service.progressStream) {
-      print(s);
-      if (s.status == Status.SUCCESS) {
-        break;
-      } else if (s.status == Status.FAILED) {
-        print("Transcoding failed!");
-        throw Exception();
+    setState(() {
+      _exporting = true;
+    });
+    try {
+      final output = "${(await getTemporaryDirectory()).path}/temp.mp4";
+      await service.start(
+        inputFile: widget.imagePath,
+        outputFile: output,
+        start: _controller.value.duration * _range.start,
+        end: _controller.value.duration * _range.end,
+      );
+      await for (final s in service.progressStream) {
+        if (s.status == Status.SUCCESS) {
+          break;
+        } else if (s.status == Status.FAILED) {
+          print("Transcoding failed!");
+          // TODO Notify user
+          throw Exception();
+        }
       }
+      if (!mounted) return;
+      Navigator.of(context).pushNamed("/edit",
+          arguments: EditArguments(
+            pack: widget.pack,
+            index: widget.index,
+            mediaPath: output,
+            type: MediaType.video,
+          ));
+    } finally {
+      setState(() {
+        _exporting = false;
+      });
     }
-    if (!mounted) return;
-    Navigator.of(context).pushNamed("/edit",
-        arguments: EditArguments(
-          pack: widget.pack,
-          index: widget.index,
-          mediaPath: output,
-          type: MediaType.video,
-        ));
   }
 }

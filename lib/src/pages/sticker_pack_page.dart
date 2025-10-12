@@ -190,12 +190,15 @@ class StickerPackPageState extends State<StickerPackPage> {
       final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
       if (video == null) return;
       if (!mounted) return;
-      Navigator.pushNamed(context, "/crop_video",
-          arguments: EditArguments(
-            pack: widget.pack,
-            index: index,
-            mediaPath: video.path,
-          ));
+      Navigator.pushNamed(
+        context,
+        "/crop_video",
+        arguments: EditArguments(
+          pack: widget.pack,
+          index: index,
+          mediaPath: video.path,
+        ),
+      ).then((value) => setState(() {}));
     } else {
       final XFile? image = await picker.pickImage(source: ImageSource.gallery);
       if (image == null) return; //TODO add Snackbar warning

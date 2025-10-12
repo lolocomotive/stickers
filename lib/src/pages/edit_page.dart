@@ -83,7 +83,7 @@ class _EditPageState extends State<EditPage> {
   }
 
   final GlobalKey _rbKey = GlobalKey();
-
+  bool _exporting = false;
   late VideoPlayerController _controller;
 
   @override
@@ -433,9 +433,11 @@ class _EditPageState extends State<EditPage> {
 
           var doneButton = FilledButton.icon(
             icon: Icon(Icons.done),
-            onPressed: () async {
-              await onDone(context);
-            },
+            onPressed: _exporting
+                ? null
+                : () async {
+                    await onDone(context);
+                  },
             label: Text(AppLocalizations.of(context)!.addToPack),
           );
           if (isHorizontal) {
@@ -507,47 +509,56 @@ class _EditPageState extends State<EditPage> {
   }
 
   Future<void> onDone(BuildContext context) async {
-    final option = ImageEditorOption();
-    for (EditorLayer layer in _layers) {
-      final Option layerOption;
-      if (layer is TextLayer) {
-        layerOption = AddTextOption();
-        final transform = layer.text.transform.storage;
-        transform[12] = transform[12] / scaleFactor;
-        transform[13] = transform[13] / scaleFactor;
-        layer.text.fontSize /= scaleFactor;
-        layer.text.outlineWidth /= scaleFactor;
-        layer.text.fontSize *= FontsRegistry.sizeMultiplier(layer.text.fontName) ?? 1;
-        (layerOption as AddTextOption).addText(layer.text);
-      } else if (layer is DrawLayer) {
-        layerOption = layer.drawOption;
-      } else {
-        throw UnimplementedError();
+    setState(() {
+      _exporting = true;
+    });
+    try {
+      final option = ImageEditorOption();
+      for (EditorLayer layer in _layers) {
+        final Option layerOption;
+        if (layer is TextLayer) {
+          layerOption = AddTextOption();
+          final transform = layer.text.transform.storage;
+          transform[12] = transform[12] / scaleFactor;
+          transform[13] = transform[13] / scaleFactor;
+          layer.text.fontSize /= scaleFactor;
+          layer.text.outlineWidth /= scaleFactor;
+          layer.text.fontSize *= FontsRegistry.sizeMultiplier(layer.text.fontName) ?? 1;
+          (layerOption as AddTextOption).addText(layer.text);
+        } else if (layer is DrawLayer) {
+          layerOption = layer.drawOption;
+        } else {
+          throw UnimplementedError();
+        }
+        option.addOption(layerOption);
       }
-      option.addOption(layerOption);
-    }
 
-    option.outputFormat = const OutputFormat.webp_lossy();
+      option.outputFormat = const OutputFormat.webp_lossy();
 
-    final Uint8List data;
-    if (widget.mediaType == MediaType.picture) {
-      data = (await ImageEditor.editFileImage(file: _source, imageEditorOption: option))!;
-    } else {
-      data = await exportAnimatedSticker(option, context);
-    }
-    addToPack(widget.pack, widget.index, data);
-    if (!context.mounted) return;
-    Navigator.of(context).pop();
-    Navigator.of(context).pop();
+      final Uint8List data;
+      if (widget.mediaType == MediaType.picture) {
+        data = (await ImageEditor.editFileImage(file: _source, imageEditorOption: option))!;
+      } else {
+        data = await exportAnimatedSticker(option, context);
+      }
+      addToPack(widget.pack, widget.index, data);
+      if (!context.mounted) return;
+      Navigator.of(context).pop();
+      Navigator.of(context).pop();
 
-    //This is useless if the screen goes away but useful for debugging
-    for (EditorText text in _texts) {
-      final transform = text.transform.storage;
-      transform[12] = transform[12] * scaleFactor;
-      transform[13] = transform[13] * scaleFactor;
-      text.fontSize *= scaleFactor;
-      text.outlineWidth *= scaleFactor;
-      text.fontSize /= FontsRegistry.sizeMultiplier(text.fontName) ?? 1;
+      //This is useless if the screen goes away but useful for debugging
+      for (EditorText text in _texts) {
+        final transform = text.transform.storage;
+        transform[12] = transform[12] * scaleFactor;
+        transform[13] = transform[13] * scaleFactor;
+        text.fontSize *= scaleFactor;
+        text.outlineWidth *= scaleFactor;
+        text.fontSize /= FontsRegistry.sizeMultiplier(text.fontName) ?? 1;
+      }
+    } finally {
+      setState(() {
+        _exporting = false;
+      });
     }
     return;
   }
@@ -580,7 +591,8 @@ class _EditPageState extends State<EditPage> {
         alphaCompression: 1,
         method: 4,
       );
-      await service.start(videoFile: _source.path, overlayFile: out.path, outputFile: output.path, config: config, fps: fps);
+      await service.start(
+          videoFile: _source.path, overlayFile: out.path, outputFile: output.path, config: config, fps: fps);
       await for (final update in service.progressStream) {
         if (update.status == Status.SUCCESS) {
           break;
@@ -592,19 +604,19 @@ class _EditPageState extends State<EditPage> {
       print("Exported WebP in ${sw.elapsedMilliseconds}ms");
       data = await output.readAsBytes();
       print("Output size: ${data.lengthInBytes / 1024}kiB");
-      if (data.lengthInBytes / 1024 < 512) {
+      if (data.lengthInBytes / 1024 < 500) {
         break;
       } else {
-        print("Result is ${data.lengthInBytes / 512 / 1024} times too big");
-        if (data.lengthInBytes / 1024 > 570) {
+        print("Result is ${data.lengthInBytes / 500 / 1024} times too big");
+        if (data.lengthInBytes / 1024 > 550) {
           // If the sticker is really too large, the only solution is to drop frames
-          fps = (fps / (data.lengthInBytes / 1024) * 570).round();
+          fps = (fps / (data.lengthInBytes / 1024) * 550).round();
         }
         quality -= 20;
         print("New configuration: q=$quality fps=$fps");
       }
     }
-    if (data!.lengthInBytes / 1024 > 400) {
+    if (data!.lengthInBytes / 1024 > 500) {
       if (!context.mounted) throw Exception();
       Navigator.of(context).pop();
       showDialog(
