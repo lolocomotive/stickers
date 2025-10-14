@@ -146,38 +146,6 @@ class _EditPageState extends State<EditPage> {
                   SizedBox(
                     height: 10,
                   ),
-                  FilledButton.tonalIcon(
-                    icon: Row(
-                      children: [
-                        Icon(Icons.colorize),
-                        SizedBox(
-                          width: 10,
-                        ),
-                        if (_pickedColor != null)
-                          Container(
-                            height: 30,
-                            width: 60,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: _pickedColor,
-                                border: Border.all(
-                                  width: 1,
-                                  color: Colors.black,
-                                )),
-                          ),
-                      ],
-                    ),
-                    iconAlignment: IconAlignment.end,
-                    onPressed: () async {
-                      _pickedColor = await showDialog(
-                          context: context,
-                          builder: (context) =>
-                              EyedropperDialog(_rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
-                      _brushColor = _pickedColor!;
-                      setState(() {});
-                    },
-                    label: Text("Pick a color"),
-                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Row(
@@ -688,7 +656,13 @@ class _EditPageState extends State<EditPage> {
     return;
   }
 
-  void _setColor(Color c) {
+  void _setColor(Color c) async {
+    if (c == Colors.transparent) {
+      _pickedColor = await showDialog(
+          context: context,
+          builder: (context) => EyedropperDialog(_rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
+      c = _pickedColor!;
+    }
     setState(() {
       _brushColor = c;
     });

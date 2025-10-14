@@ -25,10 +25,10 @@ final List<Color> colors = [
   Colors.deepPurple,
   Colors.indigo,
   Colors.blue,
-  Colors.lightBlue,
   Colors.cyan,
   Colors.teal,
   Colors.green,
   Colors.brown,
   Colors.black,
+  Colors.transparent,
 ];

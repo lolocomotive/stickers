@@ -302,20 +302,48 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
             });
           },
         );
-        final outlineWidthSlider = Slider(
-          thumbColor: Colors.white,
-          activeColor: Colors.white,
-          min: 0,
-          max: 50,
-          value: widget.parent.text.outlineWidth,
-          onChanged: (newWidth) {
-            if (newWidth == 0 || newWidth == 10) {
-              HapticFeedback.lightImpact();
-            }
-            setState(() {
-              widget.parent.text.outlineWidth = newWidth;
-            });
-          },
+        final outlineWidthSlider = Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 4, 0),
+              child: Row(
+                children: [
+                  widget.parent.text.outlineColor == Colors.transparent
+                      ? FilledButton(
+                    onPressed: () {},
+                    child: Text("Off"),
+                  )
+                      : FilledButton.tonal(
+                    onPressed: () {
+                      setState(() {
+                        // Intentionally bypassing _setOutlineColor
+                        widget.parent.text.outlineColor = Colors.transparent;
+                      });
+                    },
+                    child: Text("Off"),
+                  ),
+
+                ],
+              ),
+            ),
+            Expanded(
+              child: Slider(
+                thumbColor: Colors.white,
+                activeColor: Colors.white,
+                min: 0,
+                max: 50,
+                value: widget.parent.text.outlineWidth,
+                onChanged: (newWidth) {
+                  if (newWidth == 0 || newWidth == 10) {
+                    HapticFeedback.lightImpact();
+                  }
+                  setState(() {
+                    widget.parent.text.outlineWidth = newWidth;
+                  });
+                },
+              ),
+            ),
+          ],
         );
         final textColorPicker = Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -347,41 +375,6 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                           ))
                       .toList(),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                  child: FilledButton.tonalIcon(
-                    icon: Row(
-                      children: [
-                        Icon(Icons.colorize),
-                        SizedBox(
-                          width: 10,
-                        ),
-                        if (_pickedColor != null)
-                          Container(
-                            height: 30,
-                            width: 60,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: _pickedColor,
-                                border: Border.all(
-                                  width: 1,
-                                  color: Colors.black,
-                                )),
-                          ),
-                      ],
-                    ),
-                    iconAlignment: IconAlignment.end,
-                    onPressed: () async {
-                      _pickedColor = await showDialog(
-                          context: context,
-                          builder: (context) => EyedropperDialog(
-                              widget.rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
-                      _setTextColor(_pickedColor!);
-                      setState(() {});
-                    },
-                    label: Text("Pick a color"),
-                  ),
-                ),
               ],
             );
           }),
@@ -392,6 +385,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: colors
@@ -415,61 +409,6 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                             active: c == widget.parent.text.outlineColor,
                           ))
                       .toList(),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-                  child: Row(
-                    children: [
-                      widget.parent.text.outlineColor == Colors.transparent
-                          ? FilledButton(
-                              onPressed: () {},
-                              child: Text("Off"),
-                            )
-                          : FilledButton.tonal(
-                              onPressed: () {
-                                _setOutlineColor(Colors.transparent);
-                              },
-                              child: Text("Off"),
-                            ),
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Expanded(
-                        child: FilledButton.tonalIcon(
-                          icon: Row(
-                            children: [
-                              Icon(Icons.colorize),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              if (_pickedColor != null)
-                                Container(
-                                  height: 30,
-                                  width: 60,
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      color: _pickedColor,
-                                      border: Border.all(
-                                        width: 1,
-                                        color: Colors.black,
-                                      )),
-                                ),
-                            ],
-                          ),
-                          iconAlignment: IconAlignment.end,
-                          onPressed: () async {
-                            _pickedColor = await showDialog(
-                                context: context,
-                                builder: (context) => EyedropperDialog(
-                                    widget.rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
-                            _setOutlineColor(_pickedColor!);
-                            setState(() {});
-                          },
-                          label: Text("Pick a color"),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ],
             );
@@ -542,13 +481,27 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
     _currentTool = tool;
   }
 
-  void _setTextColor(Color color) {
+  void _setTextColor(Color color) async {
+    if (color == Colors.transparent) {
+      _pickedColor = await showDialog(
+          context: context,
+          builder: (context) =>
+              EyedropperDialog(widget.rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
+      color = _pickedColor!;
+    }
     setState(() {
       widget.parent.text.textColor = color;
     });
   }
 
-  void _setOutlineColor(Color color) {
+  void _setOutlineColor(Color color) async {
+    if (color == Colors.transparent) {
+      _pickedColor = await showDialog(
+          context: context,
+          builder: (context) =>
+              EyedropperDialog(widget.rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
+      color = _pickedColor!;
+    }
     setState(() {
       widget.parent.text.outlineColor = color;
     });
@@ -629,10 +582,12 @@ class ColorButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(5),
             color: color,
             border: Border.all(
-              color: active ? Theme.of(context).colorScheme.primary : Colors.transparent,
+              color:
+                  (active && color != Colors.transparent) ? Theme.of(context).colorScheme.primary : Colors.transparent,
               width: 3,
             ),
           ),
+          child: color == Colors.transparent ? Icon(Icons.colorize) : null,
         ),
       ),
     );

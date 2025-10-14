@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/util.dart';
@@ -24,45 +25,67 @@ class _CreatePackDialogState extends State<CreatePackDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      contentPadding: EdgeInsets.fromLTRB(20, 16, 20, 16),
       title: Text(AppLocalizations.of(context)!.createStickerPack),
       content: Form(
         autovalidateMode: AutovalidateMode.onUserInteraction,
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              autofocus: true,
-              validator: (v) => titleValidator(v, context),
-              controller: _nameController,
-              decoration: InputDecoration(
-                label: Text(AppLocalizations.of(context)!.packTitle),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SegmentedButton(
+                emptySelectionAllowed: false,
+                multiSelectionEnabled: false,
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment(
+                    value: false,
+                    label: Text("Static"),
+                    icon: Icon(Icons.photo),
+                  ),
+                  ButtonSegment(
+                    value: true,
+                    label: Text("Animated"),
+                    icon: Icon(Icons.animation),
+                  ),
+                ],
+                selected: {_animated},
+                onSelectionChanged: (set) {
+                  setState(() {
+                    _animated = set.first;
+                    HapticFeedback.lightImpact();
+                  });
+                },
               ),
-            ),
-            TextFormField(
-              validator: (v) => authorValidator(v, context),
-              controller: _authorController,
-              decoration: InputDecoration(
-                label: Text(AppLocalizations.of(context)!.author),
+              SizedBox(
+                height: 8,
               ),
-            ),
-            SizedBox(height: 10,),
-            CheckboxListTile(
-                dense: true,
-                enableFeedback: true,
-                controlAffinity: ListTileControlAffinity.leading,
-                contentPadding: EdgeInsets.zero,
-                title: Text("Animated"),
-                subtitle: Opacity(
-                  opacity: .7,
-                  child: Text("If enabled, the pack may only contain animated stickers"),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: TextFormField(
+                  autofocus: true,
+                  validator: (v) => titleValidator(v, context),
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    label: Text(AppLocalizations.of(context)!.packTitle),
+                  ),
                 ),
-                value: _animated,
-                onChanged: (value) {
-                  _animated = value ?? false;
-                  setState(() {});
-                })
-          ],
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: TextFormField(
+                  validator: (v) => authorValidator(v, context),
+                  controller: _authorController,
+                  decoration: InputDecoration(
+                    label: Text(AppLocalizations.of(context)!.author),
+                  ),
+                ),
+              ),
+
+            ],
+          ),
         ),
       ),
       actions: [

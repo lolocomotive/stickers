@@ -153,17 +153,16 @@ class GoogleFontsConfirmationDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      contentPadding: EdgeInsets.fromLTRB(24, 16, 24, 8),
       title: Text("Privacy notice"),
       content: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             "This feature uses the free Google Fonts service to offer you many new fonts for your stickers.\nIf you continue, the app will connect to Google to load the fonts. During this process, technical data like your IP address will be transmitted.",
           ),
-          SizedBox(
-            height: 24,
-          ),
+
           TextButton.icon(
             icon: Icon(Icons.open_in_new),
             onPressed: () {
