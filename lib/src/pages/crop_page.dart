@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/load_store.dart';
@@ -54,6 +56,8 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
     _maskColorController.dispose();
   }
 
+  double? _aspectRatio;
+
   @override
   Widget build(BuildContext context) {
     return DefaultActivity(
@@ -104,7 +108,7 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                     maxScale: double.infinity,
                     cropRectPadding: const EdgeInsets.all(40.0),
                     hitTestSize: 80.0,
-                    cropAspectRatio: null,
+                    cropAspectRatio: _aspectRatio,
                     cornerColor: Theme.of(context).colorScheme.primary,
                     cornerSize: const Size(30, 5),
                     controller: _editorController,
@@ -114,8 +118,9 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
             ),
           ),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              SizedBox(height: 4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -133,40 +138,114 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                   ),
                 ],
               ),
+              SizedBox(height: 4),
               Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: FilledButton(
-                  onPressed: () async {
-                    final state = widget.editorKey.currentState!;
-                    if (state.getCropRect()!.height < .5 || state.getCropRect()!.width < .5) {
-                      showDialog(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                                title: Text("Crop area too small"),
-                                content: Text("Must be at least 1x1 pixel"),
-                                actions: [
-                                  TextButton(onPressed: () => Navigator.of(context).pop(), child: Text("Okay 💗")),
-                                  FilledButton(onPressed: () => Navigator.of(context).pop(), child: Text("Yay 💗")),
-                                ],
-                              ));
-                      return;
-                    }
-                    final cropped = await cropSticker(state.getCropRect()!, state.rawImageData, widget.pack,
-                        widget.index, _editorController.rotateDegrees);
-                    final output = await saveTemp(cropped);
-                    if (!context.mounted) return;
-                    Navigator.of(context).pushNamed(
-                      "/edit",
-                      arguments: EditArguments(
-                        pack: widget.pack,
-                        index: widget.index,
-                        mediaPath: output.path,
-                      ),
-                    );
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: SegmentedButton<double>(
+                  showSelectedIcon: false,
+                  emptySelectionAllowed: true,
+                  multiSelectionEnabled: false,
+                  segments: [
+                    ButtonSegment(
+                        value: 16 / 9,
+                        icon: Column(children: [
+                          Icon(Icons.crop_16_9),
+                          Text(
+                            "16:9",
+                            style: TextStyle(fontSize: 10),
+                          )
+                        ])),
+                    ButtonSegment(
+                        value: 3 / 2,
+                        icon: Column(children: [
+                          Icon(Icons.crop_3_2),
+                          Text(
+                            "3:2",
+                            style: TextStyle(fontSize: 10),
+                          )
+                        ])),
+                    ButtonSegment(
+                        value: 1,
+                        icon: Column(children: [
+                          Icon(Icons.crop_din),
+                          Text(
+                            "1:1",
+                            style: TextStyle(fontSize: 10),
+                          )
+                        ])),
+                    ButtonSegment(
+                        value: 2 / 3,
+                        icon: Column(children: [
+                          Transform.rotate(
+                            angle: pi / 2,
+                            child: Icon(Icons.crop_3_2),
+                          ),
+                          Text(
+                            "2:3",
+                            style: TextStyle(fontSize: 10),
+                          )
+                        ])),
+                    ButtonSegment(
+                        value: 9 / 16,
+                        icon: Column(children: [
+                          Transform.rotate(
+                            angle: pi / 2,
+                            child: Icon(Icons.crop_16_9),
+                          ),
+                          Text(
+                            "9:16",
+                            style: TextStyle(fontSize: 10),
+                          )
+                        ])),
+                  ],
+                  selected: {_aspectRatio == null ? 0 : _aspectRatio!},
+                  onSelectionChanged: (v) {
+                    setState(() {
+                      _aspectRatio = v.firstOrNull;
+                      HapticFeedback.lightImpact();
+                    });
                   },
-                  child: Text(AppLocalizations.of(context)!.done),
                 ),
               ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                    child: FilledButton(
+                      onPressed: () async {
+                        final state = widget.editorKey.currentState!;
+                        if (state.getCropRect()!.height < .5 || state.getCropRect()!.width < .5) {
+                          showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                    title: Text("Crop area too small"),
+                                    content: Text("Must be at least 1x1 pixel"),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.of(context).pop(), child: Text("Okay 💗")),
+                                      FilledButton(onPressed: () => Navigator.of(context).pop(), child: Text("Yay 💗")),
+                                    ],
+                                  ));
+                          return;
+                        }
+                        final cropped = await cropSticker(state.getCropRect()!, state.rawImageData, widget.pack,
+                            widget.index, _editorController.rotateDegrees);
+                        final output = await saveTemp(cropped);
+                        if (!context.mounted) return;
+                        Navigator.of(context).pushNamed(
+                          "/edit",
+                          arguments: EditArguments(
+                            pack: widget.pack,
+                            index: widget.index,
+                            mediaPath: output.path,
+                          ),
+                        );
+                      },
+                      child: Text(AppLocalizations.of(context)!.done),
+                    ),
+                  ),
+                ],
+              )
             ],
           ),
         ],

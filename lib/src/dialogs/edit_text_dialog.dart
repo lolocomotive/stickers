@@ -310,19 +310,18 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                 children: [
                   widget.parent.text.outlineColor == Colors.transparent
                       ? FilledButton(
-                    onPressed: () {},
-                    child: Text("Off"),
-                  )
+                          onPressed: () {},
+                          child: Text("Off"),
+                        )
                       : FilledButton.tonal(
-                    onPressed: () {
-                      setState(() {
-                        // Intentionally bypassing _setOutlineColor
-                        widget.parent.text.outlineColor = Colors.transparent;
-                      });
-                    },
-                    child: Text("Off"),
-                  ),
-
+                          onPressed: () {
+                            setState(() {
+                              // Intentionally bypassing _setOutlineColor
+                              widget.parent.text.outlineColor = Colors.transparent;
+                            });
+                          },
+                          child: Text("Off"),
+                        ),
                 ],
               ),
             ),
@@ -385,7 +384,6 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: colors
@@ -545,7 +543,10 @@ class LabeledIconButton extends StatelessWidget {
                     child: icon),
                 Padding(
                   padding: const EdgeInsets.all(8.0).copyWith(bottom: 0),
-                  child: Text(label),
+                  child: Text(
+                    label,
+                    style: TextStyle(color: Colors.white),
+                  ),
                 )
               ],
             ),
