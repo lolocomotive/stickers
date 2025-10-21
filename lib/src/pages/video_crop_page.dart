@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/video/common.dart';
@@ -49,7 +50,11 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
     Animation anim = CurvedAnimation(parent: _maskColorController, curve: Curves.ease, reverseCurve: Curves.ease);
     anim.drive(tween);
     _maskColorController.addListener(_animationListener);
-    _controller = VideoPlayerController.file(File(widget.imagePath), viewType: VideoViewType.platformView);
+    _controller = VideoPlayerController.file(
+      File(widget.imagePath),
+      viewType: VideoViewType.platformView,
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+    );
     _controller.initialize().then((_) => setState(() {
           _ready = true;
         }));
@@ -269,6 +274,7 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
       _exporting = true;
     });
     try {
+      _controller.pause();
       final output = "${(await getTemporaryDirectory()).path}/temp.mp4";
       await service.start(
         inputFile: widget.imagePath,
@@ -281,7 +287,16 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
           break;
         } else if (s.status == Status.FAILED) {
           print("Transcoding failed!");
-          // TODO Notify user
+          if (mounted) {
+            showDialog(
+                context: context,
+                builder: (context) {
+                  return ErrorDialog(
+                    title: "Video trimming failed!",
+                    message: "Try another video, and if it still doesn't work, head to GitHub to submit an Issue",
+                  );
+                });
+          }
           throw Exception();
         }
       }

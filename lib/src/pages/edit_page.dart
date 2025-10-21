@@ -13,6 +13,7 @@ import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/confirm_leave_dialog.dart';
 import 'package:stickers/src/dialogs/edit_text_dialog.dart';
+import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/dialogs/eyedropper_dialog.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
@@ -513,7 +514,18 @@ class _EditPageState extends State<EditPage> {
       if (!context.mounted) return;
       Navigator.of(context).pop();
       Navigator.of(context).pop();
-
+    } on Exception catch (e) {
+      if (mounted) {
+        showDialog(
+            context: context,
+            builder: (context) {
+              return ErrorDialog(
+                title: "Couldn't export sticker",
+                message: "Error message: $e",
+              );
+            });
+      }
+    } finally {
       //This is useless if the screen goes away but useful for debugging
       for (EditorText text in _texts) {
         final transform = text.transform.storage;
@@ -523,7 +535,6 @@ class _EditPageState extends State<EditPage> {
         text.outlineWidth *= scaleFactor;
         text.fontSize /= FontsRegistry.sizeMultiplier(text.fontName) ?? 1;
       }
-    } finally {
       setState(() {
         _exporting = false;
       });
@@ -564,9 +575,21 @@ class _EditPageState extends State<EditPage> {
       await for (final update in service.progressStream) {
         if (update.status == Status.SUCCESS) {
           break;
-        } else {
+        } else if (update.status == Status.RUNNING) {
           _exportProgress = update.progress;
           setState(() {});
+        } else if (update.status == Status.FAILED) {
+          if (context.mounted) {
+            showDialog(
+              context: context,
+              builder: (context) {
+                return ErrorDialog(
+                  title: "Exporting to WebP failed",
+                  message: "Try again, or with another sticker. If the issue persists, submit an issue on GitHub.",
+                );
+              },
+            );
+          }
         }
       }
       print("Exported WebP in ${sw.elapsedMilliseconds}ms");
@@ -607,7 +630,6 @@ class _EditPageState extends State<EditPage> {
       );
       throw Exception("Sticker too large");
     }
-
     return data;
   }
 
