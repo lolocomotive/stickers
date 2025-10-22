@@ -55,7 +55,18 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
       viewType: VideoViewType.platformView,
       videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
     );
-    _controller.initialize().then((_) => setState(() {
+    _controller.initialize().onError((e, st) {
+      if (mounted) {
+        showDialog(
+            context: context,
+            builder: (context) {
+              return ErrorDialog(
+                title: "Couldn't load video",
+                message: e.toString(),
+              );
+            }).then(Navigator.of(context).pop);
+      }
+    }).then((_) => setState(() {
           _ready = true;
         }));
     _controller.addListener(_videoListener);
