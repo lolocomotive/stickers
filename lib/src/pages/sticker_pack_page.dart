@@ -227,7 +227,7 @@ class StickerPackPageState extends State<StickerPackPage> {
                 title: "Couldn't load media",
                 message: e.toString(),
               );
-            }).then(Navigator.of(context).pop);
+            });
       }
     }
   }

@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:restart_app/restart_app.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/app.dart';
+import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/dialogs/edit_quickmode_defaults_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -14,7 +19,7 @@ import 'settings_controller.dart';
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key, required this.controller});
 
-  static const routeName = '/settings';
+  static const routeName = "/settings";
 
   final SettingsController controller;
 
@@ -177,6 +182,23 @@ class SettingsPage extends StatelessWidget {
               child: Text("Add/remove fonts of the app"),
             ),
           ),
+          ListTile(
+            title: Text("Clear cache"),
+            subtitle: Opacity(
+              opacity: .7,
+              child: Text("This will restart the app"),
+            ),
+            onTap: () async {
+              await Directory(cacheDir).delete(recursive: true);
+              await (await getTemporaryDirectory()).delete(recursive: true);
+              Restart.restartApp();
+            },
+            leading: Icon(Icons.storage),
+            trailing: DefaultTextStyle(
+              style: Theme.of(context).textTheme.bodyMedium!,
+              child: CacheUseIndicator(),
+            ),
+          ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 24, vertical: 4),
             child: Divider(),
@@ -219,12 +241,54 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  _showQuickModeDefaultsDialog(context) {
+  void _showQuickModeDefaultsDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => EditQuickmodeDefaultsDialog(
         settingsController: controller,
       ),
     );
+  }
+}
+
+class CacheUseIndicator extends StatelessWidget {
+  const CacheUseIndicator({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+        future: _getCacheSize(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            int size = snapshot.data!;
+            if (size >= 1000000000) {
+              return Text("${size.toStringAsPrecision(2)} GB");
+            } else if (size >= 1000000) {
+              return Text("${(size / 1000000).toStringAsPrecision(3)} MB");
+            } else if (size >= 1000) {
+              return Text("${(size / 1000).toStringAsPrecision(3)} KB");
+            } else {
+              return Text("$size B");
+            }
+          } else {
+            return CircularProgressIndicator();
+          }
+        });
+  }
+
+  Future<int> _getCacheSize() async {
+    int totalSize = 0;
+    await Directory(cacheDir).list(recursive: true, followLinks: false).forEach((FileSystemEntity entity) {
+      if (entity is File) {
+        totalSize += entity.lengthSync();
+      }
+    });
+    await (await getTemporaryDirectory()).list(recursive: true, followLinks: false).forEach((FileSystemEntity entity) {
+      if (entity is File) {
+        totalSize += entity.lengthSync();
+      }
+    });
+
+    return totalSize;
   }
 }

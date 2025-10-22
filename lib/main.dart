@@ -47,7 +47,7 @@ void main() async {
       }));
     }),
   );
-  tasks.add(getApplicationCacheDirectory().then((value) => imageCacheDir = "${value.path}/images"));
+  tasks.add(createDirs());
 
   // It's okay to not wait for this to be finished before we start the app
   // We assume the user will not create text in stickers in the first 500ms when the app is started
@@ -64,4 +64,20 @@ void main() async {
   // SettingsController for changes, then passes it further down to the
   // SettingsView.
   runApp(StickersApp(settingsController: settingsController));
+}
+
+Future<void> createDirs() async {
+  await getApplicationCacheDirectory().then((value) async {
+    final List<Future> tasks = [];
+    cacheDir = "${value.path}/cache";
+    exportCacheDir = "${value.path}/cache/exported_packs";
+    mediaCacheDir = "${value.path}/cache/media";
+    fontsCacheDir = "${value.path}/cache/fonts";
+    tasks.addAll([
+      Directory(mediaCacheDir).create(recursive: true),
+      Directory(exportCacheDir).create(recursive: true),
+      Directory(fontsCacheDir).create(recursive: true),
+    ]);
+    await Future.wait(tasks);
+  });
 }

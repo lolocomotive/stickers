@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_archive/flutter_archive.dart';
 import 'package:image_editor/image_editor.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/data/sticker.dart';
@@ -19,7 +18,7 @@ void savePacks(List<StickerPack> packs) async {
 
 Future<void> exportPack(StickerPack pack) async {
   Stopwatch sw = Stopwatch()..start();
-  Directory exportDir = Directory("${(await getTemporaryDirectory()).path}/export/");
+  Directory exportDir = Directory(exportCacheDir);
   Directory packDir = Directory("${exportDir.path}/pack_${DateTime.timestamp().millisecondsSinceEpoch}/");
   await packDir.create(recursive: true);
   File jsonFile = File("${packDir.path}/pack.json");
@@ -47,7 +46,7 @@ Future<void> exportPack(StickerPack pack) async {
 Future<void> importPack(File f) async {
   //TODO show progress
   Stopwatch sw = Stopwatch()..start();
-  Directory importDir = Directory("${(await getTemporaryDirectory()).path}/import/");
+  Directory importDir = Directory(mediaCacheDir);
   Directory unzipDir = Directory("${importDir.path}pack_${DateTime.timestamp().millisecondsSinceEpoch}/");
   await unzipDir.create(recursive: true);
   await ZipFile.extractToDirectory(zipFile: f, destinationDir: unzipDir);
@@ -207,9 +206,7 @@ void addToPack(StickerPack pack, int index, Uint8List data) {
 }
 
 Future<File> saveTemp(Uint8List data) async {
-  String path = "${(await getTemporaryDirectory()).path}/sticker_tmp";
-  await Directory(path).create(recursive: true);
-  File output = File("$path/${DateTime.now().millisecondsSinceEpoch}.tmp.webp");
+  File output = File("$mediaCacheDir/${DateTime.now().millisecondsSinceEpoch}.tmp.webp");
   await output.writeAsBytes(data);
   return output;
 }

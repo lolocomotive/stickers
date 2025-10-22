@@ -45,7 +45,7 @@ Future<String?> registerFont(FontsRegistryEntry entry) async {
 Future<void> loadFonts(List<FontsRegistryEntry> fonts) async {
   debugPrint("Registering fonts...");
   Stopwatch sw = Stopwatch()..start();
-  Directory fontsDir = Directory("${(await getTemporaryDirectory()).path}/fonts/");
+  Directory fontsDir = Directory("${(await getApplicationDocumentsDirectory()).path}/bundled_fonts");
   if (!await fontsDir.exists()) await fontsDir.create(recursive: true);
   final futures = <Future>[];
   for (final font in fonts) {

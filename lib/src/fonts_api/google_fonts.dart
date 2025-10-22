@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:stickers/src/api_keys.dart';
+import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/fonts_api/fonts_models.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
 
@@ -21,7 +22,7 @@ String apiURL = "https://www.googleapis.com/webfonts/v1/webfonts";
  *    sort: alpha | date | popularity | style | trending.
  */
 Future<GoogleFontsReply> getFonts({String? family, String? category}) async {
-  File fontsListCache = File("${(await getTemporaryDirectory()).path}/google_fonts.json");
+  File fontsListCache = File("$fontsCacheDir/google_fonts.json");
   if (await fontsListCache.exists()) {
     try {
       return GoogleFontsReply.fromJson(jsonDecode(await fontsListCache.readAsString()));
@@ -86,9 +87,8 @@ Future<void> downloadAndRegisterFontPreview(WebFont font) async {
   debugPrint("Total: $totalDownload kB");
 
   debugPrint("Downloaded preview font ${font.family}");
-  final tmp = await getTemporaryDirectory();
-  await Directory("${tmp.path}/googleFonts").create(recursive: true);
-  File dest = File("${tmp.path}/googleFonts/${font.family}.ttf");
+
+  File dest = File("$fontsCacheDir/${font.family}.ttf");
   FontsRegistry.get(font.family)!.previewFile = dest.path;
   await dest.writeAsBytes(result.bodyBytes);
   final loader = FontLoader("${font.family}-PREVIEW");

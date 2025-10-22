@@ -51,6 +51,7 @@ dependencies:
       url: https://github.com/lolocomotive/flutter_archive
       ref: 555a589a0b4def2641f02e5352f4b842ccf9164d
   video_player: ^2.10.0
+  restart_app: ^1.3.2
 
 dev_dependencies:
   flutter_test:

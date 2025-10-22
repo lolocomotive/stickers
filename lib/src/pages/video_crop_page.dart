@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
+import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/pages/crop_page.dart';
@@ -97,7 +97,7 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
   Widget build(BuildContext context) {
     return DefaultActivity(
       appBar: AppBar(
-        title: Text("Crop and trim video"),
+        title: Text("Trim video"),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -286,7 +286,7 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
     });
     try {
       _controller.pause();
-      final output = "${(await getTemporaryDirectory()).path}/temp.mp4";
+      final output = "$mediaCacheDir/import_${DateTime.now().millisecondsSinceEpoch}.mp4";
       await service.start(
         inputFile: widget.imagePath,
         outputFile: output,
@@ -303,7 +303,7 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                 context: context,
                 builder: (context) {
                   return ErrorDialog(
-                    title: "Video trimming failed!",
+                    title: "Video trimming failed",
                     message: "Try another video, and if it still doesn't work, head to GitHub to submit an Issue",
                   );
                 });

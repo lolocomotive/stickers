@@ -6,9 +6,9 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:image_editor/image_editor.dart';
 import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
+import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/confirm_leave_dialog.dart';
@@ -550,7 +550,7 @@ class _EditPageState extends State<EditPage> {
         await ImageEditor.editImageAndGetFile(image: transparent.buffer.asUint8List(), imageEditorOption: option);
     final service = OverlayAndEncodeService();
     final output =
-        File("${(await getTemporaryDirectory()).path}/exported_${DateTime.now().millisecondsSinceEpoch}.webp");
+        File("$mediaCacheDir/exported_${DateTime.now().millisecondsSinceEpoch}.webp");
     Stopwatch sw = Stopwatch()..start();
     Uint8List? data;
     double quality = 60;
