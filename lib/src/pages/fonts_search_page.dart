@@ -132,13 +132,14 @@ class _GoogleFontPreviewState extends State<GoogleFontPreview> {
                       widget.font.family,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontFamily: "${widget.font.family}-PREVIEW",
+                        fontFamily: inRegistry ? widget.font.family : "${widget.font.family}-PREVIEW",
                         fontSize: 25,
                       ),
                     ),
                   ),
                   AnimatedOpacity(
-                    opacity: (!asyncSnapshot.hasData && _future != null && _delayOver && !asyncSnapshot.hasError) ? .7 : 0,
+                    opacity:
+                        (!asyncSnapshot.hasData && _future != null && _delayOver && !asyncSnapshot.hasError) ? .7 : 0,
                     duration: Duration(milliseconds: 300),
                     child: Padding(
                       padding: const EdgeInsets.all(10.0),
