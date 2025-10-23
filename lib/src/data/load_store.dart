@@ -145,7 +145,8 @@ Future<List<StickerPack>> getPacks() async {
   return List.empty(growable: true);
 }
 
-Future<Uint8List> cropSticker(Rect cropRect, Uint8List rawImageData, StickerPack pack, int index, double rotation) async {
+Future<Uint8List> cropSticker(
+    Rect cropRect, Uint8List rawImageData, StickerPack pack, int index, double rotation) async {
   // Apply crop then scale then put on 512x512 transparent image in center
 
   final crop = ImageEditorOption();
@@ -203,6 +204,9 @@ void addToPack(StickerPack pack, int index, Uint8List data) {
   }
   pack.onEdit();
   savePacks(packs);
+  // Clear media cache after importing a sticker
+  print("Clearing media cache");
+  Directory(mediaCacheDir).list().listen((entry) => entry.delete());
 }
 
 Future<File> saveTemp(Uint8List data) async {
