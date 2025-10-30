@@ -99,154 +99,156 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
       appBar: AppBar(
         title: Text("Trim video"),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Container(
-              // The clip and empty BoxDecoration is intentional, sometimes the done button doesn't appear otherwise
-              // See: https://github.com/lolocomotive/stickers/issues/1
-              clipBehavior: Clip.antiAlias,
-              decoration: const BoxDecoration(),
-              child: Stack(
-                children: [
-                  Center(
-                    child: AspectRatio(
-                      aspectRatio: _controller.value.aspectRatio,
-                      child: VideoPlayer(_controller),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Container(
+                // The clip and empty BoxDecoration is intentional, sometimes the done button doesn't appear otherwise
+                // See: https://github.com/lolocomotive/stickers/issues/1
+                clipBehavior: Clip.antiAlias,
+                decoration: const BoxDecoration(),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: AspectRatio(
+                        aspectRatio: _controller.value.aspectRatio,
+                        child: VideoPlayer(_controller),
+                      ),
                     ),
-                  ),
-                  Center(
-                    child: _controller.value.isPlaying
-                        ? AnimatedOpacity(
-                            opacity: _btnOpacity,
-                            duration: Duration(milliseconds: 300),
-                            child: IconButton(
-                              onPressed: () {
-                                _controller.pause();
-                                setState(() {});
-                              },
+                    Center(
+                      child: _controller.value.isPlaying
+                          ? AnimatedOpacity(
+                              opacity: _btnOpacity,
+                              duration: Duration(milliseconds: 300),
+                              child: IconButton(
+                                onPressed: () {
+                                  _controller.pause();
+                                  setState(() {});
+                                },
+                                icon: Icon(
+                                  Icons.pause,
+                                  color: Colors.white,
+                                  shadows: [Shadow(color: Colors.black, blurRadius: 32)],
+                                ),
+                                iconSize: 100,
+                              ),
+                            )
+                          : IconButton(
+                              onPressed: _play,
                               icon: Icon(
-                                Icons.pause,
+                                Icons.play_arrow,
                                 color: Colors.white,
                                 shadows: [Shadow(color: Colors.black, blurRadius: 32)],
                               ),
                               iconSize: 100,
                             ),
-                          )
-                        : IconButton(
-                            onPressed: _play,
-                            icon: Icon(
-                              Icons.play_arrow,
-                              color: Colors.white,
-                              shadows: [Shadow(color: Colors.black, blurRadius: 32)],
-                            ),
-                            iconSize: 100,
-                          ),
-                  )
-                ],
-              ),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(
-                height: 10,
-              ),
-              Stack(
-                children: [
-                  RangeSlider(
-                      year2023: false,
-                      values: _range,
-                      onChangeEnd: (_) async {
-                        if (_seekTarget == _controller.value.duration * _range.end) {
-                          _requestSeek(_controller.value.duration * _range.end - Duration(seconds: 1));
-                          if (_seekTarget < _controller.value.duration * _range.start) {
-                            _seekTarget = _controller.value.duration * _range.start;
-                          }
-                        }
-                        _play();
-                        setState(() {});
-                        await Future.delayed(Duration(milliseconds: 200));
-                        setState(() {});
-                        _editing = false;
-                      },
-                      onChangeStart: (_) {
-                        _controller.pause();
-                        _editing = true;
-                      },
-                      onChanged: (values) {
-                        final Duration seekTarget;
-                        if (_range.start != values.start) {
-                          seekTarget = _controller.value.duration * values.start;
-                        } else if (_range.end != values.end) {
-                          seekTarget = _controller.value.duration * values.end;
-                        } else {
-                          return;
-                        }
-                        _requestSeek(seekTarget);
-                        _range = values;
-                        setState(() {});
-                      }),
-                  if (!_editing && _ready)
-                    IgnorePointer(
-                      child: Slider(
-                        thumbColor: Theme.of(context).colorScheme.onSurface,
-                        activeColor: Colors.transparent,
-                        inactiveColor: Colors.transparent,
-                        value: _controller.value.position.inMilliseconds / _controller.value.duration.inMilliseconds,
-                        onChanged: (_) {},
-                        year2023: false,
-                      ),
-                    ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      _editorController.rotate(degree: -90, animation: true);
-                    },
-                    icon: Icon(Icons.rotate_left),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      _editorController.rotate(degree: 90, animation: true);
-                    },
-                    icon: Icon(Icons.rotate_right),
-                  ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 16),
-                child: FilledButton(
-                  clipBehavior: Clip.antiAlias,
-                  style: ButtonStyle(
-                    padding: WidgetStateProperty.all(EdgeInsets.zero),
-                  ),
-                  onPressed: _exporting ? null : () => doCrop(),
-                  child: Column(
-                    children: [
-                      SizedBox(height: 8),
-                      Text(AppLocalizations.of(context)!.done),
-                      SizedBox(height: 8),
-                      if (_exporting)
-                        StreamBuilder(
-                            stream: service.progressStream,
-                            builder: (context, asyncSnapshot) {
-                              return LinearProgressIndicator(
-                                value: asyncSnapshot.data?.progress,
-                              );
-                            })
-                    ],
-                  ),
+                    )
+                  ],
                 ),
               ),
-            ],
-          ),
-        ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(
+                  height: 10,
+                ),
+                Stack(
+                  children: [
+                    RangeSlider(
+                        year2023: false,
+                        values: _range,
+                        onChangeEnd: (_) async {
+                          if (_seekTarget == _controller.value.duration * _range.end) {
+                            _requestSeek(_controller.value.duration * _range.end - Duration(seconds: 1));
+                            if (_seekTarget < _controller.value.duration * _range.start) {
+                              _seekTarget = _controller.value.duration * _range.start;
+                            }
+                          }
+                          _play();
+                          setState(() {});
+                          await Future.delayed(Duration(milliseconds: 200));
+                          setState(() {});
+                          _editing = false;
+                        },
+                        onChangeStart: (_) {
+                          _controller.pause();
+                          _editing = true;
+                        },
+                        onChanged: (values) {
+                          final Duration seekTarget;
+                          if (_range.start != values.start) {
+                            seekTarget = _controller.value.duration * values.start;
+                          } else if (_range.end != values.end) {
+                            seekTarget = _controller.value.duration * values.end;
+                          } else {
+                            return;
+                          }
+                          _requestSeek(seekTarget);
+                          _range = values;
+                          setState(() {});
+                        }),
+                    if (!_editing && _ready)
+                      IgnorePointer(
+                        child: Slider(
+                          thumbColor: Theme.of(context).colorScheme.onSurface,
+                          activeColor: Colors.transparent,
+                          inactiveColor: Colors.transparent,
+                          value: _controller.value.position.inMilliseconds / _controller.value.duration.inMilliseconds,
+                          onChanged: (_) {},
+                          year2023: false,
+                        ),
+                      ),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        _editorController.rotate(degree: -90, animation: true);
+                      },
+                      icon: Icon(Icons.rotate_left),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        _editorController.rotate(degree: 90, animation: true);
+                      },
+                      icon: Icon(Icons.rotate_right),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 16),
+                  child: FilledButton(
+                    clipBehavior: Clip.antiAlias,
+                    style: ButtonStyle(
+                      padding: WidgetStateProperty.all(EdgeInsets.zero),
+                    ),
+                    onPressed: _exporting ? null : () => doCrop(),
+                    child: Column(
+                      children: [
+                        SizedBox(height: 8),
+                        Text(AppLocalizations.of(context)!.done),
+                        SizedBox(height: 8),
+                        if (_exporting)
+                          StreamBuilder(
+                              stream: service.progressStream,
+                              builder: (context, asyncSnapshot) {
+                                return LinearProgressIndicator(
+                                  value: asyncSnapshot.data?.progress,
+                                );
+                              })
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
