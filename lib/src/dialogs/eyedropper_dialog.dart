@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 
 class EyedropperDialog extends StatefulWidget {
   final RenderRepaintBoundary boundary;
@@ -28,7 +29,8 @@ class _EyedropperDialogState extends State<EyedropperDialog> {
   }
 
   Future<ui.Image> _getImage() async {
-    final image = await widget.boundary.toImage(pixelRatio: MediaQuery.of(context).devicePixelRatio);
+    final image =
+        await widget.boundary.toImage(pixelRatio: MediaQuery.of(context).devicePixelRatio);
     if (mounted) {
       _samplePosition = Offset(image.width / 2 / MediaQuery.of(context).devicePixelRatio,
           image.height / 2 / MediaQuery.of(context).devicePixelRatio);
@@ -60,7 +62,7 @@ class _EyedropperDialogState extends State<EyedropperDialog> {
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text(
-                        "Pick a color",
+                        AppLocalizations.of(context)!.pickAColor,
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                     ),
@@ -137,7 +139,7 @@ class _EyedropperDialogState extends State<EyedropperDialog> {
                       height: 16,
                     ),
                     Text(
-                      "Adjust",
+                      AppLocalizations.of(context)!.adjust,
                       style: TextTheme.of(context).bodyLarge,
                     ),
                     HSLPicker(
@@ -154,14 +156,15 @@ class _EyedropperDialogState extends State<EyedropperDialog> {
                         children: [
                           Flexible(
                             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                              Text("New color:"),
+                              Text(AppLocalizations.of(context)!.newColor),
                               SizedBox(
                                 width: 10,
                               ),
                               Container(
                                 height: 30,
                                 width: 60,
-                                decoration: BoxDecoration(color: _color, borderRadius: BorderRadius.circular(8)),
+                                decoration: BoxDecoration(
+                                    color: _color, borderRadius: BorderRadius.circular(8)),
                               ),
                             ]),
                           ),
@@ -170,7 +173,7 @@ class _EyedropperDialogState extends State<EyedropperDialog> {
                                   onPressed: () {
                                     Navigator.of(context).pop(_color);
                                   },
-                                  child: Text("Done")))
+                                  child: Text(AppLocalizations.of(context)!.done)))
                         ],
                       ),
                     ),
@@ -200,8 +203,8 @@ class _EyedropperDialogState extends State<EyedropperDialog> {
     double py = _samplePosition.dy * MediaQuery.of(context).devicePixelRatio;
     if (px >= 0 && px < image.width && py >= 0 && py < image.height) {
       int index = (py.floor() * image.width + px.floor()) * 4;
-      _color =
-          Color.fromARGB(_imageData![index + 3], _imageData![index], _imageData![index + 1], _imageData![index + 2]);
+      _color = Color.fromARGB(_imageData![index + 3], _imageData![index], _imageData![index + 1],
+          _imageData![index + 2]);
       _hslColor = HSLColor.fromColor(_color);
     }
   }
@@ -254,7 +257,8 @@ class _HSLPickerState extends State<HSLPicker> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SliderTheme(
-          data: SliderTheme.of(context).copyWith(trackShape: GradientSliderTrackShape(null, _s, _l)),
+          data:
+              SliderTheme.of(context).copyWith(trackShape: GradientSliderTrackShape(null, _s, _l)),
           child: Slider(
               thumbColor: _color.toColor(),
               min: 0,
@@ -266,7 +270,8 @@ class _HSLPickerState extends State<HSLPicker> {
               }),
         ),
         SliderTheme(
-          data: SliderTheme.of(context).copyWith(trackShape: GradientSliderTrackShape(_h, null, _l)),
+          data:
+              SliderTheme.of(context).copyWith(trackShape: GradientSliderTrackShape(_h, null, _l)),
           child: Slider(
               thumbColor: _color.toColor(),
               min: 0,
@@ -278,7 +283,8 @@ class _HSLPickerState extends State<HSLPicker> {
               }),
         ),
         SliderTheme(
-          data: SliderTheme.of(context).copyWith(trackShape: GradientSliderTrackShape(_h, _s, null)),
+          data:
+              SliderTheme.of(context).copyWith(trackShape: GradientSliderTrackShape(_h, _s, null)),
           child: Slider(
               thumbColor: _color.toColor(),
               min: 0,
@@ -310,8 +316,10 @@ class GradientSliderTrackShape extends SliderTrackShape with BaseSliderTrackShap
 
   void loadShaders() async {
     _hueGradientProgram ??= await FragmentProgram.fromAsset('assets/shaders/hue_gradient.frag');
-    _saturationGradientProgram ??= await FragmentProgram.fromAsset('assets/shaders/saturation_gradient.frag');
-    _lightnessGradientProgram ??= await FragmentProgram.fromAsset('assets/shaders/lightness_gradient.frag');
+    _saturationGradientProgram ??=
+        await FragmentProgram.fromAsset('assets/shaders/saturation_gradient.frag');
+    _lightnessGradientProgram ??=
+        await FragmentProgram.fromAsset('assets/shaders/lightness_gradient.frag');
   }
 
   @override
@@ -324,8 +332,8 @@ class GradientSliderTrackShape extends SliderTrackShape with BaseSliderTrackShap
       bool? isEnabled,
       bool? isDiscrete,
       required ui.TextDirection textDirection}) {
-    var barRect =
-        Rect.fromCenter(center: parentBox.paintBounds.center, width: parentBox.paintBounds.width - 48, height: 10);
+    var barRect = Rect.fromCenter(
+        center: parentBox.paintBounds.center, width: parentBox.paintBounds.width - 48, height: 10);
     final ui.FragmentProgram? program;
     if (h == null) {
       program = _hueGradientProgram;

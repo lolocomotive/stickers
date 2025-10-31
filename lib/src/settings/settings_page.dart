@@ -176,17 +176,17 @@ class SettingsPage extends StatelessWidget {
               Navigator.of(context).pushNamed("/settings/fonts");
             },
             leading: Icon(Icons.text_fields),
-            title: Text("Font manager"),
+            title: Text(AppLocalizations.of(context)!.fontsManager),
             subtitle: Opacity(
               opacity: .7,
-              child: Text("Add/remove fonts of the app"),
+              child: Text(AppLocalizations.of(context)!.fontsManagerDetails),
             ),
           ),
           ListTile(
-            title: Text("Clear cache"),
+            title: Text(AppLocalizations.of(context)!.clearCache),
             subtitle: Opacity(
               opacity: .7,
-              child: Text("This will restart the app"),
+              child: Text(AppLocalizations.of(context)!.thisWillRestart),
             ),
             onTap: () async {
               await Directory(cacheDir).delete(recursive: true);
@@ -278,12 +278,16 @@ class CacheUseIndicator extends StatelessWidget {
 
   Future<int> _getCacheSize() async {
     int totalSize = 0;
-    await Directory(cacheDir).list(recursive: true, followLinks: false).forEach((FileSystemEntity entity) {
+    await Directory(cacheDir)
+        .list(recursive: true, followLinks: false)
+        .forEach((FileSystemEntity entity) {
       if (entity is File) {
         totalSize += entity.lengthSync();
       }
     });
-    await (await getTemporaryDirectory()).list(recursive: true, followLinks: false).forEach((FileSystemEntity entity) {
+    await (await getTemporaryDirectory())
+        .list(recursive: true, followLinks: false)
+        .forEach((FileSystemEntity entity) {
       if (entity is File) {
         totalSize += entity.lengthSync();
       }

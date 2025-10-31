@@ -101,8 +101,8 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                 focusNode: widget.focusNode,
                 style: TextStyle(
                   inherit: false,
-                  fontSize:
-                      widget.parent.text.fontSize * (FontsRegistry.sizeMultiplier(widget.parent.text.fontName) ?? 1),
+                  fontSize: widget.parent.text.fontSize *
+                      (FontsRegistry.sizeMultiplier(widget.parent.text.fontName) ?? 1),
                   color: widget.parent.text.textColor,
                   fontFamily: widget.parent.text.fontName,
                 ),
@@ -187,7 +187,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                         );
                       });
                     },
-                    child: Text("More fonts"));
+                    child: Text(AppLocalizations.of(context)!.moreFonts));
               }
               return GestureDetector(
                 onTap: () {
@@ -222,7 +222,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                   ),
                 ),
               ),
-              "Font",
+              AppLocalizations.of(context)!.font,
               active: _currentTool == 0,
               onTap: () {
                 _setTool(0);
@@ -233,7 +233,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                 padding: const EdgeInsets.all(3.0),
                 child: Icon(Icons.format_size, color: Colors.white),
               ),
-              "Font size",
+              AppLocalizations.of(context)!.fontSize,
               active: _currentTool == 1,
               onTap: () {
                 _setTool(1);
@@ -244,7 +244,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                 padding: const EdgeInsets.all(3.0),
                 child: Icon(Icons.palette, color: Colors.white),
               ),
-              "Color",
+              AppLocalizations.of(context)!.color,
               active: _currentTool == 2,
               onTap: () {
                 _setTool(2);
@@ -279,7 +279,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                   ],
                 ),
               ),
-              "Outline",
+              AppLocalizations.of(context)!.outline,
               active: _currentTool == 3,
               onTap: () {
                 _setTool(3);
@@ -311,7 +311,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                   widget.parent.text.outlineColor == Colors.transparent
                       ? FilledButton(
                           onPressed: () {},
-                          child: Text("Off"),
+                          child: Text(AppLocalizations.of(context)!.off),
                         )
                       : FilledButton.tonal(
                           onPressed: () {
@@ -320,7 +320,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                               widget.parent.text.outlineColor = Colors.transparent;
                             });
                           },
-                          child: Text("Off"),
+                          child: Text(AppLocalizations.of(context)!.off),
                         ),
                 ],
               ),
@@ -427,7 +427,8 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                 constraints: BoxConstraints(maxWidth: 512),
                 child: Column(
                   children: [
-                    AnimatedSwitcher(duration: Duration(milliseconds: 150), child: _tools[_currentTool]),
+                    AnimatedSwitcher(
+                        duration: Duration(milliseconds: 150), child: _tools[_currentTool]),
                     actions,
                   ],
                 ),
@@ -483,8 +484,8 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
     if (color == Colors.transparent) {
       _pickedColor = await showDialog(
           context: context,
-          builder: (context) =>
-              EyedropperDialog(widget.rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
+          builder: (context) => EyedropperDialog(
+              widget.rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
       color = _pickedColor!;
     }
     setState(() {
@@ -496,8 +497,8 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
     if (color == Colors.transparent) {
       _pickedColor = await showDialog(
           context: context,
-          builder: (context) =>
-              EyedropperDialog(widget.rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
+          builder: (context) => EyedropperDialog(
+              widget.rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
       color = _pickedColor!;
     }
     setState(() {
@@ -583,8 +584,9 @@ class ColorButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(5),
             color: color,
             border: Border.all(
-              color:
-                  (active && color != Colors.transparent) ? Theme.of(context).colorScheme.primary : Colors.transparent,
+              color: (active && color != Colors.transparent)
+                  ? Theme.of(context).colorScheme.primary
+                  : Colors.transparent,
               width: 3,
             ),
           ),

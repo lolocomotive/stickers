@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/dialogs/delete_confirm_dialog.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
@@ -22,7 +23,7 @@ class _FontsManagerPageState extends State<FontsManagerPage> {
   @override
   Widget build(BuildContext context) {
     return DefaultSliverActivity(
-        title: "Fonts manager",
+        title: AppLocalizations.of(context)!.fontsManager,
         child: ReorderableListView.builder(
           footer: ListTile(
             onTap: () async {
@@ -35,7 +36,9 @@ class _FontsManagerPageState extends State<FontsManagerPage> {
               if (!context.mounted) return;
               if (answer != true) return;
 
-              Navigator.of(context).push(MaterialPageRoute(builder: (context) => FontsSearchPage())).then((_) {
+              Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (context) => FontsSearchPage()))
+                  .then((_) {
                 setState(() {});
               });
             },
@@ -43,7 +46,7 @@ class _FontsManagerPageState extends State<FontsManagerPage> {
               padding: const EdgeInsets.symmetric(horizontal: 14.0),
               child: Icon(Icons.add),
             ),
-            title: Text("Add more"),
+            title: Text(AppLocalizations.of(context)!.addMore),
           ),
           buildDefaultDragHandles: false,
           itemCount: FontsRegistry.fontCount,
@@ -56,12 +59,14 @@ class _FontsManagerPageState extends State<FontsManagerPage> {
               key: ValueKey(i),
               child: ListTile(
                 onTap: () async {
-                  await showDialog(context: context, builder: (context) => EditFontDialog(FontsRegistry.at(i)));
+                  await showDialog(
+                      context: context, builder: (context) => EditFontDialog(FontsRegistry.at(i)));
                 },
                 leading: IconButton(
                   onPressed: () async {
                     final shouldDelete = await showDialog(
-                        context: context, builder: (context) => DeleteConfirmDialog(FontsRegistry.at(i).family));
+                        context: context,
+                        builder: (context) => DeleteConfirmDialog(FontsRegistry.at(i).family));
                     if (shouldDelete) {
                       FontsRegistry.delete(FontsRegistry.at(i).family);
                       setState(() {});
@@ -125,20 +130,20 @@ class _EditFontDialogState extends State<EditFontDialog> {
       content: TextField(
         controller: _controller,
         style: TextStyle(fontFamily: widget.entry.family),
-        decoration: InputDecoration(label: Text("Display name")),
+        decoration: InputDecoration(label: Text(AppLocalizations.of(context)!.displayName)),
       ),
       actions: [
         TextButton(
           onPressed: () {
             Navigator.of(context).pop();
           },
-          child: Text("Cancel"),
+          child: Text(AppLocalizations.of(context)!.cancel),
         ),
         ElevatedButton(
           onPressed: () {
             Navigator.of(context).pop(_controller.text);
           },
-          child: Text("Done"),
+          child: Text(AppLocalizations.of(context)!.done),
         ),
       ],
     );
@@ -154,21 +159,18 @@ class GoogleFontsConfirmationDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       contentPadding: EdgeInsets.fromLTRB(24, 16, 24, 8),
-      title: Text("Privacy notice"),
+      title: Text(AppLocalizations.of(context)!.privacyNotice),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "This feature uses the free Google Fonts service to offer you many new fonts for your stickers.\nIf you continue, the app will connect to Google to load the fonts. During this process, technical data like your IP address will be transmitted.",
-          ),
-
+          Text(AppLocalizations.of(context)!.privacyNoticeText),
           TextButton.icon(
             icon: Icon(Icons.open_in_new),
             onPressed: () {
               launchUrl(Uri.parse("https://developers.google.com/fonts/faq/privacy"));
             },
-            label: Text("More info"),
+            label: Text(AppLocalizations.of(context)!.moreInfo),
           ),
         ],
       ),
@@ -177,14 +179,14 @@ class GoogleFontsConfirmationDialog extends StatelessWidget {
           onPressed: () {
             Navigator.of(context).pop(false);
           },
-          child: Text("Cancel"),
+          child: Text(AppLocalizations.of(context)!.cancel),
         ),
         ElevatedButton(
           onPressed: () {
             Navigator.of(context).pop(true);
             settingsController.updateGoogleFonts(true);
           },
-          child: Text("Continue"),
+          child: Text(AppLocalizations.of(context)!.continue_),
         ),
       ],
     );

@@ -40,7 +40,8 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
     super.initState();
     _maskColorController = AnimationController(vsync: this);
     Tween<double> tween = Tween(begin: 0.0, end: 1.0);
-    Animation anim = CurvedAnimation(parent: _maskColorController, curve: Curves.ease, reverseCurve: Curves.ease);
+    Animation anim = CurvedAnimation(
+        parent: _maskColorController, curve: Curves.ease, reverseCurve: Curves.ease);
     anim.drive(tween);
     _maskColorController.addListener(_animationListener);
   }
@@ -220,17 +221,26 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                             showDialog(
                                 context: context,
                                 builder: (ctx) => AlertDialog(
-                                      title: Text("Crop area too small"),
-                                      content: Text("Must be at least 1x1 pixel"),
+                                      title: Text(AppLocalizations.of(context)!.cropTooSmall),
+                                      content:
+                                          Text(AppLocalizations.of(context)!.cropTooSmallDetails),
                                       actions: [
-                                        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text("Okay 💗")),
-                                        FilledButton(onPressed: () => Navigator.of(context).pop(), child: Text("Yay 💗")),
+                                        TextButton(
+                                            onPressed: () => Navigator.of(context).pop(),
+                                            child: Text("Okay 💗")),
+                                        FilledButton(
+                                            onPressed: () => Navigator.of(context).pop(),
+                                            child: Text("Yay 💗")),
                                       ],
                                     ));
                             return;
                           }
-                          final cropped = await cropSticker(state.getCropRect()!, state.rawImageData, widget.pack,
-                              widget.index, _editorController.rotateDegrees);
+                          final cropped = await cropSticker(
+                              state.getCropRect()!,
+                              state.rawImageData,
+                              widget.pack,
+                              widget.index,
+                              _editorController.rotateDegrees);
                           final output = await saveTemp(cropped);
                           if (!context.mounted) return;
                           Navigator.of(context).pushNamed(
@@ -269,5 +279,9 @@ class EditArguments {
   String mediaPath;
   MediaType type;
 
-  EditArguments({required this.pack, required this.index, required this.mediaPath, this.type = MediaType.picture});
+  EditArguments(
+      {required this.pack,
+      required this.index,
+      required this.mediaPath,
+      this.type = MediaType.picture});
 }

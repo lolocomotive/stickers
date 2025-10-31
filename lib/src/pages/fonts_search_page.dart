@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/fonts_api/fonts_models.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/fonts_api/google_fonts.dart';
@@ -24,7 +25,7 @@ class _FontsSearchPageState extends State<FontsSearchPage> {
   @override
   Widget build(BuildContext context) {
     return DefaultSliverActivity(
-      title: "Search for fonts",
+      title: AppLocalizations.of(context)!.searchForFonts,
       actions: [
         FutureBuilder(
             future: _future,
@@ -32,7 +33,9 @@ class _FontsSearchPageState extends State<FontsSearchPage> {
               if (snapshot.hasData) {
                 return IconButton(
                     onPressed: () {
-                      showSearch(context: context, delegate: GoogleFontsSearchDelegate(snapshot.data!.items));
+                      showSearch(
+                          context: context,
+                          delegate: GoogleFontsSearchDelegate(snapshot.data!.items));
                     },
                     icon: Icon(Icons.search));
               }
@@ -61,7 +64,7 @@ class _FontsSearchPageState extends State<FontsSearchPage> {
               print(snapshot.stackTrace);
               return Column(
                 children: [
-                  Text("Error"),
+                  Text(AppLocalizations.of(context)!.error),
                 ],
               );
             }
@@ -118,8 +121,11 @@ class _GoogleFontPreviewState extends State<GoogleFontPreview> {
                 children: [
                   ListTile(
                     subtitle: inRegistry
-                        ? Center(child: Text("Already downloaded"))
-                        : (asyncSnapshot.hasError ? Center(child: Text("Error downloading font preview")) : null),
+                        ? Center(child: Text(AppLocalizations.of(context)!.alreadyDownloaded))
+                        : (asyncSnapshot.hasError
+                            ? Center(
+                                child: Text(AppLocalizations.of(context)!.errorDownloadingPreview))
+                            : null),
                     onTap: inRegistry
                         ? null
                         : () async {
@@ -132,14 +138,19 @@ class _GoogleFontPreviewState extends State<GoogleFontPreview> {
                       widget.font.family,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontFamily: inRegistry ? widget.font.family : "${widget.font.family}-PREVIEW",
+                        fontFamily:
+                            inRegistry ? widget.font.family : "${widget.font.family}-PREVIEW",
                         fontSize: 25,
                       ),
                     ),
                   ),
                   AnimatedOpacity(
-                    opacity:
-                        (!asyncSnapshot.hasData && _future != null && _delayOver && !asyncSnapshot.hasError) ? .7 : 0,
+                    opacity: (!asyncSnapshot.hasData &&
+                            _future != null &&
+                            _delayOver &&
+                            !asyncSnapshot.hasError)
+                        ? .7
+                        : 0,
                     duration: Duration(milliseconds: 300),
                     child: Padding(
                       padding: const EdgeInsets.all(10.0),
@@ -175,7 +186,7 @@ class _DownloadFontDialogState extends State<DownloadFontDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text("Download ${widget.widget.font.family}?"),
+      title: Text(AppLocalizations.of(context)!.downloadItem(widget.widget.font.family)),
       actions: [
         TextButton(
             onPressed: _loading
@@ -183,7 +194,7 @@ class _DownloadFontDialogState extends State<DownloadFontDialog> {
                 : () {
                     Navigator.of(context).pop();
                   },
-            child: Text("Cancel")),
+            child: Text(AppLocalizations.of(context)!.cancel)),
         ElevatedButton(
             onPressed: _loading
                 ? null
@@ -196,7 +207,9 @@ class _DownloadFontDialogState extends State<DownloadFontDialog> {
                     Navigator.of(context).pop();
                     Navigator.of(context).pop();
                   },
-            child: _loading ? Text("Downloading...") : Text("Download")),
+            child: _loading
+                ? Text(AppLocalizations.of(context)!.downloading)
+                : Text(AppLocalizations.of(context)!.download)),
       ],
     );
   }

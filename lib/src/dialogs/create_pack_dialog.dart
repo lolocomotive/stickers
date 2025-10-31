@@ -42,12 +42,12 @@ class _CreatePackDialogState extends State<CreatePackDialog> {
                 segments: [
                   ButtonSegment(
                     value: false,
-                    label: Text("Static"),
+                    label: Text(AppLocalizations.of(context)!.staticPack),
                     icon: Icon(Icons.photo),
                   ),
                   ButtonSegment(
                     value: true,
-                    label: Text("Animated"),
+                    label: Text(AppLocalizations.of(context)!.animatedPack),
                     icon: Icon(Icons.animation),
                   ),
                 ],
@@ -83,7 +83,6 @@ class _CreatePackDialogState extends State<CreatePackDialog> {
                   ),
                 ),
               ),
-
             ],
           ),
         ),

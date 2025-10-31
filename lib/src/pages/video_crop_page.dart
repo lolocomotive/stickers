@@ -47,7 +47,8 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
     super.initState();
     _maskColorController = AnimationController(vsync: this);
     Tween<double> tween = Tween(begin: 0.0, end: 1.0);
-    Animation anim = CurvedAnimation(parent: _maskColorController, curve: Curves.ease, reverseCurve: Curves.ease);
+    Animation anim = CurvedAnimation(
+        parent: _maskColorController, curve: Curves.ease, reverseCurve: Curves.ease);
     anim.drive(tween);
     _maskColorController.addListener(_animationListener);
     _controller = VideoPlayerController.file(
@@ -61,7 +62,7 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
             context: context,
             builder: (context) {
               return ErrorDialog(
-                title: "Couldn't load video",
+                title: AppLocalizations.of(context)!.couldntLoadVideo,
                 message: e.toString(),
               );
             }).then(Navigator.of(context).pop);
@@ -97,7 +98,7 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
   Widget build(BuildContext context) {
     return DefaultActivity(
       appBar: AppBar(
-        title: Text("Trim video"),
+        title: Text(AppLocalizations.of(context)!.trimVideo),
       ),
       child: SafeArea(
         child: Column(
@@ -162,7 +163,8 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                         values: _range,
                         onChangeEnd: (_) async {
                           if (_seekTarget == _controller.value.duration * _range.end) {
-                            _requestSeek(_controller.value.duration * _range.end - Duration(seconds: 1));
+                            _requestSeek(
+                                _controller.value.duration * _range.end - Duration(seconds: 1));
                             if (_seekTarget < _controller.value.duration * _range.start) {
                               _seekTarget = _controller.value.duration * _range.start;
                             }
@@ -196,7 +198,8 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                           thumbColor: Theme.of(context).colorScheme.onSurface,
                           activeColor: Colors.transparent,
                           inactiveColor: Colors.transparent,
-                          value: _controller.value.position.inMilliseconds / _controller.value.duration.inMilliseconds,
+                          value: _controller.value.position.inMilliseconds /
+                              _controller.value.duration.inMilliseconds,
                           onChanged: (_) {},
                           year2023: false,
                         ),
@@ -305,9 +308,8 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                 context: context,
                 builder: (context) {
                   return ErrorDialog(
-                    title: "Video trimming failed",
-                    message: "Try another video, and if it still doesn't work, head to GitHub to submit an Issue",
-                  );
+                      title: AppLocalizations.of(context)!.trimFailed,
+                      message: AppLocalizations.of(context)!.trimFailedMsg);
                 });
           }
           throw Exception();
