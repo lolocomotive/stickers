@@ -36,9 +36,7 @@ class _FontsManagerPageState extends State<FontsManagerPage> {
               if (!context.mounted) return;
               if (answer != true) return;
 
-              Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (context) => FontsSearchPage()))
-                  .then((_) {
+              Navigator.of(context).push(MaterialPageRoute(builder: (context) => FontsSearchPage())).then((_) {
                 setState(() {});
               });
             },
@@ -59,14 +57,16 @@ class _FontsManagerPageState extends State<FontsManagerPage> {
               key: ValueKey(i),
               child: ListTile(
                 onTap: () async {
-                  await showDialog(
-                      context: context, builder: (context) => EditFontDialog(FontsRegistry.at(i)));
+                  var result =
+                      await showDialog(context: context, builder: (context) => EditFontDialog(FontsRegistry.at(i)));
+                  if (result == "") result = null;
+                  FontsRegistry.at(i).display = result;
+                  FontsRegistry.enqueueSave();
                 },
                 leading: IconButton(
                   onPressed: () async {
                     final shouldDelete = await showDialog(
-                        context: context,
-                        builder: (context) => DeleteConfirmDialog(FontsRegistry.at(i).family));
+                        context: context, builder: (context) => DeleteConfirmDialog(FontsRegistry.at(i).family));
                     if (shouldDelete) {
                       FontsRegistry.delete(FontsRegistry.at(i).family);
                       setState(() {});

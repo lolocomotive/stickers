@@ -206,23 +206,6 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                       ),
                   ],
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        _editorController.rotate(degree: -90, animation: true);
-                      },
-                      icon: Icon(Icons.rotate_left),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        _editorController.rotate(degree: 90, animation: true);
-                      },
-                      icon: Icon(Icons.rotate_right),
-                    ),
-                  ],
-                ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(10, 8, 10, 16),
                   child: FilledButton(

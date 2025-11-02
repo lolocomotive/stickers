@@ -153,8 +153,7 @@ class _EditPageState extends State<EditPage> {
                       child: Row(
                         children: [
                           Container(
-                            decoration: BoxDecoration(
-                                color: _brushColor, borderRadius: BorderRadius.circular(10)),
+                            decoration: BoxDecoration(color: _brushColor, borderRadius: BorderRadius.circular(10)),
                             height: 7,
                             width: 7,
                           ),
@@ -171,8 +170,7 @@ class _EditPageState extends State<EditPage> {
                                 }),
                           ),
                           Container(
-                            decoration: BoxDecoration(
-                                color: _brushColor, borderRadius: BorderRadius.circular(25)),
+                            decoration: BoxDecoration(color: _brushColor, borderRadius: BorderRadius.circular(25)),
                             height: 25,
                             width: 25,
                           ),
@@ -204,8 +202,8 @@ class _EditPageState extends State<EditPage> {
                   children: [
                     Theme(
                       data: ThemeData(
-                        colorScheme: ColorScheme.fromSeed(
-                            seedColor: Colors.green, brightness: Theme.of(context).brightness),
+                        colorScheme:
+                            ColorScheme.fromSeed(seedColor: Colors.green, brightness: Theme.of(context).brightness),
                       ),
                       child: FilledButton.icon(
                         onPressed: () {
@@ -295,10 +293,8 @@ class _EditPageState extends State<EditPage> {
                           child: MatrixGestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onGestureStart: onGestureStart,
-                            onMatrixUpdate: (_, translationDeltaMatrix, scaleDeltaMatrix,
-                                    rotationDeltaMatrix) =>
-                                onMatrixUpdate(
-                                    translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix),
+                            onMatrixUpdate: (_, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) =>
+                                onMatrixUpdate(translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix),
                             child: Stack(children: [
                               if (widget.mediaType == MediaType.picture)
                                 Image.file(_source)
@@ -345,7 +341,10 @@ class _EditPageState extends State<EditPage> {
                                             value: _exportProgress,
                                           ),
                                         ),
-                                        Text(_message ?? ""),
+                                        Text(
+                                          _message ?? "",
+                                          textAlign: TextAlign.center,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -376,11 +375,9 @@ class _EditPageState extends State<EditPage> {
                               .isEmpty
                           ? null
                           : () {
-                              final layer = _layers
-                                  .whereType<DrawLayer>()
-                                  .lastWhere((layer) => layer.painter.strokes.isNotEmpty);
-                              _undo.add(
-                                  UndoEntry(layer.painter.strokes.removeLast(), layer.painter));
+                              final layer =
+                                  _layers.whereType<DrawLayer>().lastWhere((layer) => layer.painter.strokes.isNotEmpty);
+                              _undo.add(UndoEntry(layer.painter.strokes.removeLast(), layer.painter));
                               setState(() {});
                             },
                       label: Text(AppLocalizations.of(context)!.undo),
@@ -420,8 +417,7 @@ class _EditPageState extends State<EditPage> {
               label: Text(AppLocalizations.of(context)!.addToPack),
             );
             if (isHorizontal) {
-              final double halfWidth =
-                  min(constraints.maxHeight - 16, min(500, constraints.maxWidth / 2 - 16));
+              final double halfWidth = min(constraints.maxHeight - 16, min(500, constraints.maxWidth / 2 - 16));
               return Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Center(
@@ -556,8 +552,8 @@ class _EditPageState extends State<EditPage> {
 
   Future<Uint8List> exportAnimatedSticker(ImageEditorOption option, BuildContext context) async {
     final transparent = await rootBundle.load("assets/transparent.webp");
-    final out = await ImageEditor.editImageAndGetFile(
-        image: transparent.buffer.asUint8List(), imageEditorOption: option);
+    final out =
+        await ImageEditor.editImageAndGetFile(image: transparent.buffer.asUint8List(), imageEditorOption: option);
     final service = OverlayAndEncodeService();
     final output = File("$mediaCacheDir/exported_${DateTime.now().millisecondsSinceEpoch}.webp");
     Stopwatch sw = Stopwatch()..start();
@@ -566,13 +562,15 @@ class _EditPageState extends State<EditPage> {
     int fps = 24;
 
     for (int attempt = 0; attempt < 3; attempt++) {
-      switch (attempt) {
-        case 0:
-          _message = AppLocalizations.of(context)!.firstAttempt;
-        case 1:
-          _message = AppLocalizations.of(context)!.secondAttempt;
-        case 2:
-          _message = AppLocalizations.of(context)!.thirdAttempt;
+      if (context.mounted) {
+        switch (attempt) {
+          case 0:
+            _message = AppLocalizations.of(context)!.firstAttempt;
+          case 1:
+            _message = AppLocalizations.of(context)!.secondAttempt;
+          case 2:
+            _message = AppLocalizations.of(context)!.thirdAttempt;
+        }
       }
       setState(() {});
       var config = WebPConfig(
@@ -582,11 +580,7 @@ class _EditPageState extends State<EditPage> {
         method: 4,
       );
       await service.start(
-          videoFile: _source.path,
-          overlayFile: out.path,
-          outputFile: output.path,
-          config: config,
-          fps: fps);
+          videoFile: _source.path, overlayFile: out.path, outputFile: output.path, config: config, fps: fps);
       await for (final update in service.progressStream) {
         if (update.status == Status.SUCCESS) {
           break;
@@ -647,11 +641,9 @@ class _EditPageState extends State<EditPage> {
     return data;
   }
 
-  void onMatrixUpdate(
-      Matrix4 translationDeltaMatrix, Matrix4 scaleDeltaMatrix, Matrix4 rotationDeltaMatrix) {
+  void onMatrixUpdate(Matrix4 translationDeltaMatrix, Matrix4 scaleDeltaMatrix, Matrix4 rotationDeltaMatrix) {
     if (_drawing) {
-      _brushPos = Offset(_brushPos.dx + translationDeltaMatrix.row0.w,
-          _brushPos.dy + translationDeltaMatrix.row1.w);
+      _brushPos = Offset(_brushPos.dx + translationDeltaMatrix.row0.w, _brushPos.dy + translationDeltaMatrix.row1.w);
       (_layers.last as DrawLayer).painter.strokes.last.points.add(_brushPos / scaleFactor);
       setState(() {});
       return;
@@ -698,8 +690,7 @@ class _EditPageState extends State<EditPage> {
     if (c == Colors.transparent) {
       _pickedColor = await showDialog(
           context: context,
-          builder: (context) =>
-              EyedropperDialog(_rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
+          builder: (context) => EyedropperDialog(_rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
       c = _pickedColor!;
     }
     setState(() {
