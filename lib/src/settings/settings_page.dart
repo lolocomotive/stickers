@@ -129,6 +129,12 @@ class SettingsPage extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(horizontal: 8),
                               child: Text("Deutsch"),
                             )),
+                        DropdownMenuItem(
+                            value: "ru",
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: Text("Русский"),
+                            )),
                       ],
                       onChanged: (value) {
                         if (value == null) return;
