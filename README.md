@@ -119,11 +119,12 @@ Also the code is not very well documented yet so sorry in advance to anyone tryi
 
 Some features I plan to work on in the future
 
-- [ ] Animated stickers support (animated packs do work when imported form a file, but you can't add
-  any stickers to them)
 - [ ] Selecting multiple packs at once in the home screen
 - [ ] Add option to add a background to texts
-- [ ] Allow rotating while cropping
+- [ ] Image layers on stickers
+- [ ] Start with an existing sticker
+- [ ] Create animated stickers from gifs
+- [ ] Crop and rotate videos
 
 ## iOS Support
 
