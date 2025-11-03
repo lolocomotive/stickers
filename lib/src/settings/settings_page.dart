@@ -284,16 +284,12 @@ class CacheUseIndicator extends StatelessWidget {
 
   Future<int> _getCacheSize() async {
     int totalSize = 0;
-    await Directory(cacheDir)
-        .list(recursive: true, followLinks: false)
-        .forEach((FileSystemEntity entity) {
+    await Directory(cacheDir).list(recursive: true, followLinks: false).forEach((FileSystemEntity entity) {
       if (entity is File) {
         totalSize += entity.lengthSync();
       }
     });
-    await (await getTemporaryDirectory())
-        .list(recursive: true, followLinks: false)
-        .forEach((FileSystemEntity entity) {
+    await (await getTemporaryDirectory()).list(recursive: true, followLinks: false).forEach((FileSystemEntity entity) {
       if (entity is File) {
         totalSize += entity.lengthSync();
       }

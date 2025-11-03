@@ -102,7 +102,7 @@ class StickerPacksPageState extends State<StickerPacksPage> {
       title: AppLocalizations.of(context)?.pTitle ?? localizationUnavailable,
       child: packs.isEmpty
           ? Padding(
-              padding: const EdgeInsets.fromLTRB(0, 36, 0, 0),
+              padding: const EdgeInsets.fromLTRB(8, 36, 8, 0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
