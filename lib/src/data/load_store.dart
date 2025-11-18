@@ -36,7 +36,7 @@ Future<void> exportPack(StickerPack pack) async {
   await jsonFile.writeAsString(jsonEncode(exportData));
   debugPrint("Json written  t=${sw.elapsedMilliseconds}ms");
 
-  File zipFile = File("${exportDir.path}${pack.title.replaceAll(RegExp("[^ \\-_!&a-zA-Z0-9]"), "_")}.zip");
+  File zipFile = File("${exportDir.path}/${pack.title.replaceAll(RegExp("[^ \\-_!&a-zA-Z0-9]"), "_")}.zip");
   await ZipFile.createFromDirectory(sourceDir: packDir, zipFile: zipFile);
 
   debugPrint("Exported to: ${zipFile.path} t=${sw.elapsedMilliseconds}ms");
