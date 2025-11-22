@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_archive/flutter_archive.dart';
 import 'package:image_editor/image_editor.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/data/sticker.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/globals.dart';
@@ -64,7 +63,7 @@ Future<void> importPack(File f) async {
           dirContents
               .map((entry) => entry.path)
               .where((path) => path.toLowerCase().endsWith(".webp"))
-              .map((path) => Sticker(path, ["❤"]))
+              .map((path) => Sticker(path, ["❤"], null))
               .toList(),
           "1000",
           false, // It's not possible to directly export animated packs from that app.
@@ -84,6 +83,7 @@ Future<void> importPack(File f) async {
                 .map((sticker) => Sticker(
                       "${dir.path}/${sticker["image_file"]}",
                       (sticker["emojis"] as List).isEmpty ? ["❤"] : sticker["emojis"],
+                      null,
                     ))
                 .toList(),
             packJson["image_data_version"],
@@ -190,7 +190,7 @@ Future<Uint8List> cropSticker(
 /// Copies the file to the required place
 ///
 /// If [index] is 30 it changes the tray icon.
-void addToPack(StickerPack pack, int index, Uint8List data) {
+void addToPack(StickerPack pack, int index, Uint8List data, [String? layers]) {
   Directory("$packsDir/${pack.id}").createSync(recursive: true);
   File output;
   if (index == 30) {
@@ -200,7 +200,7 @@ void addToPack(StickerPack pack, int index, Uint8List data) {
   } else {
     output = File("$packsDir/${pack.id}/sticker_${index}_${DateTime.now().millisecondsSinceEpoch}.webp");
     output.writeAsBytesSync(data);
-    pack.stickers.add(Sticker(output.path, ["❤"]));
+    pack.stickers.add(Sticker(output.path, ["❤"], layers));
   }
   pack.onEdit();
   savePacks(packs);

@@ -4,6 +4,14 @@ import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/pages/sticker_packs_page.dart';
 import 'package:stickers/src/settings/settings_controller.dart';
 
+const String localizationUnavailable = "Localization unavailable";
+const double defaultBorderRadius = 10;
+late String packsDir;
+late String cacheDir;
+late String fontsCacheDir;
+late String exportCacheDir;
+late String mediaCacheDir;
+
 late List<StickerPack> packs;
 final navigatorKey = GlobalKey<NavigatorState>();
 late SettingsController settingsController;

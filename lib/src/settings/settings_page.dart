@@ -5,7 +5,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/app.dart';
-import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/dialogs/edit_quickmode_defaults_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:url_launcher/url_launcher.dart';

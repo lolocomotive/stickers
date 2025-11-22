@@ -5,6 +5,12 @@ import 'package:stickers/src/pages/edit_page.dart';
 class DrawLayer extends StatelessWidget implements EditorLayer {
   final DrawingPainter painter = DrawingPainter();
 
+  static DrawLayer fromJson(Map<String, dynamic> json) {
+    final layer = DrawLayer();
+    layer.painter.strokes = json["strokes"].map((stroke) => Stroke.fromJson(stroke)).toList();
+    return layer;
+  }
+
   DrawOption get drawOption {
     DrawOption r = DrawOption();
     for (final stroke in painter.strokes) {
@@ -17,10 +23,10 @@ class DrawLayer extends StatelessWidget implements EditorLayer {
         r.addDrawPart(
           OvalDrawPart(
               rect: Rect.fromLTWH(
-                point.dx - (stroke.width ) / 2 ,
-                point.dy - (stroke.width ) / 2 ,
-                stroke.width ,
-                stroke.width ,
+                point.dx - (stroke.width) / 2,
+                point.dy - (stroke.width) / 2,
+                stroke.width,
+                stroke.width,
               ),
               paint: fillPaint),
         );
@@ -40,6 +46,14 @@ class DrawLayer extends StatelessWidget implements EditorLayer {
       ),
     );
   }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      "type": "draw",
+      "strokes": painter.strokes.map((e) => e.toJson()).toList(),
+    };
+  }
 }
 
 class Stroke {
@@ -48,6 +62,25 @@ class Stroke {
   List<Offset> points = [];
 
   Stroke(this.color, this.width);
+
+  static Stroke fromJson(Map<String, dynamic> json) {
+    Stroke s = Stroke(json["color"], json["width"]);
+    s.points = json["points"].map((p) => Offset(p["x"], p["y"])).toList();
+    return s;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "color": color.toARGB32(),
+      "width": width,
+      "points": points
+          .map((point) => {
+                "x": point.dx,
+                "y": point.dy,
+              })
+          .toList(),
+    };
+  }
 }
 
 class DrawingPainter extends CustomPainter {
