@@ -30,6 +30,35 @@ class TextLayer extends StatefulWidget implements EditorLayer {
   void update(Matrix4 matrix) {
     state?.update(matrix);
   }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      "type": "text",
+      "text": text.text,
+      "transform": text.transform.storage,
+      "fontSize": text.fontSize,
+      "textColor": text.textColor.toARGB32(),
+      "fontName": text.fontName,
+      "outlineColor": text.outlineColor.toARGB32(),
+      "outlineWidth": text.outlineWidth,
+    };
+  }
+
+  static TextLayer fromJson(Map<String, dynamic> json, GlobalKey rbKey) {
+    final text = EditorText(
+      text: json["text"],
+      transform: Matrix4.fromList(json["transform"]),
+      fontSize: json["fontSize"],
+      textColor: json["textColor"],
+      fontName: json["fontName"],
+      outlineColor: json["outlineColor"],
+      outlineWidth: json["outlineWidth"],
+    );
+
+    final layer = TextLayer(text, rbKey: rbKey);
+    return layer;
+  }
 }
 
 class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {

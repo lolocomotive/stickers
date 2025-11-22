@@ -8,7 +8,6 @@ import 'package:image_editor/image_editor.dart';
 import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
-import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/confirm_leave_dialog.dart';
@@ -518,7 +517,7 @@ class _EditPageState extends State<EditPage> {
       } else {
         data = await exportAnimatedSticker(option, context);
       }
-      addToPack(widget.pack, widget.index, data);
+      addToPack(widget.pack, widget.index, data, widget.imagePath);
       if (!context.mounted) return;
       Navigator.of(context).pop();
       Navigator.of(context).pop();
@@ -697,6 +696,12 @@ class _EditPageState extends State<EditPage> {
       _brushColor = c;
     });
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "layers": _layers.map((layer) => layer.toJson()).toList(),
+    };
+  }
 }
 
 class UndoEntry {
@@ -708,4 +713,19 @@ class UndoEntry {
 
 abstract class EditorLayer extends Widget {
   const EditorLayer({super.key});
+
+  Map<String, dynamic> toJson();
+
+  static EditorLayer fromJson(Map<String, dynamic> json, GlobalKey rbKey) {
+    switch (json["type"]) {
+      case "draw":
+        return DrawLayer.fromJson(json);
+      case "text":
+        return TextLayer.fromJson(json, rbKey);
+      case "image":
+        throw Exception("Not supported yet");
+      default:
+        throw Exception("Unsupported layer type");
+    }
+  }
 }

@@ -6,9 +6,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:stickers/src/api_keys.dart';
-import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/fonts_api/fonts_models.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
+import 'package:stickers/src/globals.dart';
 
 String apiURL = "https://www.googleapis.com/webfonts/v1/webfonts";
 /*

@@ -2,10 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:image_editor/image_editor.dart';
-import 'package:stickers/src/constants.dart';
+import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker.dart';
-import 'package:stickers/src/globals.dart';
 import 'package:whatsapp_stickers_plus/whatsapp_stickers.dart';
 
 class StickerPack {
