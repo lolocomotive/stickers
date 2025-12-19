@@ -910,7 +910,7 @@ packages:
       path: "C:\\Users\\loic\\StudioProjects\\whatsapp_stickers_plus"
       relative: false
     source: path
-    version: "1.1.1"
+    version: "1.1.2"
   win32:
     dependency: transitive
     description:

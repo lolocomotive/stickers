@@ -193,7 +193,8 @@ Future<Uint8List> cropSticker(
 /// Copies the file to the required place
 ///
 /// If [index] is 30 it changes the tray icon.
-Future<void> addToPack(StickerPack pack, int index, Uint8List data, [EditorData? editorData]) async {
+Future<void> addToPack(StickerPack pack, int index, Uint8List data,
+    [EditorData? editorData, bool replace = false]) async {
   Directory("$packsDir/${pack.id}").createSync(recursive: true);
   File stickerFile;
   File? editorDataFile;
@@ -222,7 +223,9 @@ Future<void> addToPack(StickerPack pack, int index, Uint8List data, [EditorData?
   } else {
     stickerFile = File("$packsDir/${pack.id}/$index.webp");
     await stickerFile.writeAsBytes(data);
-    pack.stickers.add(Sticker(stickerFile.path, ["❤"], editorDataFile?.path));
+    if (!replace) {
+      pack.stickers.add(Sticker(stickerFile.path, ["❤"], editorDataFile?.path));
+    }
   }
 
   pack.onEdit();

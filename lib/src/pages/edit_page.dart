@@ -570,10 +570,9 @@ class _EditPageState extends State<EditPage> {
       }
       final editorData = EditorData(background: _source.path, layers: _layers);
       if (replace) {
-        await addToPack(widget.pack, widget.index, data, editorData);
+        await addToPack(widget.pack, widget.index, data, editorData, replace);
       } else {
-        await addToPack(
-            widget.pack, widget.editorData == null ? widget.pack.stickers.length + 2 : widget.index, data, editorData);
+        await addToPack(widget.pack, widget.pack.stickers.length, data, editorData);
       }
       if (!context.mounted) return;
       Navigator.of(context).pop();
