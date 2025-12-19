@@ -9,10 +9,13 @@ import 'package:share_plus/share_plus.dart';
 import 'package:stickers/src/data/sticker.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/globals.dart';
+import 'package:stickers/src/widgets/image_layer.dart';
 
-void savePacks(List<StickerPack> packs) async {
+import 'editor_data.dart';
+
+Future<void> savePacks(List<StickerPack> packs) async {
   File output = File("$packsDir/packs.json");
-  output.writeAsString(jsonEncode(packs.map((pack) => pack.toJson()).toList()));
+  await output.writeAsString(jsonEncode(packs.map((pack) => pack.toJson()).toList()));
 }
 
 Future<void> exportPack(StickerPack pack) async {
@@ -190,21 +193,41 @@ Future<Uint8List> cropSticker(
 /// Copies the file to the required place
 ///
 /// If [index] is 30 it changes the tray icon.
-void addToPack(StickerPack pack, int index, Uint8List data, [String? layers]) {
+Future<void> addToPack(StickerPack pack, int index, Uint8List data, [EditorData? editorData]) async {
   Directory("$packsDir/${pack.id}").createSync(recursive: true);
-  File output;
-  if (index == 30) {
-    output = File("$packsDir/${pack.id}/tray_${DateTime.now().millisecondsSinceEpoch}.webp");
-    output.writeAsBytesSync(data);
-    pack.trayIcon = output.path;
-  } else {
-    output = File("$packsDir/${pack.id}/sticker_${index}_${DateTime.now().millisecondsSinceEpoch}.webp");
-    output.writeAsBytesSync(data);
-    pack.stickers.add(Sticker(output.path, ["❤"], layers));
+  File stickerFile;
+  File? editorDataFile;
+
+  if (editorData != null) {
+    await Directory("$packsDir/${pack.id}/$index/").create(recursive: true);
+    await File(editorData.background).rename("$packsDir/${pack.id}/$index/background.webp");
+    editorData.background = "$packsDir/${pack.id}/$index/background.webp";
+
+    for (int i = 0; i < editorData.layers.length; i++) {
+      if (editorData.layers[i] is ImageLayer) {
+        final ImageLayer layer = editorData.layers[i] as ImageLayer;
+        await File(layer.source).rename("$packsDir/${pack.id}/$index/$i.webp");
+        layer.source = "$packsDir/${pack.id}/$index/$i.webp";
+      }
+    }
+
+    editorDataFile = File("$packsDir/${pack.id}/$index.json");
+    await editorDataFile.writeAsString(jsonEncode(editorData.toJson()));
   }
+
+  if (index == 30) {
+    stickerFile = File("$packsDir/${pack.id}/tray.webp");
+    await stickerFile.writeAsBytes(data);
+    pack.trayIcon = stickerFile.path;
+  } else {
+    stickerFile = File("$packsDir/${pack.id}/$index.webp");
+    await stickerFile.writeAsBytes(data);
+    pack.stickers.add(Sticker(stickerFile.path, ["❤"], editorDataFile?.path));
+  }
+
   pack.onEdit();
-  savePacks(packs);
-  // Clear media cache after importing a sticker
+  await savePacks(packs);
+  // Clear media cache after adding a sticker
   print("Clearing media cache");
   Directory(mediaCacheDir).list().listen((entry) => entry.delete());
 }

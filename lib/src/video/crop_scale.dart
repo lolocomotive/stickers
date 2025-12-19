@@ -1,8 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/services.dart';
 
 import 'common.dart';
-
 
 class CropAndScaleService {
   static const _methodChannel = MethodChannel('de.loicezt.stickers/methods');
@@ -10,6 +10,7 @@ class CropAndScaleService {
 
   // A stream controller to expose a single, unified progress stream
   final _progressController = StreamController<Progress>.broadcast();
+
   Stream<Progress> get progressStream => _progressController.stream;
 
   CropAndScaleService() {
@@ -21,7 +22,7 @@ class CropAndScaleService {
     if (data is Map) {
       final statusString = data['status'] as String?;
       final status = Status.values.firstWhere(
-            (e) => e.toString() == 'Status.$statusString',
+        (e) => e.toString() == 'Status.$statusString',
         orElse: () => Status.IDLE,
       );
 

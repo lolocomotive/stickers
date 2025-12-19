@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
+import 'package:stickers/src/data/editor_data.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/pages/default_page.dart';
@@ -40,8 +41,7 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
     super.initState();
     _maskColorController = AnimationController(vsync: this);
     Tween<double> tween = Tween(begin: 0.0, end: 1.0);
-    Animation anim = CurvedAnimation(
-        parent: _maskColorController, curve: Curves.ease, reverseCurve: Curves.ease);
+    Animation anim = CurvedAnimation(parent: _maskColorController, curve: Curves.ease, reverseCurve: Curves.ease);
     anim.drive(tween);
     _maskColorController.addListener(_animationListener);
   }
@@ -222,25 +222,18 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                                 context: context,
                                 builder: (ctx) => AlertDialog(
                                       title: Text(AppLocalizations.of(context)!.cropTooSmall),
-                                      content:
-                                          Text(AppLocalizations.of(context)!.cropTooSmallDetails),
+                                      content: Text(AppLocalizations.of(context)!.cropTooSmallDetails),
                                       actions: [
                                         TextButton(
-                                            onPressed: () => Navigator.of(context).pop(),
-                                            child: Text("Okay 💗")),
+                                            onPressed: () => Navigator.of(context).pop(), child: Text("Okay 💗")),
                                         FilledButton(
-                                            onPressed: () => Navigator.of(context).pop(),
-                                            child: Text("Yay 💗")),
+                                            onPressed: () => Navigator.of(context).pop(), child: Text("Yay 💗")),
                                       ],
                                     ));
                             return;
                           }
-                          final cropped = await cropSticker(
-                              state.getCropRect()!,
-                              state.rawImageData,
-                              widget.pack,
-                              widget.index,
-                              _editorController.rotateDegrees);
+                          final cropped = await cropSticker(state.getCropRect()!, state.rawImageData, widget.pack,
+                              widget.index, _editorController.rotateDegrees);
                           final output = await saveTemp(cropped);
                           if (!context.mounted) return;
                           Navigator.of(context).pushNamed(
@@ -276,12 +269,15 @@ class EditArguments {
 
   // Index 30 is tray icon
   int index;
-  String mediaPath;
+  String? mediaPath;
   MediaType type;
+  String? editorData;
 
-  EditArguments(
-      {required this.pack,
-      required this.index,
-      required this.mediaPath,
-      this.type = MediaType.picture});
+  EditArguments({
+    required this.pack,
+    required this.index,
+    this.mediaPath,
+    this.editorData,
+    this.type = MediaType.picture,
+  });
 }

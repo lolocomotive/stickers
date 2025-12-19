@@ -1,6 +1,9 @@
+import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
-import 'dart:math';
+import 'dart:math' hide log;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +11,7 @@ import 'package:image_editor/image_editor.dart';
 import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
+import 'package:stickers/src/data/editor_data.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/confirm_leave_dialog.dart';
@@ -27,11 +31,12 @@ import 'package:video_player/video_player.dart';
 
 class EditPage extends StatefulWidget {
   /// Path of the temporary image to edit
-  final String imagePath;
+  final String? mediaPath;
   final StickerPack pack;
   final int index;
+  final String? editorData;
 
-  const EditPage(this.pack, this.index, this.imagePath, this.mediaType, {super.key});
+  const EditPage(this.pack, this.index, this.mediaType, {super.key, this.mediaPath, this.editorData});
 
   static const routeName = "/edit";
 
@@ -65,7 +70,19 @@ class _EditPageState extends State<EditPage> {
   @override
   void initState() {
     super.initState();
-    _source = File(widget.imagePath);
+    if (widget.mediaPath == null) {
+      EditorData data = EditorData.fromJson(jsonDecode(File(widget.editorData!).readAsStringSync()), _rbKey);
+      _source = File(data.background);
+      for (final layer in data.layers) {
+        if (layer is TextLayer) {
+          layer.openNextFrame = false;
+          _texts.add(layer.text);
+        }
+        _layers.add(layer);
+      }
+    } else {
+      _source = File(widget.mediaPath!);
+    }
     if (widget.mediaType == MediaType.video) {
       _controller = VideoPlayerController.file(
         _source,
@@ -79,7 +96,6 @@ class _EditPageState extends State<EditPage> {
         setState(() {});
       });
     }
-    //_sticker = _pack.stickers[widget.index];
   }
 
   final GlobalKey _rbKey = GlobalKey();
@@ -226,29 +242,7 @@ class _EditPageState extends State<EditPage> {
                 children: [
                   Expanded(
                     child: FilledButton.tonalIcon(
-                      onPressed: () {
-                        _drawing = false;
-                        EditorText text = EditorText(
-                          outlineWidth: 10,
-                          outlineColor: Colors.transparent,
-                          text: "",
-                          transform: Matrix4.identity(),
-                          fontSize: 40,
-                          textColor: Colors.white,
-                        );
-                        _texts.add(text);
-                        _layers.add(TextLayer(
-                          text,
-                          rbKey: _rbKey,
-                          onDelete: (layer) {
-                            _layers.remove(layer);
-                            if (_currentTextLayer == layer) _currentTextLayer = null;
-                            setState(() {});
-                          },
-                        ));
-
-                        setState(() {});
-                      },
+                      onPressed: _addText,
                       label: Text(AppLocalizations.of(context)!.addText),
                       icon: Icon(Icons.format_size),
                     ),
@@ -261,102 +255,117 @@ class _EditPageState extends State<EditPage> {
               ),
             );
 
-            final imageDisplay = Container(
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(24)),
-              clipBehavior: Clip.antiAlias,
-              child: RepaintBoundary(
-                key: _rbKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      color: Colors.black,
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: CustomPaint(
-                          painter: CheckerPainter(context, sizeCallback: (size) {
-                            if (imageSize != size) {
-                              imageSize = size;
-                              scaleFactor = size.width / 512;
-                              if (size.aspectRatio != 1) {
-                                // That should never happen
-                                print("Aspect ratio of sticker should be 1");
+            final imageDisplay = LayoutBuilder(builder: (context, constraints) {
+              if (scaleFactor != constraints.biggest.width / 512) {
+                //FIXME this probably breaks when the screen size changes
+                scaleFactor = constraints.biggest.width / 512;
+
+                // We have to do this after loading from json
+                // We cannot do this in initState because scaleFactor cannot be defined there.
+                denormalizeTexts();
+                for (final layer in _layers) {
+                  if (layer is DrawLayer) {
+                    layer.painter.scaleFactor = scaleFactor;
+                  }
+                }
+              }
+              return Container(
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(24)),
+                clipBehavior: Clip.antiAlias,
+                child: RepaintBoundary(
+                  key: _rbKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        color: Colors.black,
+                        child: AspectRatio(
+                          aspectRatio: 1,
+                          child: CustomPaint(
+                            painter: CheckerPainter(context, sizeCallback: (size) {
+                              if (imageSize != size) {
+                                imageSize = size;
+
+                                if (size.aspectRatio != 1) {
+                                  // That should never happen
+                                  print("Aspect ratio of sticker should be 1");
+                                }
+                                WidgetsBinding.instance.addPostFrameCallback(
+                                  (timeStamp) => setState(() {}),
+                                );
                               }
-                              WidgetsBinding.instance.addPostFrameCallback(
-                                (timeStamp) => setState(() {}),
-                              );
-                            }
-                          }),
-                          child: MatrixGestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onGestureStart: onGestureStart,
-                            onMatrixUpdate: (_, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) =>
-                                onMatrixUpdate(translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix),
-                            child: Stack(children: [
-                              if (widget.mediaType == MediaType.picture)
-                                Image.file(_source)
-                              else
-                                Center(
-                                  child: AspectRatio(
-                                    aspectRatio: _controller.value.aspectRatio,
-                                    child: VideoPlayer(_controller),
-                                  ),
-                                ),
-                              ..._layers.map(
-                                (e) => Positioned(
-                                  top: 0,
-                                  bottom: 0,
-                                  left: 0,
-                                  right: 0,
-                                  child: e,
-                                ),
-                              ),
-                              if (_message != null)
-                                Positioned(
-                                  top: 0,
-                                  bottom: 0,
-                                  left: 0,
-                                  right: 0,
-                                  child: Container(
-                                    color: Theme.of(context).colorScheme.surface.withAlpha(200),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          AppLocalizations.of(context)!.exporting,
-                                          style: Theme.of(context).textTheme.displaySmall,
-                                        ),
-                                        SizedBox(
-                                          height: 12,
-                                        ),
-                                        SizedBox(
-                                          height: 64,
-                                          width: 64,
-                                          child: CircularProgressIndicator(
-                                            year2023: false,
-                                            value: _exportProgress,
-                                          ),
-                                        ),
-                                        Text(
-                                          _message ?? "",
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
+                            }),
+                            child: MatrixGestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onGestureStart: onGestureStart,
+                              onMatrixUpdate: (_, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) =>
+                                  onMatrixUpdate(translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix),
+                              child: Stack(children: [
+                                if (widget.mediaType == MediaType.picture)
+                                  Image.file(_source)
+                                else
+                                  Center(
+                                    child: AspectRatio(
+                                      aspectRatio: _controller.value.aspectRatio,
+                                      child: VideoPlayer(_controller),
                                     ),
                                   ),
-                                )
-                            ]),
+                                ..._layers.map(
+                                  (e) => Positioned(
+                                    top: 0,
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    child: e,
+                                  ),
+                                ),
+                                if (_message != null)
+                                  Positioned(
+                                    top: 0,
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    child: Container(
+                                      color: Theme.of(context).colorScheme.surface.withAlpha(200),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            AppLocalizations.of(context)!.exporting,
+                                            style: Theme.of(context).textTheme.displaySmall,
+                                          ),
+                                          SizedBox(
+                                            height: 12,
+                                          ),
+                                          SizedBox(
+                                            height: 64,
+                                            width: 64,
+                                            child: CircularProgressIndicator(
+                                              year2023: false,
+                                              value: _exportProgress,
+                                            ),
+                                          ),
+                                          Text(
+                                            _message ?? "",
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                              ]),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            );
+              );
+            });
 
             final undoButtons = AnimatedCrossFade(
               sizeCurve: _curve,
@@ -445,6 +454,7 @@ class _EditPageState extends State<EditPage> {
                                   undoButtons,
                                   if (_drawing) SizedBox(height: 12),
                                   doneButton,
+                                  if (kDebugMode) OutlinedButton(onPressed: _dump, child: Text("Dump"))
                                 ],
                               ),
                             ),
@@ -472,6 +482,7 @@ class _EditPageState extends State<EditPage> {
                         undoButtons,
                         SizedBox(height: 12),
                         doneButton,
+                        if (kDebugMode) OutlinedButton(onPressed: _dump, child: Text("Dump"))
                       ],
                     ),
                   ),
@@ -482,6 +493,30 @@ class _EditPageState extends State<EditPage> {
         ),
       ),
     );
+  }
+
+  void _addText() {
+    _drawing = false;
+    EditorText text = EditorText(
+      outlineWidth: 10,
+      outlineColor: Colors.transparent,
+      text: "",
+      transform: Matrix4.identity(),
+      fontSize: 40,
+      textColor: Colors.white,
+    );
+    _texts.add(text);
+    _layers.add(TextLayer(
+      text,
+      rbKey: _rbKey,
+      onDelete: (layer) {
+        _layers.remove(layer);
+        if (_currentTextLayer == layer) _currentTextLayer = null;
+        setState(() {});
+      },
+    ));
+
+    setState(() {});
   }
 
   Future<void> onDone(BuildContext context) async {
@@ -517,7 +552,8 @@ class _EditPageState extends State<EditPage> {
       } else {
         data = await exportAnimatedSticker(option, context);
       }
-      addToPack(widget.pack, widget.index, data, widget.imagePath);
+      final editorData = EditorData(background: _source.path, layers: _layers);
+      await addToPack(widget.pack, widget.index, data, editorData);
       if (!context.mounted) return;
       Navigator.of(context).pop();
       Navigator.of(context).pop();
@@ -534,19 +570,23 @@ class _EditPageState extends State<EditPage> {
       }
     } finally {
       //This is useless if the screen goes away but useful for debugging
-      for (EditorText text in _texts) {
-        final transform = text.transform.storage;
-        transform[12] = transform[12] * scaleFactor;
-        transform[13] = transform[13] * scaleFactor;
-        text.fontSize *= scaleFactor;
-        text.outlineWidth *= scaleFactor;
-        text.fontSize /= FontsRegistry.sizeMultiplier(text.fontName) ?? 1;
-      }
+      denormalizeTexts();
       setState(() {
         _exporting = false;
       });
     }
     return;
+  }
+
+  void denormalizeTexts() {
+    for (EditorText text in _texts) {
+      final transform = text.transform.storage;
+      transform[12] = transform[12] * scaleFactor;
+      transform[13] = transform[13] * scaleFactor;
+      text.fontSize *= scaleFactor;
+      text.outlineWidth *= scaleFactor;
+      text.fontSize /= FontsRegistry.sizeMultiplier(text.fontName) ?? 1;
+    }
   }
 
   Future<Uint8List> exportAnimatedSticker(ImageEditorOption option, BuildContext context) async {
@@ -701,6 +741,13 @@ class _EditPageState extends State<EditPage> {
     return {
       "layers": _layers.map((layer) => layer.toJson()).toList(),
     };
+  }
+
+  void _dump() {
+    print("Layers:");
+    for (final layer in _layers) {
+      log(layer.toJson().toString());
+    }
   }
 }
 
