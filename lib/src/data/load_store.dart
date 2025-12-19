@@ -120,12 +120,12 @@ Future<void> importPack(File f) async {
     await Directory("$packsDir/${pack.id}").create(recursive: true);
 
     for (var i = 0; i < pack.stickers.length; i++) {
-      await File(pack.stickers[i].source).copy("$packsDir/${pack.id}/imported_$i.webp");
-      pack.stickers[i].source = File("$packsDir/${pack.id}/imported_$i.webp").path;
+      await File(pack.stickers[i].source).copy("$packsDir/${pack.id}/$i.webp");
+      pack.stickers[i].source = File("$packsDir/${pack.id}/$i.webp").path;
     }
     if (pack.trayIcon != null) {
-      await File("${pack.trayIcon}").copy("$packsDir/${pack.id}/imported_tray.webp");
-      pack.trayIcon = File("$packsDir/${pack.id}/imported_tray.webp").path;
+      await File("${pack.trayIcon}").copy("$packsDir/${pack.id}/tray.webp");
+      pack.trayIcon = File("$packsDir/${pack.id}/tray.webp").path;
     }
     debugPrint("[${pack.id}] Copy t=${sw.elapsedMilliseconds}ms");
     packs.add(pack);
