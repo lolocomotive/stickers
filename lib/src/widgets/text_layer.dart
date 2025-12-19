@@ -14,11 +14,14 @@ class TextLayer extends StatefulWidget implements EditorLayer {
 
   final GlobalKey rbKey;
 
+  bool openNextFrame;
+
   TextLayer(
     this.text, {
     super.key,
     this.onDelete,
     required this.rbKey,
+    this.openNextFrame = true,
   });
 
   @override
@@ -48,11 +51,11 @@ class TextLayer extends StatefulWidget implements EditorLayer {
   static TextLayer fromJson(Map<String, dynamic> json, GlobalKey rbKey) {
     final text = EditorText(
       text: json["text"],
-      transform: Matrix4.fromList(json["transform"]),
+      transform: Matrix4.fromList(json["transform"].map<double>((e) => e as double).toList()),
       fontSize: json["fontSize"],
-      textColor: json["textColor"],
+      textColor: Color(json["textColor"]),
       fontName: json["fontName"],
-      outlineColor: json["outlineColor"],
+      outlineColor: Color(json["outlineColor"]),
       outlineWidth: json["outlineWidth"],
     );
 
@@ -62,17 +65,20 @@ class TextLayer extends StatefulWidget implements EditorLayer {
 }
 
 class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
-  final TextEditingController _controller = TextEditingController(text: "");
+  final TextEditingController _controller = TextEditingController();
   final _focusNode = FocusNode();
   final _editorKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => enableEditing());
+    if (widget.openNextFrame) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => enableEditing());
+    }
   }
 
   void enableEditing() {
+    _controller.text = widget.text.text;
     showDialog(
       useRootNavigator: true,
       context: context,
@@ -127,7 +133,7 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
                   ),
                 ),
                 Text(
-                  _controller.text,
+                  widget.text.text,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     inherit: false,

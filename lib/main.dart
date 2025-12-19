@@ -65,8 +65,30 @@ void main() async {
   runApp(StickersApp(settingsController: settingsController));
 }
 
+/// Creates the directory structure for the app to function
+///
+/// ```
+/// ~
+/// ├-sticker_packs.json              // Main json file with all sticker packs
+/// ├-fonts.json                      // Json file for the fonts registry
+/// ├-cache                           // Used for temporary stuff. Not using flutter-provided temp dir because
+/// │   │                             // Android may delete it while the app is running, which breaks the app
+/// │   ├-exported_packs              // Packs that have been exported for the user to share
+/// │   ├-media                       // Where media gets stored before getting cropped and processed into a sticker NOTE: might change
+/// │   └-fonts                       // Font previews downloaded by the fonts manager
+/// └-packs                           // Folder where all sticker packs are stored
+///     └-pack_1766063451614          // Original pack name if imported, UTC timestamp if created from the app
+///         ├-editor_data             // Editor data, needed to edit stickers after they are made
+///         │   ├-1.json              // Editor data for sticker 1
+///         │   └-1                   // Editor media for sticker 1
+///         │       ├-background.webp // Background image/video
+///         │       └-1.webp          // Media for image layers
+///         └-imported_1.webp         // Will just rename to i.webp i think
+///
+///
+/// ```
 Future<void> createDirs() async {
-  await getApplicationCacheDirectory().then((value) async {
+  await getApplicationDocumentsDirectory().then((value) async {
     final List<Future> tasks = [];
     cacheDir = "${value.path}/cache";
     exportCacheDir = "${value.path}/cache/exported_packs";

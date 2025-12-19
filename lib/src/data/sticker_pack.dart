@@ -46,7 +46,7 @@ class StickerPack {
       animatedStickerPack: animated,
     );
 
-    for (var sticker in stickers) {
+    for (final sticker in stickers) {
       stickerPack.addSticker(sticker.getWhatsappStickerImage(), sticker.emojis);
     }
 
@@ -89,7 +89,7 @@ class StickerPack {
     );
   }
 
-  setTray(String source) {
+  void setTray(String source) {
     Directory parent = Directory("$packsDir/$id/");
     File output = File("$packsDir/$id/tray_${DateTime.now().millisecondsSinceEpoch}.webp");
     if (!parent.existsSync()) parent.createSync(recursive: true);

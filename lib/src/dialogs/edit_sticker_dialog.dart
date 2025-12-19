@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
+import 'package:stickers/src/data/editor_data.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/pages/crop_page.dart';
 
 class EditStickerDialog extends StatefulWidget {
   final StickerPack pack;
@@ -44,9 +47,41 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
             Container(
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
               clipBehavior: Clip.antiAlias,
-              child: CustomPaint(
-                painter: CheckerPainter(context),
-                child: Image.file(File(widget.pack.stickers[widget.index].source)),
+              child: Stack(
+                children: [
+                  CustomPaint(
+                    painter: CheckerPainter(context),
+                    child: Image.file(File(widget.pack.stickers[widget.index].source)),
+                  ),
+                  Positioned(
+                      // FIXME this is ugly
+                      top: 0,
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: FilledButton(
+                          onPressed: () async {
+                            if (widget.pack.stickers[widget.index].editorData != null) {
+                              Navigator.of(context).pushNamed("/edit",
+                                  arguments: EditArguments(
+                                    pack: widget.pack,
+                                    index: widget.index,
+                                    editorData: widget.pack.stickers[widget.index].editorData!,
+                                  ));
+                            } else {
+                              Navigator.of(context).pushNamed("/edit",
+                                  arguments: EditArguments(
+                                    pack: widget.pack,
+                                    index: widget.index,
+                                    mediaPath: widget.pack.stickers[widget.index].source,
+                                  ));
+                            }
+                          },
+                          child: Text("Edit"),
+                        ),
+                      ))
+                ],
               ),
             ),
             Form(
@@ -56,8 +91,7 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
-                    decoration: InputDecoration(
-                        label: Text(AppLocalizations.of(context)!.associatedEmojis)),
+                    decoration: InputDecoration(label: Text(AppLocalizations.of(context)!.associatedEmojis)),
                     textAlign: TextAlign.center,
                     validator: validator,
                     controller: controller,
@@ -88,8 +122,7 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                           onPressed: valid
                               ? () {
                                   if (formKey.currentState?.validate() == false) return;
-                                  widget.pack.stickers[widget.index].emojis =
-                                      controller.value.text.characters.toList();
+                                  widget.pack.stickers[widget.index].emojis = controller.value.text.characters.toList();
                                   widget.pack.onEdit();
                                   Navigator.of(context).pop();
                                 }
@@ -114,8 +147,8 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
     } else if (value.characters.length > 3) {
       return AppLocalizations.of(context)!.pleaseProvideAtmost3Emojis;
     }
-    final emojiRegex = RegExp(
-        r"(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])");
+    final emojiRegex =
+        RegExp(r"(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])");
     for (final char in value.characters) {
       if (emojiRegex.allMatches(char).isEmpty) {
         return AppLocalizations.of(context)!.pleaseEnterOnlyEmojis;

@@ -1,9 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_editor/image_editor.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
@@ -35,7 +31,8 @@ String? authorValidator(String? value, BuildContext context) {
 Future<void> sendToWhatsappWithErrorHandling(StickerPack pack, BuildContext context) async {
   try {
     await pack.sendToWhatsapp();
-  } on WhatsappStickersAlreadyAddedException catch (_) {
+  } on WhatsappStickersAlreadyAddedException catch (_) { // Not really an error
+  } on WhatsappStickersCancelledException catch (_) { // The user decided to cancel - no need to inform
   } on WhatsappStickersException catch (e) {
     showDialog(
       context: navigatorKey.currentContext!,
@@ -73,4 +70,3 @@ int colCount(double width) {
     return 9;
   }
 }
-

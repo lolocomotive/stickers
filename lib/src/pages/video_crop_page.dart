@@ -48,7 +48,10 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
     _maskColorController = AnimationController(vsync: this);
     Tween<double> tween = Tween(begin: 0.0, end: 1.0);
     Animation anim = CurvedAnimation(
-        parent: _maskColorController, curve: Curves.ease, reverseCurve: Curves.ease);
+      parent: _maskColorController,
+      curve: Curves.ease,
+      reverseCurve: Curves.ease,
+    );
     anim.drive(tween);
     _maskColorController.addListener(_animationListener);
     _controller = VideoPlayerController.file(
@@ -163,8 +166,7 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                         values: _range,
                         onChangeEnd: (_) async {
                           if (_seekTarget == _controller.value.duration * _range.end) {
-                            _requestSeek(
-                                _controller.value.duration * _range.end - Duration(seconds: 1));
+                            _requestSeek(_controller.value.duration * _range.end - Duration(seconds: 1));
                             if (_seekTarget < _controller.value.duration * _range.start) {
                               _seekTarget = _controller.value.duration * _range.start;
                             }
@@ -198,8 +200,7 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                           thumbColor: Theme.of(context).colorScheme.onSurface,
                           activeColor: Colors.transparent,
                           inactiveColor: Colors.transparent,
-                          value: _controller.value.position.inMilliseconds /
-                              _controller.value.duration.inMilliseconds,
+                          value: _controller.value.position.inMilliseconds / _controller.value.duration.inMilliseconds,
                           onChanged: (_) {},
                           year2023: false,
                         ),
