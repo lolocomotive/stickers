@@ -3,7 +3,6 @@ import 'dart:developer';
 import 'dart:io';
 import 'dart:math' hide log;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -415,14 +414,33 @@ class _EditPageState extends State<EditPage> {
               duration: Duration(milliseconds: 200),
             );
 
-            var doneButton = FilledButton.icon(
-              icon: Icon(Icons.done),
-              onPressed: _exporting
-                  ? null
-                  : () async {
-                      await onDone(context);
-                    },
-              label: Text(AppLocalizations.of(context)!.addToPack),
+            var doneButton = Row(
+              children: [
+                if (widget.editorData != null)
+                  FilledButton.tonal(
+                    onPressed: _exporting
+                        ? null
+                        : () async {
+                            await addSticker(context, replace: true);
+                          },
+                    child: Text("Replace"),
+                  ),
+                if (widget.editorData != null)
+                  SizedBox(
+                    width: 16,
+                  ),
+                Expanded(
+                  child: FilledButton.icon(
+                    icon: Icon(Icons.done),
+                    onPressed: _exporting
+                        ? null
+                        : () async {
+                            await addSticker(context);
+                          },
+                    label: Text(AppLocalizations.of(context)!.addToPack),
+                  ),
+                ),
+              ],
             );
             if (isHorizontal) {
               final double halfWidth = min(constraints.maxHeight - 16, min(500, constraints.maxWidth / 2 - 16));
@@ -454,7 +472,6 @@ class _EditPageState extends State<EditPage> {
                                   undoButtons,
                                   if (_drawing) SizedBox(height: 12),
                                   doneButton,
-                                  if (kDebugMode) OutlinedButton(onPressed: _dump, child: Text("Dump"))
                                 ],
                               ),
                             ),
@@ -482,7 +499,6 @@ class _EditPageState extends State<EditPage> {
                         undoButtons,
                         SizedBox(height: 12),
                         doneButton,
-                        if (kDebugMode) OutlinedButton(onPressed: _dump, child: Text("Dump"))
                       ],
                     ),
                   ),
@@ -519,7 +535,7 @@ class _EditPageState extends State<EditPage> {
     setState(() {});
   }
 
-  Future<void> onDone(BuildContext context) async {
+  Future<void> addSticker(BuildContext context, {bool replace = false}) async {
     setState(() {
       _exporting = true;
     });
@@ -553,7 +569,12 @@ class _EditPageState extends State<EditPage> {
         data = await exportAnimatedSticker(option, context);
       }
       final editorData = EditorData(background: _source.path, layers: _layers);
-      await addToPack(widget.pack, widget.index, data, editorData);
+      if (replace) {
+        await addToPack(widget.pack, widget.index, data, editorData);
+      } else {
+        await addToPack(
+            widget.pack, widget.editorData == null ? widget.pack.stickers.length + 2 : widget.index, data, editorData);
+      }
       if (!context.mounted) return;
       Navigator.of(context).pop();
       Navigator.of(context).pop();
@@ -743,7 +764,7 @@ class _EditPageState extends State<EditPage> {
     };
   }
 
-  void _dump() {
+  void _dumpLayers() {
     print("Layers:");
     for (final layer in _layers) {
       log(layer.toJson().toString());

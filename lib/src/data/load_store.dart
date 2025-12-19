@@ -226,6 +226,7 @@ Future<void> addToPack(StickerPack pack, int index, Uint8List data, [EditorData?
   }
 
   pack.onEdit();
+  await FileImage(stickerFile).evict();
   await savePacks(packs);
   // Clear media cache after adding a sticker
   print("Clearing media cache");
