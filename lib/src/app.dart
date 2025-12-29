@@ -224,7 +224,7 @@ class StickersAppState extends State<StickersApp> {
       final pack = StickerPack(
         defaultTitle,
         defaultAuthor,
-        "pack_${DateTime.now().millisecondsSinceEpoch}",
+        uid(),
         [],
         "0",
         false, // TODO add support for animated stickers in auto-generated

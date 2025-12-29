@@ -99,7 +99,7 @@ class _CreatePackDialogState extends State<CreatePackDialog> {
             widget.packs.add(StickerPack(
               _nameController.text,
               _authorController.text,
-              "pack_${DateTime.now().millisecondsSinceEpoch}",
+              uid(),
               [],
               "0",
               _animated,

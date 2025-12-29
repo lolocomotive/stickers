@@ -1,10 +1,8 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
-import 'package:stickers/src/data/editor_data.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 
@@ -107,11 +105,9 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            File(widget.pack.stickers[widget.index].source).delete();
-                            widget.pack.stickers.removeAt(widget.index);
-                            widget.pack.onEdit();
+                          onPressed: () async {
+                            await deleteSticker();
+                            if (context.mounted) Navigator.of(context).pop();
                           },
                           child: Text(
                             AppLocalizations.of(context)!.deleteSticker,
@@ -139,6 +135,17 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
         ),
       ),
     );
+  }
+
+  Future<void> deleteSticker() async {
+    await File(widget.pack.stickers[widget.index].source).delete();
+    if (widget.pack.stickers[widget.index].editorData != null) {
+      await File(widget.pack.stickers[widget.index].editorData!).delete();
+      await Directory(widget.pack.stickers[widget.index].editorData!.replaceAll(RegExp("\\.json\$"), ""))
+          .delete(recursive: true);
+    }
+    widget.pack.stickers.removeAt(widget.index);
+    widget.pack.onEdit();
   }
 
   String? validator(String? value) {

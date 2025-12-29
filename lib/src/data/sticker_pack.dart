@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:image_editor/image_editor.dart';
-import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker.dart';
+import 'package:stickers/src/globals.dart';
 import 'package:whatsapp_stickers_plus/whatsapp_stickers.dart';
 
 class StickerPack {
@@ -91,7 +91,8 @@ class StickerPack {
 
   void setTray(String source) {
     Directory parent = Directory("$packsDir/$id/");
-    File output = File("$packsDir/$id/tray_${DateTime.now().millisecondsSinceEpoch}.webp");
+    File output = File("$packsDir/$id/tray.webp");
+    FileImage(output).evict();
     if (!parent.existsSync()) parent.createSync(recursive: true);
     File(source).copySync(output.path);
     trayIcon = output.path;

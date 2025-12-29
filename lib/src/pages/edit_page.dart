@@ -28,6 +28,8 @@ import 'package:stickers/src/widgets/text_layer.dart';
 import 'package:vector_math/vector_math_64.dart' hide Colors;
 import 'package:video_player/video_player.dart';
 
+import '../util.dart';
+
 class EditPage extends StatefulWidget {
   /// Path of the temporary image to edit
   final String? mediaPath;
@@ -614,7 +616,7 @@ class _EditPageState extends State<EditPage> {
     final out =
         await ImageEditor.editImageAndGetFile(image: transparent.buffer.asUint8List(), imageEditorOption: option);
     final service = OverlayAndEncodeService();
-    final output = File("$mediaCacheDir/exported_${DateTime.now().millisecondsSinceEpoch}.webp");
+    final output = File("$mediaCacheDir/exported_${uid()}.webp");
     Stopwatch sw = Stopwatch()..start();
     Uint8List? data;
     double quality = 60;

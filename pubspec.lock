@@ -90,13 +90,13 @@ packages:
     source: hosted
     version: "0.3.5"
   crypto:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: crypto
-      sha256: "1e445881f28f22d6140f181e07737b22f1e099a5e1ff94b0af2f9e4a463f4855"
+      sha256: c8ea0233063ba03258fbcf2ca4d6dadfefe14f02fab57702265467a19f27fadf
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.6"
+    version: "3.0.7"
   csslib:
     dependency: transitive
     description:
@@ -907,9 +907,11 @@ packages:
   whatsapp_stickers_plus:
     dependency: "direct main"
     description:
-      path: "C:\\Users\\loic\\StudioProjects\\whatsapp_stickers_plus"
-      relative: false
-    source: path
+      path: "."
+      ref: "47d089a886cc0df4fa2f7f8af659b06454442e9d"
+      resolved-ref: "47d089a886cc0df4fa2f7f8af659b06454442e9d"
+      url: "https://github.com/lolocomotive/whatsapp_stickers_plus"
+    source: git
     version: "1.1.2"
   win32:
     dependency: transitive

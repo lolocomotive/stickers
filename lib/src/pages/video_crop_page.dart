@@ -9,6 +9,7 @@ import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
+import 'package:stickers/src/util.dart';
 import 'package:stickers/src/video/common.dart';
 import 'package:stickers/src/video/crop_scale.dart';
 import 'package:video_player/video_player.dart';
@@ -275,7 +276,7 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
     });
     try {
       _controller.pause();
-      final output = "$mediaCacheDir/import_${DateTime.now().millisecondsSinceEpoch}.mp4";
+      final output = "$mediaCacheDir/import_${uid()}.mp4";
       await service.start(
         inputFile: widget.imagePath,
         outputFile: output,

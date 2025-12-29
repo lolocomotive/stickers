@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
@@ -5,6 +8,17 @@ import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:whatsapp_stickers_plus/exceptions.dart';
+
+int counter = 0;
+
+/// Generates an UID based on current time.
+/// Hacky but should work
+String uid() {
+  return sha256
+      .convert(utf8.encode("${counter++}#${DateTime.timestamp().microsecondsSinceEpoch}"))
+      .toString()
+      .substring(0, 16);
+}
 
 bool isValidURL(String input) {
   final url = Uri.tryParse(input);
@@ -31,8 +45,10 @@ String? authorValidator(String? value, BuildContext context) {
 Future<void> sendToWhatsappWithErrorHandling(StickerPack pack, BuildContext context) async {
   try {
     await pack.sendToWhatsapp();
-  } on WhatsappStickersAlreadyAddedException catch (_) { // Not really an error
-  } on WhatsappStickersCancelledException catch (_) { // The user decided to cancel - no need to inform
+  } on WhatsappStickersAlreadyAddedException catch (_) {
+    // Not really an error
+  } on WhatsappStickersCancelledException catch (_) {
+    // The user decided to cancel - no need to inform
   } on WhatsappStickersException catch (e) {
     showDialog(
       context: navigatorKey.currentContext!,

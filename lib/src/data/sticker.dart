@@ -1,6 +1,8 @@
 import 'package:whatsapp_stickers_plus/whatsapp_stickers.dart';
 
 class Sticker {
+
+  /// Path of the source file
   String source;
 
   /// Source file of the original media and layers of the sticker

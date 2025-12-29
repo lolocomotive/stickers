@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:stickers/src/data/sticker.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/globals.dart';
+import 'package:stickers/src/util.dart';
 import 'package:stickers/src/widgets/image_layer.dart';
 
 import 'editor_data.dart';
@@ -21,7 +22,7 @@ Future<void> savePacks(List<StickerPack> packs) async {
 Future<void> exportPack(StickerPack pack) async {
   Stopwatch sw = Stopwatch()..start();
   Directory exportDir = Directory(exportCacheDir);
-  Directory packDir = Directory("${exportDir.path}/pack_${DateTime.timestamp().millisecondsSinceEpoch}/");
+  Directory packDir = Directory("${exportDir.path}/${uid()}/");
   await packDir.create(recursive: true);
   File jsonFile = File("${packDir.path}/pack.json");
   Map<String, dynamic> exportData = pack.toJson();
@@ -49,7 +50,7 @@ Future<void> importPack(File f) async {
   //TODO show progress
   Stopwatch sw = Stopwatch()..start();
   Directory importDir = Directory(mediaCacheDir);
-  Directory unzipDir = Directory("${importDir.path}pack_${DateTime.timestamp().millisecondsSinceEpoch}/");
+  Directory unzipDir = Directory("${importDir.path}${uid()}/");
   await unzipDir.create(recursive: true);
   await ZipFile.extractToDirectory(zipFile: f, destinationDir: unzipDir);
   debugPrint("Unzip t=${sw.elapsedMilliseconds}ms");
@@ -62,7 +63,7 @@ Future<void> importPack(File f) async {
       final pack = StickerPack(
           (await File("${unzipDir.path}title.txt").readAsString()).replaceAll("\n", ""),
           (await File("${unzipDir.path}author.txt").readAsString()).replaceAll("\n", ""),
-          "pack_${DateTime.timestamp().millisecondsSinceEpoch}",
+          uid(),
           dirContents
               .map((entry) => entry.path)
               .where((path) => path.toLowerCase().endsWith(".webp"))
@@ -199,29 +200,31 @@ Future<void> addToPack(StickerPack pack, int index, Uint8List data,
   File stickerFile;
   File? editorDataFile;
 
-  if (editorData != null) {
-    await Directory("$packsDir/${pack.id}/$index/").create(recursive: true);
-    await File(editorData.background).rename("$packsDir/${pack.id}/$index/background.webp");
-    editorData.background = "$packsDir/${pack.id}/$index/background.webp";
-
-    for (int i = 0; i < editorData.layers.length; i++) {
-      if (editorData.layers[i] is ImageLayer) {
-        final ImageLayer layer = editorData.layers[i] as ImageLayer;
-        await File(layer.source).rename("$packsDir/${pack.id}/$index/$i.webp");
-        layer.source = "$packsDir/${pack.id}/$index/$i.webp";
-      }
-    }
-
-    editorDataFile = File("$packsDir/${pack.id}/$index.json");
-    await editorDataFile.writeAsString(jsonEncode(editorData.toJson()));
-  }
-
   if (index == 30) {
     stickerFile = File("$packsDir/${pack.id}/tray.webp");
     await stickerFile.writeAsBytes(data);
     pack.trayIcon = stickerFile.path;
   } else {
-    stickerFile = File("$packsDir/${pack.id}/$index.webp");
+    // This is enough to avoid filename collisions
+    final String filename = "${index}_${uid()}";
+
+    if (editorData != null) {
+      await Directory("$packsDir/${pack.id}/$filename/").create(recursive: true);
+      await File(editorData.background).rename("$packsDir/${pack.id}/$filename/background.webp");
+      editorData.background = "$packsDir/${pack.id}/$filename/background.webp";
+
+      for (int i = 0; i < editorData.layers.length; i++) {
+        if (editorData.layers[i] is ImageLayer) {
+          final ImageLayer layer = editorData.layers[i] as ImageLayer;
+          await File(layer.source).rename("$packsDir/${pack.id}/$filename/$i.webp");
+          layer.source = "$packsDir/${pack.id}/$filename/$i.webp";
+        }
+      }
+
+      editorDataFile = File("$packsDir/${pack.id}/$filename.json");
+      await editorDataFile.writeAsString(jsonEncode(editorData.toJson()));
+    }
+    stickerFile = File("$packsDir/${pack.id}/$filename.webp");
     await stickerFile.writeAsBytes(data);
     if (!replace) {
       pack.stickers.add(Sticker(stickerFile.path, ["❤"], editorDataFile?.path));
@@ -237,7 +240,7 @@ Future<void> addToPack(StickerPack pack, int index, Uint8List data,
 }
 
 Future<File> saveTemp(Uint8List data) async {
-  File output = File("$mediaCacheDir/${DateTime.now().millisecondsSinceEpoch}.tmp.webp");
+  File output = File("$mediaCacheDir/${uid()}.tmp.webp");
   await output.writeAsBytes(data);
   return output;
 }
