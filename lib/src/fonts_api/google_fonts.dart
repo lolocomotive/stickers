@@ -47,9 +47,8 @@ double totalDownload = 0;
 
 Future<void> downloadAndRegisterFont(WebFont font) async {
   final entry = FontsRegistry.get(font.family) ?? FontsRegistryEntry(font.family, FontType.googleFont);
-  final tmp = await getApplicationDocumentsDirectory();
-  await Directory("${tmp.path}/googleFonts").create(recursive: true);
-  File dest = File("${tmp.path}/googleFonts/${font.family}.ttf");
+  await Directory(googleFontsDir).create(recursive: true);
+  File dest = File("$googleFontsDir/${font.family}.ttf");
   final result = await get(Uri.parse(font.files["regular"] ?? font.files[font.variants.first]!));
   await dest.writeAsBytes(result.bodyBytes);
   final loader = FontLoader(font.family);

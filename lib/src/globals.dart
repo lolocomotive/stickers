@@ -11,6 +11,8 @@ late String cacheDir;
 late String fontsCacheDir;
 late String exportCacheDir;
 late String mediaCacheDir;
+late String bundledFontsDir;
+late String googleFontsDir;
 
 late List<StickerPack> packs;
 final navigatorKey = GlobalKey<NavigatorState>();

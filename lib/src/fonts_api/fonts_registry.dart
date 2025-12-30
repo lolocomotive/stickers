@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_editor/image_editor.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:stickers/src/globals.dart';
 
 enum FontType { bundled, custom, googleFont }
 
@@ -45,8 +46,7 @@ Future<String?> registerFont(FontsRegistryEntry entry) async {
 Future<void> loadFonts(List<FontsRegistryEntry> fonts) async {
   debugPrint("Registering fonts...");
   Stopwatch sw = Stopwatch()..start();
-  Directory fontsDir = Directory("${(await getApplicationDocumentsDirectory()).path}/bundled_fonts/");
-  if (!await fontsDir.exists()) await fontsDir.create(recursive: true);
+  Directory fontsDir = Directory(bundledFontsDir);
   final futures = <Future>[];
   for (final font in fonts) {
     futures.add((() async {
