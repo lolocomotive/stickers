@@ -306,7 +306,7 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
             pack: widget.pack,
             index: widget.index,
             mediaPath: output,
-            type: MediaType.video,
+            type: .video,
           ));
     } finally {
       setState(() {
