@@ -210,8 +210,9 @@ Future<void> addToPack(StickerPack pack, int index, Uint8List data,
 
     if (editorData != null) {
       await Directory("$packsDir/${pack.id}/$filename/").create(recursive: true);
-      await File(editorData.background).rename("$packsDir/${pack.id}/$filename/background.webp");
-      editorData.background = "$packsDir/${pack.id}/$filename/background.webp";
+      final backgroundPath = "$packsDir/${pack.id}/$filename/background.${editorData.background.split(".").last}";
+      await File(editorData.background).rename(backgroundPath);
+      editorData.background = backgroundPath;
 
       for (int i = 0; i < editorData.layers.length; i++) {
         if (editorData.layers[i] is ImageLayer) {

@@ -51,7 +51,8 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                     painter: CheckerPainter(context),
                     child: Image.file(File(widget.pack.stickers[widget.index].source)),
                   ),
-                  Positioned(
+                  if (!widget.pack.animated || widget.pack.stickers[widget.index].editorData != null)
+                    Positioned(
                       // FIXME this is ugly
                       top: 0,
                       bottom: 0,
@@ -61,24 +62,30 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                         child: FilledButton(
                           onPressed: () async {
                             if (widget.pack.stickers[widget.index].editorData != null) {
-                              Navigator.of(context).pushNamed("/edit",
-                                  arguments: EditArguments(
-                                    pack: widget.pack,
-                                    index: widget.index,
-                                    editorData: widget.pack.stickers[widget.index].editorData!,
-                                  ));
+                              Navigator.of(context).pushNamed(
+                                "/edit",
+                                arguments: EditArguments(
+                                  pack: widget.pack,
+                                  index: widget.index,
+                                  type: widget.pack.animated ? .video : .picture,
+                                  editorData: widget.pack.stickers[widget.index].editorData!,
+                                ),
+                              );
                             } else {
-                              Navigator.of(context).pushNamed("/edit",
-                                  arguments: EditArguments(
-                                    pack: widget.pack,
-                                    index: widget.index,
-                                    mediaPath: widget.pack.stickers[widget.index].source,
-                                  ));
+                              Navigator.of(context).pushNamed(
+                                "/edit",
+                                arguments: EditArguments(
+                                  pack: widget.pack,
+                                  index: widget.index,
+                                  mediaPath: widget.pack.stickers[widget.index].source,
+                                ),
+                              );
                             }
                           },
                           child: Text("Edit"),
                         ),
-                      ))
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -127,7 +134,7 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                         ),
                       ],
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -141,8 +148,9 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
     await File(widget.pack.stickers[widget.index].source).delete();
     if (widget.pack.stickers[widget.index].editorData != null) {
       await File(widget.pack.stickers[widget.index].editorData!).delete();
-      await Directory(widget.pack.stickers[widget.index].editorData!.replaceAll(RegExp("\\.json\$"), ""))
-          .delete(recursive: true);
+      await Directory(
+        widget.pack.stickers[widget.index].editorData!.replaceAll(RegExp("\\.json\$"), ""),
+      ).delete(recursive: true);
     }
     widget.pack.stickers.removeAt(widget.index);
     widget.pack.onEdit();
@@ -154,8 +162,9 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
     } else if (value.characters.length > 3) {
       return AppLocalizations.of(context)!.pleaseProvideAtmost3Emojis;
     }
-    final emojiRegex =
-        RegExp(r"(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])");
+    final emojiRegex = RegExp(
+      r"(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])",
+    );
     for (final char in value.characters) {
       if (emojiRegex.allMatches(char).isEmpty) {
         return AppLocalizations.of(context)!.pleaseEnterOnlyEmojis;
