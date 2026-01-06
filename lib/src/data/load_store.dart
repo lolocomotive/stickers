@@ -30,6 +30,13 @@ Future<void> exportPack(StickerPack pack) async {
   for (var i = 0; i < pack.stickers.length; i++) {
     await File(pack.stickers[i].source).copy("${packDir.path}$i.webp");
     exportData["stickers"][i]["source"] = "$i.webp";
+    if (exportData["stickers"][i]["editorData"] != null) {
+      exportData["stickers"][i]["editorData"] = "$i.json";
+      final data = jsonDecode(await File(pack.stickers[i].editorData!).readAsString());
+      data["background"] = "$i/background.webp";
+      await File("${packDir.path}$i.json").writeAsString(jsonEncode(data));
+      await Directory(pack.stickers[i].editorData!.replaceAll(RegExp(".json\$"), "")).copy("${packDir.path}$i");
+    }
   }
   if (pack.trayIcon != null) {
     await File(pack.trayIcon!).copy("${packDir.path}tray.png");
@@ -61,17 +68,18 @@ Future<void> importPack(File f) async {
     case "wastickers":
       final dirContents = unzipDir.listSync();
       final pack = StickerPack(
-          (await File("${unzipDir.path}title.txt").readAsString()).replaceAll("\n", ""),
-          (await File("${unzipDir.path}author.txt").readAsString()).replaceAll("\n", ""),
-          uid(),
-          dirContents
-              .map((entry) => entry.path)
-              .where((path) => path.toLowerCase().endsWith(".webp"))
-              .map((path) => Sticker(path, ["❤"], null))
-              .toList(),
-          "1000",
-          false, // It's not possible to directly export animated packs from that app.
-          trayIcon: dirContents.where((entry) => entry.path.toLowerCase().endsWith(".png")).firstOrNull?.path);
+        (await File("${unzipDir.path}title.txt").readAsString()).replaceAll("\n", ""),
+        (await File("${unzipDir.path}author.txt").readAsString()).replaceAll("\n", ""),
+        uid(),
+        dirContents
+            .map((entry) => entry.path)
+            .where((path) => path.toLowerCase().endsWith(".webp"))
+            .map((path) => Sticker(path, ["❤"], null))
+            .toList(),
+        "1000",
+        false, // It's not possible to directly export animated packs from that app.
+        trayIcon: dirContents.where((entry) => entry.path.toLowerCase().endsWith(".png")).firstOrNull?.path,
+      );
       packsToAdd.add(pack);
       break;
     case "stickify":
@@ -84,11 +92,13 @@ Future<void> importPack(File f) async {
             packJson["publisher"],
             packJson["identifier"],
             (packJson["stickers"] as List)
-                .map((sticker) => Sticker(
-                      "${dir.path}/${sticker["image_file"]}",
-                      (sticker["emojis"] as List).isEmpty ? ["❤"] : sticker["emojis"],
-                      null,
-                    ))
+                .map(
+                  (sticker) => Sticker(
+                    "${dir.path}/${sticker["image_file"]}",
+                    (sticker["emojis"] as List).isEmpty ? ["❤"] : sticker["emojis"],
+                    null,
+                  ),
+                )
                 .toList(),
             packJson["image_data_version"],
             packJson["animated_sticker_pack"],
@@ -150,7 +160,12 @@ Future<List<StickerPack>> getPacks() async {
 }
 
 Future<Uint8List> cropSticker(
-    Rect cropRect, Uint8List rawImageData, StickerPack pack, int index, double rotation) async {
+  Rect cropRect,
+  Uint8List rawImageData,
+  StickerPack pack,
+  int index,
+  double rotation,
+) async {
   // Apply crop then scale then put on 512x512 transparent image in center
 
   final crop = ImageEditorOption();
@@ -194,8 +209,13 @@ Future<Uint8List> cropSticker(
 /// Copies the file to the required place
 ///
 /// If [index] is 30 it changes the tray icon.
-Future<void> addToPack(StickerPack pack, int index, Uint8List data,
-    [EditorData? editorData, bool replace = false]) async {
+Future<void> addToPack(
+  StickerPack pack,
+  int index,
+  Uint8List data, [
+  EditorData? editorData,
+  bool replace = false,
+]) async {
   Directory("$packsDir/${pack.id}").createSync(recursive: true);
   File stickerFile;
   File? editorDataFile;
@@ -227,7 +247,15 @@ Future<void> addToPack(StickerPack pack, int index, Uint8List data,
     }
     stickerFile = File("$packsDir/${pack.id}/$filename.webp");
     await stickerFile.writeAsBytes(data);
-    if (!replace) {
+    if (replace) {
+      await File(pack.stickers[index].source).delete();
+      if (pack.stickers[index].editorData != null) {
+        await File(pack.stickers[index].editorData!).delete();
+        await Directory(pack.stickers[index].editorData!.replaceAll(RegExp(".json\$"), "")).delete(recursive: true);
+      }
+      pack.stickers[index].source = stickerFile.path;
+      pack.stickers[index].editorData = editorDataFile?.path;
+    } else {
       pack.stickers.add(Sticker(stickerFile.path, ["❤"], editorDataFile?.path));
     }
   }

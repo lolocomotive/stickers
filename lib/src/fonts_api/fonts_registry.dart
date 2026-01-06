@@ -13,7 +13,7 @@ enum FontType { bundled, custom, googleFont }
 /// Returns the font file path.
 Future<String?> _registerBundledFont(String family, Directory fontsDir) async {
   if (family == "sans-serif" || family == "monospace") return null;
-  File fontFile = File("${fontsDir.path}$family.ttf");
+  File fontFile = File("${fontsDir.path}/$family.ttf");
   if (!await fontFile.exists()) {
     debugPrint("Copying file to ${fontFile.path}");
     await fontFile.create();

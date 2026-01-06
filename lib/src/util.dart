@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +42,27 @@ String? authorValidator(String? value, BuildContext context) {
   }
   return null;
 }
+
+
+extension DirectoryCopy on Directory {
+  Future<void> copy(String targetPath) async {
+    await Directory(targetPath).create(recursive: true);
+    final String sourcePath = absolute.path;
+    await for (final item in list(recursive: true)) {
+      String relativePath = item.path.replaceFirst(sourcePath, '');
+      if (relativePath.startsWith(Platform.pathSeparator)) {
+        relativePath = relativePath.substring(1);
+      }
+      final String newPath = '$targetPath${Platform.pathSeparator}$relativePath';
+      if (item is Directory) {
+        await Directory(newPath).create(recursive: true);
+      } else if (item is File) {
+        await item.copy(newPath);
+      }
+    }
+  }
+}
+
 
 Future<void> sendToWhatsappWithErrorHandling(StickerPack pack, BuildContext context) async {
   try {
