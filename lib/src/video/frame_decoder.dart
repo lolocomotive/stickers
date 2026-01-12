@@ -67,69 +67,20 @@ class QuickFrameInfo {
 
 /// Static utilities for quick media validation without full decoding
 class MediaValidator {
-  /// Get estimated frame count for a video/animation file using FFprobe
-  /// This is faster than full decoding and useful for validation before processing
+  /// Get estimated frame count for a video/animation file
+  /// Uses native Flutter codec for WebP/GIF (more reliable) and FFprobe for videos
   static Future<QuickFrameInfo> getQuickFrameInfo(String filePath) async {
     try {
-      final session = await FFprobeKit.getMediaInformation(filePath);
-      final info = session.getMediaInformation();
+      final extension = filePath.toLowerCase().split('.').last;
 
-      if (info == null) {
-        return QuickFrameInfo(
-          estimatedFrameCount: 0,
-          fps: 0,
-          duration: Duration.zero,
-          error: 'Failed to get media information',
-        );
+      // For WebP and GIF, use Flutter's native codec which properly handles animation
+      // FFprobe often fails to detect animated WebP frame counts correctly
+      if (extension == 'webp' || extension == 'gif') {
+        return await _getQuickFrameInfoNative(filePath);
       }
 
-      final streams = info.getStreams();
-      if (streams.isEmpty) {
-        return QuickFrameInfo(
-          estimatedFrameCount: 0,
-          fps: 0,
-          duration: Duration.zero,
-          error: 'No streams found in media',
-        );
-      }
-
-      // Find video stream
-      final videoStream = streams.firstWhere(
-        (s) => s.getType() == 'video',
-        orElse: () => streams.first,
-      );
-
-      // Parse frame rate
-      final fpsStr =
-          videoStream.getRealFrameRate() ??
-          videoStream.getAverageFrameRate() ??
-          '24/1';
-      double fps = 24.0;
-      if (fpsStr.contains('/')) {
-        final parts = fpsStr.split('/');
-        if (parts.length == 2) {
-          final num = double.tryParse(parts[0]) ?? 24;
-          final den = double.tryParse(parts[1]) ?? 1;
-          fps = den > 0 ? num / den : 24;
-        }
-      } else {
-        fps = double.tryParse(fpsStr) ?? 24;
-      }
-      fps = fps.clamp(1.0, 120.0);
-
-      // Get duration
-      final durationStr = info.getDuration() ?? '0';
-      final durationSec = double.tryParse(durationStr) ?? 0;
-      final duration = Duration(microseconds: (durationSec * 1000000).round());
-
-      // Estimate frame count - use floor to be conservative
-      final frameCount = (durationSec * fps).floor().clamp(0, 100000);
-
-      return QuickFrameInfo(
-        estimatedFrameCount: frameCount,
-        fps: fps,
-        duration: duration,
-      );
+      // For videos, use FFprobe
+      return await _getQuickFrameInfoFFprobe(filePath);
     } catch (e) {
       return QuickFrameInfo(
         estimatedFrameCount: 0,
@@ -138,6 +89,129 @@ class MediaValidator {
         error: 'Error analyzing media: $e',
       );
     }
+  }
+
+  /// Get frame info using Flutter's native image codec (for WebP/GIF)
+  static Future<QuickFrameInfo> _getQuickFrameInfoNative(
+    String filePath,
+  ) async {
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        return QuickFrameInfo(
+          estimatedFrameCount: 0,
+          fps: 0,
+          duration: Duration.zero,
+          error: 'File not found',
+        );
+      }
+
+      final bytes = await file.readAsBytes();
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frameCount = codec.frameCount;
+
+      if (frameCount == 0) {
+        codec.dispose();
+        return QuickFrameInfo(
+          estimatedFrameCount: 0,
+          fps: 0,
+          duration: Duration.zero,
+          error: 'No frames found',
+        );
+      }
+
+      // Get first frame to estimate duration/fps
+      Duration totalDuration = Duration.zero;
+      for (int i = 0; i < frameCount; i++) {
+        final frameInfo = await codec.getNextFrame();
+        totalDuration += frameInfo.duration;
+        frameInfo.image.dispose();
+      }
+      codec.dispose();
+
+      final avgDurationMs = totalDuration.inMilliseconds / frameCount;
+      final fps = avgDurationMs > 0
+          ? (1000 / avgDurationMs).clamp(1.0, 120.0)
+          : 24.0;
+
+      return QuickFrameInfo(
+        estimatedFrameCount: frameCount,
+        fps: fps,
+        duration: totalDuration,
+      );
+    } catch (e) {
+      return QuickFrameInfo(
+        estimatedFrameCount: 0,
+        fps: 0,
+        duration: Duration.zero,
+        error: 'Error decoding with native codec: $e',
+      );
+    }
+  }
+
+  /// Get frame info using FFprobe (for videos)
+  static Future<QuickFrameInfo> _getQuickFrameInfoFFprobe(
+    String filePath,
+  ) async {
+    final session = await FFprobeKit.getMediaInformation(filePath);
+    final info = session.getMediaInformation();
+
+    if (info == null) {
+      return QuickFrameInfo(
+        estimatedFrameCount: 0,
+        fps: 0,
+        duration: Duration.zero,
+        error: 'Failed to get media information',
+      );
+    }
+
+    final streams = info.getStreams();
+    if (streams.isEmpty) {
+      return QuickFrameInfo(
+        estimatedFrameCount: 0,
+        fps: 0,
+        duration: Duration.zero,
+        error: 'No streams found in media',
+      );
+    }
+
+    // Find video stream
+    final videoStream = streams.firstWhere(
+      (s) => s.getType() == 'video',
+      orElse: () => streams.first,
+    );
+
+    // Parse frame rate
+    final fpsStr =
+        videoStream.getRealFrameRate() ??
+        videoStream.getAverageFrameRate() ??
+        '24/1';
+    double fps = 24.0;
+    if (fpsStr.contains('/')) {
+      final parts = fpsStr.split('/');
+      if (parts.length == 2) {
+        final num = double.tryParse(parts[0]) ?? 24;
+        final den = double.tryParse(parts[1]) ?? 1;
+        fps = den > 0 ? num / den : 24;
+      }
+    } else {
+      fps = double.tryParse(fpsStr) ?? 24;
+    }
+    fps = fps.clamp(1.0, 120.0);
+
+    // Get duration
+    final durationStr = info.getDuration() ?? '0';
+    final durationSec = double.tryParse(durationStr) ?? 0;
+    final duration = Duration(microseconds: (durationSec * 1000000).round());
+
+    // Estimate frame count - use floor to be conservative
+    final frameCount = (durationSec * fps).floor().clamp(0, 100000);
+
+    return QuickFrameInfo(
+      estimatedFrameCount: frameCount,
+      fps: fps,
+      duration: duration,
+    );
   }
 }
 
