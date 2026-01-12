@@ -44,7 +44,15 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
               title: Text(widget.pack.title),
               subtitle: Opacity(
                 opacity: .8,
-                child: Text(widget.pack.author),
+                child: Row(
+                  children: [
+                    Text(widget.pack.author),
+                    const SizedBox(width: 4),
+                    Icon(widget.pack.animated ? Icons.animation : Icons.collections, size: 16),
+                    const SizedBox(width: 2),
+                    Text(widget.pack.stickers.length.toString()),
+                  ],
+                ),
               ),
               leading: widget.pack.stickers.isEmpty
                   ? null

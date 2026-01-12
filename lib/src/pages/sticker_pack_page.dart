@@ -95,7 +95,24 @@ class StickerPackPageState extends State<StickerPackPage> {
                   icon: const Icon(Icons.delete),
                 ),
               ],
-              title: widget.pack.title,
+              titleWidget: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.pack.title),
+                  Opacity(
+                    opacity: 0.8,
+                    child: Row(
+                      children: [
+                        Text(widget.pack.author, style: Theme.of(context).textTheme.bodySmall),
+                        const SizedBox(width: 4),
+                        Icon(widget.pack.animated ? Icons.animation : Icons.collections, size: 16),
+                        const SizedBox(width: 2),
+                        Text(widget.pack.stickers.length.toString(), style: Theme.of(context).textTheme.bodySmall),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: GridView.builder(
