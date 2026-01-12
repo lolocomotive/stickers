@@ -8,15 +8,14 @@ import 'package:stickers/src/pages/edit_page.dart';
 
 class TextLayer extends StatefulWidget implements EditorLayer {
   final EditorText text;
-  TextLayerState? state;
 
   final Function(TextLayer)? onDelete;
 
   final GlobalKey rbKey;
 
-  bool openNextFrame;
+  final bool openNextFrame;
 
-  TextLayer(
+  const TextLayer(
     this.text, {
     super.key,
     this.onDelete,
@@ -26,12 +25,11 @@ class TextLayer extends StatefulWidget implements EditorLayer {
 
   @override
   State<TextLayer> createState() {
-    state = TextLayerState();
-    return state!;
+    return TextLayerState();
   }
 
   void update(Matrix4 matrix) {
-    state?.update(matrix);
+    text.transform = matrix;
   }
 
   @override
@@ -51,7 +49,9 @@ class TextLayer extends StatefulWidget implements EditorLayer {
   static TextLayer fromJson(Map<String, dynamic> json, GlobalKey rbKey) {
     final text = EditorText(
       text: json["text"],
-      transform: Matrix4.fromList(json["transform"].map<double>((e) => e as double).toList()),
+      transform: Matrix4.fromList(
+        json["transform"].map<double>((e) => e as double).toList(),
+      ),
       fontSize: json["fontSize"],
       textColor: Color(json["textColor"]),
       fontName: json["fontName"],
@@ -122,7 +122,10 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     inherit: false,
-                    fontSize: widget.text.fontSize * (FontsRegistry.sizeMultiplier(widget.text.fontName) ?? 1),
+                    fontSize:
+                        widget.text.fontSize *
+                        (FontsRegistry.sizeMultiplier(widget.text.fontName) ??
+                            1),
                     foreground: Paint()
                       ..strokeJoin = StrokeJoin.round
                       ..strokeCap = StrokeCap.round
@@ -137,7 +140,10 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     inherit: false,
-                    fontSize: widget.text.fontSize * (FontsRegistry.sizeMultiplier(widget.text.fontName) ?? 1),
+                    fontSize:
+                        widget.text.fontSize *
+                        (FontsRegistry.sizeMultiplier(widget.text.fontName) ??
+                            1),
                     color: widget.text.textColor,
                     fontFamily: widget.text.fontName,
                   ),
@@ -156,7 +162,9 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
   }
 
   void disableEditing() {
-    Navigator.of(context).popUntil((route) => route.settings.name == EditPage.routeName);
+    Navigator.of(
+      context,
+    ).popUntil((route) => route.settings.name == EditPage.routeName);
   }
 }
 
@@ -168,31 +176,44 @@ class FontPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double paddingDiff = MediaQuery.of(context).textScaler.scale(max(15 * (font.sizeMultiplier - 1), 0)) / 2;
+    final double paddingDiff =
+        MediaQuery.of(
+          context,
+        ).textScaler.scale(max(15 * (font.sizeMultiplier - 1), 0)) /
+        2;
     return Column(
       children: [
         Container(
-          padding: EdgeInsets.fromLTRB(12, 8 - paddingDiff, 12, 8 - paddingDiff),
+          padding: EdgeInsets.fromLTRB(
+            12,
+            8 - paddingDiff,
+            12,
+            8 - paddingDiff,
+          ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             color: active
                 ? (Theme.of(context).brightness == Brightness.light
-                    ? Theme.of(context).colorScheme.primary.withAlpha(100)
-                    : Theme.of(context).colorScheme.primary.withAlpha(50))
+                      ? Theme.of(context).colorScheme.primary.withAlpha(100)
+                      : Theme.of(context).colorScheme.primary.withAlpha(50))
                 : Colors.transparent,
           ),
           child: Baseline(
-              baseline: MediaQuery.of(context).textScaler.scale(15),
-              baselineType: TextBaseline.alphabetic,
-              child: Text(
-                font.display ?? font.family,
-                overflow: TextOverflow.fade,
-                softWrap: false,
-                style: TextStyle(
-                    color: Colors.white,
-                    fontFamily: font.family,
-                    fontSize: MediaQuery.of(context).textScaler.scale(15 * font.sizeMultiplier)),
-              )),
+            baseline: MediaQuery.of(context).textScaler.scale(15),
+            baselineType: TextBaseline.alphabetic,
+            child: Text(
+              font.display ?? font.family,
+              overflow: TextOverflow.fade,
+              softWrap: false,
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: font.family,
+                fontSize: MediaQuery.of(
+                  context,
+                ).textScaler.scale(15 * font.sizeMultiplier),
+              ),
+            ),
+          ),
         ),
       ],
     );

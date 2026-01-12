@@ -1,91 +1,121 @@
 import 'dart:async';
-
-import 'package:flutter/services.dart';
+import 'package:ffmpeg_kit_flutter_new_video/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_new_video/ffprobe_kit.dart';
+import 'package:ffmpeg_kit_flutter_new_video/ffmpeg_session.dart';
+import 'package:ffmpeg_kit_flutter_new_video/return_code.dart';
+import 'package:ffmpeg_kit_flutter_new_video/statistics.dart';
 
 import 'common.dart';
 
 class OverlayAndEncodeService {
-  // The channel names must match those defined in MainActivity.kt
-  static const _methodChannel = MethodChannel('de.loicezt.stickers/methods');
-  static const _eventChannel = EventChannel('de.loicezt.stickers/progress_encode');
-
   // A stream controller to expose a single, unified progress stream.
   final _progressController = StreamController<Progress>.broadcast();
 
   Stream<Progress> get progressStream => _progressController.stream;
+  FFmpegSession? _session;
 
-  OverlayAndEncodeService() {
-    // Listen to the native event channel as soon as the service is created.
-    _eventChannel.receiveBroadcastStream().listen(_onProgress, onError: _onError);
-  }
-
-  /// Handles incoming data from the native EventChannel.
-  void _onProgress(dynamic data) {
-    if (data is Map) {
-      final statusString = data['status'] as String?;
-
-      // Safely parse the status string into an enum.
-      final status = Status.values.firstWhere(
-        (e) => e.name == statusString,
-        orElse: () => Status.IDLE,
-      );
-
-      final progress = Progress(
-        status: status,
-        progress: (data['progress'] as num?)?.toDouble() ?? 0.0,
-        currentFrame: data['currentFrame'] as int? ?? 0,
-        totalFrames: data['totalFrames'] as int? ?? 0,
-      );
-      _progressController.add(progress);
-    }
-  }
-
-  /// Handles errors from the native EventChannel.
-  void _onError(Object error) {
-    // ignore: avoid_print
-    print("Error on EventChannel: $error");
-    _progressController.add(Progress(status: Status.FAILED));
-  }
-
-  /// Calls the native method to start the overlay and encoding process.
   Future<void> start({
     required String videoFile,
     required String overlayFile,
     required String outputFile,
     required WebPConfig config,
     required int fps,
+    double speed = 1.0,
   }) async {
+    double duration = 0;
     try {
-      // The method name 'startOverlay' and the argument keys must match
-      // what is expected in MainActivity.kt.
-      await _methodChannel.invokeMethod(
-        'startOverlay',
-        {
-          'videoFile': videoFile,
-          'overlayFile': overlayFile,
-          'outputFile': outputFile,
-          'fps': fps,
-          'config': config.toMap(),
+      final mediaInfoSession = await FFprobeKit.getMediaInformation(videoFile);
+      final mediaInfo = mediaInfoSession.getMediaInformation();
+      final durationStr = mediaInfo?.getDuration();
+      if (durationStr != null) {
+        duration = double.tryParse(durationStr) ?? 0;
+      }
+    } catch (e) {
+      print("Error getting media info: $e");
+    }
+
+    // Use setpts to adjust speed (duration), then fps to resample (reducing frame count if speeding up)
+    // Scale and Pad should happen after to ensure consistent output size
+    // Note: setpts must handle potentially weird timestamps, but usually PTS/speed works.
+    final filterComplex = '[0:v]setpts=PTS/${speed.toStringAsFixed(4)},fps=$fps,scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=0x00000000[base];[base][1:v]overlay=0:0';
+
+    final arguments = [
+      '-y',
+      '-i', videoFile,
+      '-i', overlayFile,
+      '-filter_complex', filterComplex,
+      '-c:v', 'libwebp',
+      '-pix_fmt', 'yuva420p',
+      '-loop', '0',
+      '-an',
+    ];
+
+    if (config.lossless == true) {
+      arguments.addAll(['-lossless', '1']);
+    }
+
+    if (config.quality != null) {
+      arguments.addAll(['-q:v', '${config.quality}']);
+    }
+
+    if (config.method != null) {
+      arguments.addAll(['-compression_level', '${config.method}']);
+    }
+
+    if (config.imageHint != null) {
+      arguments.add('-preset');
+      switch (config.imageHint!) {
+        case WebPImageHint.picture:
+        case WebPImageHint.photo:
+          arguments.add('picture');
+          break;
+        case WebPImageHint.graph:
+          arguments.add('drawing');
+          break;
+        default:
+          arguments.add('default');
+      }
+    }
+
+    arguments.add(outputFile);
+
+    _progressController.add(Progress(status: Status.running, progress: 0.0));
+
+    _session = await FFmpegKit.executeWithArgumentsAsync(
+        arguments,
+        (FFmpegSession session) async {
+          final returnCode = await session.getReturnCode();
+          if (ReturnCode.isSuccess(returnCode)) {
+            _progressController.add(Progress(status: Status.success, progress: 1.0));
+          } else if (ReturnCode.isCancel(returnCode)) {
+            _progressController.add(Progress(status: Status.cancelled, progress: 0.0));
+          } else {
+            print("FFmpeg overlay failed with rc $returnCode");
+            print(await session.getOutput());
+            _progressController.add(Progress(status: Status.failed));
+          }
         },
-      );
-    } on PlatformException catch (e) {
-      // ignore: avoid_print
-      print("Failed to start overlay process: '${e.message}'.");
-      _progressController.add(Progress(status: Status.FAILED));
-    }
+        null, // Log callback
+        (Statistics statistics) {
+          final time = statistics.getTime();
+          double progress = 0;
+          if (duration > 0 && time > 0) {
+            progress = (time / 1000.0) / duration;
+          }
+          if (progress > 1.0) progress = 1.0;
+          _progressController.add(Progress(
+              status: Status.running,
+              progress: progress,
+              currentFrame: statistics.getVideoFrameNumber(),
+          ));
+        }
+    );
   }
 
-  /// Calls the native method to cancel the ongoing process.
   Future<void> cancel() async {
-    try {
-      await _methodChannel.invokeMethod('cancel');
-    } on PlatformException catch (e) {
-      // ignore: avoid_print
-      print("Failed to cancel overlay process: '${e.message}'.");
-    }
+    _session?.cancel();
   }
 
-  /// Cleans up the stream controller.
   void dispose() {
     _progressController.close();
   }

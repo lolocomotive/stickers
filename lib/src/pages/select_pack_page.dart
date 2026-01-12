@@ -24,6 +24,7 @@ class _SelectPackPageState extends State<SelectPackPage> {
   Widget build(BuildContext context) {
     return DefaultSliverActivity(
       fab: FloatingActionButton(
+        heroTag: "select_pack_fab",
         onPressed: () {
           showDialog(context: context, builder: (_) => CreatePackDialog(packs)).then(
             (_) => setState(() {

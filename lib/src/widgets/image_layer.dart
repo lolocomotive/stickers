@@ -4,9 +4,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:stickers/src/pages/edit_page.dart';
 
 class ImageLayer extends StatelessWidget implements EditorLayer {
-  String source;
+  final String source;
 
-  ImageLayer({super.key, required this.source});
+  const ImageLayer({super.key, required this.source});
 
   @override
   Widget build(BuildContext context) {

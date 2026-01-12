@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
-import 'package:stickers/src/data/editor_data.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/pages/default_page.dart';
@@ -262,6 +261,8 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
 enum MediaType {
   video,
   picture,
+  /// Animated WebP with alpha channel - uses frame-based pipeline
+  animatedWebp,
 }
 
 class EditArguments {
@@ -269,15 +270,19 @@ class EditArguments {
 
   // Index 30 is tray icon
   int index;
-  String? mediaPath;
+  String mediaPath;
   MediaType type;
   String? editorData;
+  
+  /// If true, frames should be retrieved from FrameCache instead of decoding mediaPath
+  bool useFrameCache;
 
   EditArguments({
     required this.pack,
     required this.index,
-    this.mediaPath,
-    this.editorData,
+    required this.mediaPath,
     this.type = MediaType.picture,
+    this.editorData,
+    this.useFrameCache = false,
   });
 }

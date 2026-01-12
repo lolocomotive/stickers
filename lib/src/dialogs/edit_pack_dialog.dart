@@ -113,7 +113,7 @@ class _EditPackDialogState extends State<EditPackDialog> {
                       TextFormField(
                         keyboardType: TextInputType.url,
                         controller: _publisherURLController,
-                        validator: _urlValidator,
+                        validator: (value) => urlValidator(value, context),
                         decoration: InputDecoration(
                           label: Text(AppLocalizations.of(context)!.publisherWebsite),
                         ),
@@ -122,7 +122,7 @@ class _EditPackDialogState extends State<EditPackDialog> {
                       TextFormField(
                         keyboardType: TextInputType.url,
                         controller: _privacyPolicyURLController,
-                        validator: _urlValidator,
+                        validator: (value) => urlValidator(value, context),
                         decoration: InputDecoration(
                           label: Text(AppLocalizations.of(context)!.privacyPolicyWebsite),
                         ),
@@ -131,7 +131,7 @@ class _EditPackDialogState extends State<EditPackDialog> {
                       TextFormField(
                         keyboardType: TextInputType.url,
                         controller: _licenseAgreementURLController,
-                        validator: _urlValidator,
+                        validator: (value) => urlValidator(value, context),
                         decoration: InputDecoration(
                           label: Text(AppLocalizations.of(context)!.licenseAgreementWebsite),
                         ),
@@ -172,14 +172,7 @@ class _EditPackDialogState extends State<EditPackDialog> {
     );
   }
 
-  String? _urlValidator(String? value) {
-    if (value == null) return null;
-    if (value.isEmpty) return null;
-    if (isValidURL(value)) return null;
-    return AppLocalizations.of(context)!.pleaseEnterAValidUrl;
-  }
-
-  _changeTrayIcon() {
+  void _changeTrayIcon() {
     showDialog(
       context: context,
       builder: (context) => TrayIconMethodSelector(

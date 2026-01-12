@@ -61,6 +61,8 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
                         painter: CheckerPainter(context),
                         child: Image.file(
                           File(widget.pack.trayIcon ?? widget.pack.stickers.first.source),
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Center(child: Icon(Icons.broken_image)),
                         ),
                       ),
                     ),
@@ -120,6 +122,8 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
                         painter: CheckerPainter(context),
                         child: Image.file(
                           File(sticker.source),
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Center(child: Icon(Icons.broken_image)),
                         ),
                       ),
                     ),

@@ -8,6 +8,7 @@ import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/globals.dart';
+import 'package:stickers/src/pages/animated_trim_page.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/edit_page.dart';
 import 'package:stickers/src/pages/fonts_manager_page.dart';
@@ -108,6 +109,7 @@ class StickersAppState extends State<StickersApp> {
             Locale('de', ''),
             Locale('fr', ''),
             Locale('ru', ''),
+            Locale('tr', ''),
           ],
           locale: _locale,
 
@@ -142,29 +144,31 @@ class StickersAppState extends State<StickersApp> {
                     return FontsManagerPage();
                   case SettingsPage.routeName:
                     return SettingsPage(controller: widget.settingsController);
+                  case AnimatedTrimPage.routeName:
+                    final args = routeSettings.arguments as EditArguments;
+                    return AnimatedTrimPage(
+                      pack: args.pack,
+                      index: args.index,
+                      mediaPath: args.mediaPath,
+                    );
                   case VideoCropPage.routeName:
                     final args = routeSettings.arguments as EditArguments;
                     return VideoCropPage(
                       pack: args.pack,
                       index: args.index,
-                      imagePath: args.mediaPath!,
+                      imagePath: args.mediaPath,
                     );
                   case CropPage.routeName:
                     final args = routeSettings.arguments as EditArguments;
                     return CropPage(
                       pack: args.pack,
                       index: args.index,
-                      imagePath: args.mediaPath!,
+                      imagePath: args.mediaPath,
                     );
                   case EditPage.routeName:
                     final args = routeSettings.arguments as EditArguments;
-                    return EditPage(
-                      args.pack,
-                      args.index,
-                      args.type,
-                      editorData: args.editorData,
-                      mediaPath: args.mediaPath,
-                    );
+                    return EditPage(args.pack, args.index, args.mediaPath, args.editorData, args.type,
+                      useFrameCache: args.useFrameCache);
                   case StickerPackPage.routeName:
                     return StickerPackPage(routeSettings.arguments as StickerPack, () {
                       setState(() {});

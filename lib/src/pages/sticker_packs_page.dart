@@ -48,6 +48,7 @@ class StickerPacksPageState extends State<StickerPacksPage> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           FloatingActionButton(
+            heroTag: "import_fab",
             tooltip: AppLocalizations.of(context)!.import,
             onPressed: () async {
               FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -79,6 +80,7 @@ class StickerPacksPageState extends State<StickerPacksPage> {
             width: 8,
           ),
           FloatingActionButton.extended(
+            heroTag: "create_pack_fab",
             backgroundColor: Theme.of(context).colorScheme.primary,
             onPressed: () {
               showDialog(context: context, builder: (_) => CreatePackDialog(packs)).then(

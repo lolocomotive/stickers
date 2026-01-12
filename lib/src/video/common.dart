@@ -1,5 +1,5 @@
 // Enums and classes to mirror the Kotlin side
-enum Status { IDLE, RUNNING, SUCCESS, FAILED, CANCELLED }
+enum Status { idle, running, success, failed, cancelled }
 
 class Progress {
   final Status status;
@@ -8,7 +8,7 @@ class Progress {
   final int totalFrames;
 
   Progress({
-    this.status = Status.IDLE,
+    this.status = Status.idle,
     this.progress = 0.0,
     this.currentFrame = 0,
     this.totalFrames = 0,

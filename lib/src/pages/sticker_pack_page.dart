@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
@@ -14,6 +15,7 @@ import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/util.dart';
+import 'package:stickers/src/video/frame_decoder.dart';
 
 class StickerPackPage extends StatefulWidget {
   final StickerPack pack;
@@ -28,6 +30,33 @@ class StickerPackPage extends StatefulWidget {
 }
 
 class StickerPackPageState extends State<StickerPackPage> {
+  @override
+  void initState() {
+    super.initState();
+    _removeBrokenStickers();
+  }
+
+  Future<void> _removeBrokenStickers() async {
+    final stickersToCheck = widget.pack.stickers.toList();
+    final brokenStickers = [];
+
+    for (final sticker in stickersToCheck) {
+      if (!await File(sticker.source).exists()) {
+        brokenStickers.add(sticker);
+      }
+    }
+
+    if (brokenStickers.isNotEmpty && mounted) {
+      setState(() {
+        for (final sticker in brokenStickers) {
+          widget.pack.stickers.remove(sticker);
+        }
+      });
+      widget.pack.onEdit();
+      await savePacks(packs);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -119,7 +148,11 @@ class StickerPackPageState extends State<StickerPackPage> {
                             : CustomPaint(
                                 painter: CheckerPainter(context),
                                 child: GestureDetector(
-                                  child: Image.file(File(widget.pack.stickers[index].source)),
+                                  child: Image.file(
+                                    File(widget.pack.stickers[index].source),
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        const Center(child: Icon(Icons.broken_image)),
+                                  ),
                                   onTap: () {
                                     showDialog(
                                       context: context,
@@ -194,16 +227,61 @@ class StickerPackPageState extends State<StickerPackPage> {
     try {
       final ImagePicker picker = ImagePicker();
       if (widget.pack.animated) {
-        final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
-        if (video == null) return;
+        FilePickerResult? result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: [
+            'webp',
+            'mp4',
+            'avi',
+            'mov',
+            'mkv',
+            'webm',
+            'gif',
+            'flv',
+            'wmv',
+            'mpeg',
+            'mpg',
+            'm4v',
+            '3gp',
+            'ts'
+          ],
+        );
+
+        if (result == null || result.files.single.path == null) return;
+        final String mediaPath = result.files.single.path!;
+
         if (!mounted) return;
+        
+        // Use frame-based pipeline for WebP and GIF to preserve alpha
+        final extension = mediaPath.toLowerCase().split('.').last;
+        final useFramePipeline = ['webp', 'gif'].contains(extension);
+        
+        if (useFramePipeline) {
+          // Check frame count for animated WebP/GIF
+          final frameInfo = await MediaValidator.getQuickFrameInfo(mediaPath);
+          if (!frameInfo.hasEnoughFrames) {
+            if (mounted) {
+              showDialog(
+                context: context,
+                builder: (context) => ErrorDialog(
+                  title: AppLocalizations.of(context)!.couldntExportSticker,
+                  message: AppLocalizations.of(context)!.animatedStickersMustHaveAtLeast2Frames,
+                ),
+              );
+            }
+            return;
+          }
+        }
+        
+        if (!mounted) return;
+        
         Navigator.pushNamed(
           context,
-          "/crop_video",
+          useFramePipeline ? "/trim_animated" : "/crop_video",
           arguments: EditArguments(
             pack: widget.pack,
             index: index,
-            mediaPath: video.path,
+            mediaPath: mediaPath,
           ),
         ).then((value) => setState(() {}));
       } else {

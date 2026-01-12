@@ -70,4 +70,10 @@ class SettingsService {
   Future<void> updateGoogleFonts(bool googleFonts) async {
     _prefs.setBool("googleFonts", googleFonts);
   }
+
+  Future<int> compressionMethod() async => _prefs.getInt("compressionMethod") ?? 0;
+
+  Future<void> updateCompressionMethod(int method) async {
+    _prefs.setInt("compressionMethod", method);
+  }
 }

@@ -9,7 +9,7 @@ import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:whatsapp_stickers_plus/exceptions.dart';
-
+import 'dart:math';
 int counter = 0;
 
 /// Generates an UID based on current time.
@@ -108,3 +108,60 @@ int colCount(double width) {
     return 9;
   }
 }
+
+String getFileSizeString(int bytes, String filePath) {
+  if (bytes <= 0) return "0 B";
+  const suffixes = ["B", "KB", "MB", "GB", "TB"];
+  var i = (log(bytes) / log(1000)).floor();
+  final sizeStr = '${(bytes / pow(1000, i)).toStringAsFixed(2)} ${suffixes[i]}';
+  final extension = filePath.split('.').last.toUpperCase();
+  return '$sizeStr ($extension)';
+}
+
+String getDurationString(Duration duration) {
+  int min = duration.inMinutes;
+  int sec = duration.inSeconds % 60;
+  int ms = duration.inMilliseconds % 1000;
+
+  String formatFractional(int ms) {
+    if (ms == 0) return '';
+    String frac = (ms / 1000.0).toStringAsFixed(2);
+    if (frac == '0.00') return '';
+    frac = frac.substring(2);
+    frac = frac.replaceAll(RegExp(r'0+$'), '');
+    if (frac.isEmpty) frac = '0';
+    return '.$frac';
+  }
+
+  if (min > 0) {
+    return '$min:${sec.toString().padLeft(2, '0')}${formatFractional(ms)} s';
+  } else if (sec == 0) {
+    return '${ms}ms';
+  } else {
+    return '$sec${formatFractional(ms)}s';
+  }
+}
+
+String? urlValidator(String? value, BuildContext context) {
+  if (value == null) return null;
+  if (value.isEmpty) return null;
+  if (isValidURL(value)) return null;
+  return AppLocalizations.of(context)!.pleaseEnterAValidUrl;
+}
+
+String? emojiValidator(String? value, BuildContext context) {
+  if (value == null || value.isEmpty) {
+    return AppLocalizations.of(context)!.pleaseProvideAtLeastOneEmoji;
+  } else if (value.characters.length > 3) {
+    return AppLocalizations.of(context)!.pleaseProvideAtmost3Emojis;
+  }
+  final emojiRegex = RegExp(
+      r"(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])");
+  for (final char in value.characters) {
+    if (emojiRegex.allMatches(char).isEmpty) {
+      return AppLocalizations.of(context)!.pleaseEnterOnlyEmojis;
+    }
+  }
+  return null;
+}
+

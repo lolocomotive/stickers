@@ -231,14 +231,14 @@ Future<void> addToPack(
     if (editorData != null) {
       await Directory("$packsDir/${pack.id}/$filename/").create(recursive: true);
       final backgroundPath = "$packsDir/${pack.id}/$filename/background.${editorData.background.split(".").last}";
-      await File(editorData.background).rename(backgroundPath);
+      await File(editorData.background).copy(backgroundPath);
       editorData.background = backgroundPath;
 
       for (int i = 0; i < editorData.layers.length; i++) {
         if (editorData.layers[i] is ImageLayer) {
           final ImageLayer layer = editorData.layers[i] as ImageLayer;
-          await File(layer.source).rename("$packsDir/${pack.id}/$filename/$i.webp");
-          layer.source = "$packsDir/${pack.id}/$filename/$i.webp";
+          await File(layer.source).copy("$packsDir/${pack.id}/$filename/$i.webp");
+          editorData.layers[i] = ImageLayer(source: "$packsDir/${pack.id}/$filename/$i.webp");
         }
       }
 
@@ -248,10 +248,19 @@ Future<void> addToPack(
     stickerFile = File("$packsDir/${pack.id}/$filename.webp");
     await stickerFile.writeAsBytes(data);
     if (replace) {
-      await File(pack.stickers[index].source).delete();
+      final oldFile = File(pack.stickers[index].source);
+      if (await oldFile.exists()) {
+        await oldFile.delete();
+      }
       if (pack.stickers[index].editorData != null) {
-        await File(pack.stickers[index].editorData!).delete();
-        await Directory(pack.stickers[index].editorData!.replaceAll(RegExp(".json\$"), "")).delete(recursive: true);
+        final oldEditorData = File(pack.stickers[index].editorData!);
+        if (await oldEditorData.exists()) {
+          await oldEditorData.delete();
+        }
+        final oldEditorDataDir = Directory(pack.stickers[index].editorData!.replaceAll(RegExp(".json\$"), ""));
+        if (await oldEditorDataDir.exists()) {
+          await oldEditorDataDir.delete(recursive: true);
+        }
       }
       pack.stickers[index].source = stickerFile.path;
       pack.stickers[index].editorData = editorDataFile?.path;

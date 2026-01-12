@@ -96,16 +96,20 @@
   "newColor": "New color:",
   "cropTooSmall": "Crop area too small",
   "cropTooSmallDetails": "Must be at least 1x1 pixel",
-  "exporting": "Exporting",
+  "exporting": "Processing",
   "couldntExportSticker": "Couldn't export sticker",
+  "animatedStickersMustHaveAtLeast2Frames": "Animated stickers must have at least 2 frames",
+  "@animatedStickersMustHaveAtLeast2Frames": {
+    "description": "Error message when trying to add an animated sticker with less than 2 frames"
+  },
   "errorMessage": "Error message: ",
-  "firstAttempt": "First attempt",
-  "secondAttempt": "Result too big, re-encoding with lower quality",
+  "firstAttempt": "Adding sticker...",
+  "secondAttempt": "Result is too big, compressing...",
   "thirdAttempt": "Last attempt",
   "exportWebpFailed": "Exporting to WebP failed",
   "exportWebpFailedMsg": "Try again, or with another sticker. If the issue persists, submit an issue on GitHub.",
   "stickerTooLarge": "Sticker too large",
-  "stickerTooLargeMsg": "Even when encoding at very low quality settings, the sticker still exceeds the maximum size requirement of 512kB. Please use a shorter video.",
+  "stickerTooLargeMsg": "Even when encoding at very low quality settings, the sticker still exceeds the maximum size requirement of 500kB. Please use a shorter video.",
   "fontsManager": "Fonts manager",
   "addMore": "Add more",
   "displayName": "Display name",
@@ -127,5 +131,10 @@
   "trimFailedMsg": "Try another video, and if it still doesn't work, head to GitHub to submit an Issue",
   "fontsManagerDetails": "Add/remove fonts of the app",
   "clearCache": "Clear cache",
-  "thisWillRestart": "This will restart the app"
+  "thisWillRestart": "This will restart the app",
+  "compressionMethod": "Compression",
+  "reduceFPS": "Speedup",
+  "reduceQuality": "Reduce Quality",
+  "trimResultedInZeroFrames": "The trimmed video contains no frames. Please select a longer duration.",
+  "trimResultedInSingleFrame": "The trimmed video contains only one frame. Animated stickers need at least 2 frames."
 }

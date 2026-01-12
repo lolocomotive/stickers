@@ -5,6 +5,8 @@ import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/pages/crop_page.dart';
+import 'package:stickers/src/util.dart';
+import 'package:stickers/src/video/frame_decoder.dart';
 
 class EditStickerDialog extends StatefulWidget {
   final StickerPack pack;
@@ -20,11 +22,39 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
   final formKey = GlobalKey<FormState>();
   final controller = TextEditingController();
   bool valid = true;
+  int _fileSize = 0;
+  Duration? _duration;
 
   @override
   void initState() {
     super.initState();
     controller.text = widget.pack.stickers[widget.index].emojis.join();
+    try {
+      _fileSize = File(widget.pack.stickers[widget.index].source).lengthSync();
+    } catch (e) {
+      print("Error getting file size: $e");
+    }
+    _loadDuration();
+  }
+
+  void _loadDuration() async {
+    try {
+      final decoder = FrameDecoderService();
+      final success = await decoder.decode(widget.pack.stickers[widget.index].source);
+      if (success) {
+        setState(() {
+          _duration = decoder.metadata?.totalDuration;
+        });
+      } else {
+        setState(() {
+          _duration = null;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _duration = null;
+      });
+    }
   }
 
   @override
@@ -49,46 +79,56 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                 children: [
                   CustomPaint(
                     painter: CheckerPainter(context),
-                    child: Image.file(File(widget.pack.stickers[widget.index].source)),
+                    child: Image.file(
+                      File(widget.pack.stickers[widget.index].source),
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Center(child: Icon(Icons.broken_image)),
+                    ),
                   ),
-                  if (!widget.pack.animated || widget.pack.stickers[widget.index].editorData != null)
+                  if (!widget.pack.animated || widget.pack.stickers[widget.index].editorData != null || widget.pack.animated)
                     Positioned(
-                      // FIXME this is ugly
-                      top: 0,
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: Center(
-                        child: FilledButton(
-                          onPressed: () async {
-                            if (widget.pack.stickers[widget.index].editorData != null) {
-                              Navigator.of(context).pushNamed(
-                                "/edit",
-                                arguments: EditArguments(
-                                  pack: widget.pack,
-                                  index: widget.index,
-                                  type: widget.pack.animated ? .video : .picture,
-                                  editorData: widget.pack.stickers[widget.index].editorData!,
-                                ),
-                              );
-                            } else {
-                              Navigator.of(context).pushNamed(
-                                "/edit",
-                                arguments: EditArguments(
-                                  pack: widget.pack,
-                                  index: widget.index,
-                                  mediaPath: widget.pack.stickers[widget.index].source,
-                                ),
-                              );
-                            }
-                          },
-                          child: Text("Edit"),
-                        ),
+                      bottom: 8,
+                      right: 8,
+                      child: FilledButton(
+                        onPressed: () async {
+                          if (widget.pack.stickers[widget.index].editorData != null) {
+                            Navigator.of(context).pushNamed(
+                              "/edit",
+                              arguments: EditArguments(
+                                pack: widget.pack,
+                                index: widget.index,
+                                mediaPath: widget.pack.stickers[widget.index].source,
+                                type: widget.pack.animated ? MediaType.animatedWebp : MediaType.picture,
+                                editorData: widget.pack.stickers[widget.index].editorData!,
+                              ),
+                            );
+                          } else {
+                            Navigator.of(context).pushNamed(
+                              "/edit",
+                              arguments: EditArguments(
+                                pack: widget.pack,
+                                index: widget.index,
+                                mediaPath: widget.pack.stickers[widget.index].source,
+                                type: widget.pack.animated ? MediaType.animatedWebp : MediaType.picture,
+                              ),
+                            );
+                          }
+                        },
+                        child: Text("Edit"),
                       ),
                     ),
                 ],
               ),
             ),
+            if (_fileSize > 0)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  '${getFileSizeString(_fileSize, widget.pack.stickers[widget.index].source)}${_duration != null ? ' ${getDurationString(_duration!)}' : ''}',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
             Form(
               key: formKey,
               autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -145,12 +185,21 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
   }
 
   Future<void> deleteSticker() async {
-    await File(widget.pack.stickers[widget.index].source).delete();
+    final file = File(widget.pack.stickers[widget.index].source);
+    if (await file.exists()) {
+      await file.delete();
+    }
     if (widget.pack.stickers[widget.index].editorData != null) {
-      await File(widget.pack.stickers[widget.index].editorData!).delete();
-      await Directory(
+      final editorDataFile = File(widget.pack.stickers[widget.index].editorData!);
+      if (await editorDataFile.exists()) {
+        await editorDataFile.delete();
+      }
+      final editorDataDir = Directory(
         widget.pack.stickers[widget.index].editorData!.replaceAll(RegExp("\\.json\$"), ""),
-      ).delete(recursive: true);
+      );
+      if (await editorDataDir.exists()) {
+        await editorDataDir.delete(recursive: true);
+      }
     }
     widget.pack.stickers.removeAt(widget.index);
     widget.pack.onEdit();

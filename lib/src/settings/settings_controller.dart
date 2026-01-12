@@ -23,6 +23,7 @@ class SettingsController with ChangeNotifier {
   late String _defaultTitle;
   late String _locale;
   late bool _googleFonts;
+  late int _compressionMethod;
 
   // Whether the user has agreed or not to use the google fonts service
   bool get googleFonts => _googleFonts;
@@ -32,6 +33,8 @@ class SettingsController with ChangeNotifier {
   String get defaultAuthor => _defaultAuthor;
 
   String get locale => _locale;
+  
+  int get compressionMethod => _compressionMethod;
 
   // Allow Widgets to read the user's preferred ThemeMode.
   ThemeMode get themeMode => _themeMode;
@@ -43,6 +46,13 @@ class SettingsController with ChangeNotifier {
     _quickMode = quickMode;
     notifyListeners();
     await _settingsService.updateQuickMode(quickMode);
+  }
+
+  Future<void> updateCompressionMethod(int method) async {
+    if (method == _compressionMethod) return;
+    _compressionMethod = method;
+    notifyListeners();
+    await _settingsService.updateCompressionMethod(method);
   }
 
   Future<void> updateGoogleFonts(bool googleFonts) async {
@@ -83,6 +93,7 @@ class SettingsController with ChangeNotifier {
     _defaultAuthor = await _settingsService.defaultAuthor();
     _locale = await _settingsService.locale();
     _googleFonts = await _settingsService.googleFonts();
+    _compressionMethod = await _settingsService.compressionMethod();
 
     notifyListeners();
   }
