@@ -99,6 +99,7 @@ class _EditPageState extends State<EditPage> with TickerProviderStateMixin {
         if (layer is TextLayer) {
           final newLayer = TextLayer(
             layer.text,
+            key: GlobalKey<TextLayerState>(),
             onDelete: layer.onDelete,
             rbKey: layer.rbKey,
             openNextFrame: false,
@@ -749,6 +750,7 @@ class _EditPageState extends State<EditPage> with TickerProviderStateMixin {
     _layers.add(
       TextLayer(
         text,
+        key: GlobalKey<TextLayerState>(),
         rbKey: _rbKey,
         onDelete: (layer) {
           _layers.remove(layer);
@@ -1260,7 +1262,7 @@ class _EditPageState extends State<EditPage> with TickerProviderStateMixin {
     newTransform = translationDeltaMatrix * newTransform;
     newTransform = scaleDeltaMatrix * newTransform;
     newTransform = rotationDeltaMatrix * newTransform;
-    _currentTextLayer!.update(newTransform);
+    (_currentTextLayer!.key as GlobalKey<TextLayerState>).currentState!.update(newTransform);
     return;
   }
 
