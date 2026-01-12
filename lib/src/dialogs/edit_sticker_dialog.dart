@@ -89,7 +89,7 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                     Positioned(
                       bottom: 8,
                       right: 8,
-                      child: FilledButton(
+                      child: FilledButton.icon(
                         onPressed: () async {
                           if (widget.pack.stickers[widget.index].editorData != null) {
                             Navigator.of(context).pushNamed(
@@ -114,7 +114,8 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                             );
                           }
                         },
-                        child: Text("Edit"),
+                        icon: Icon(Icons.edit),
+                        label: Text("Edit"),
                       ),
                     ),
                 ],

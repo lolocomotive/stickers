@@ -180,9 +180,11 @@ class _EditPageState extends State<EditPage> with TickerProviderStateMixin {
       child: DefaultActivity(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
-          title: Text(_duration != null
-              ? '${AppLocalizations.of(context)!.editYourSticker} (${getDurationString(_duration!)})'
-              : AppLocalizations.of(context)!.editYourSticker),
+          title: Text(
+            _duration != null
+                ? '${AppLocalizations.of(context)!.editYourSticker} (${getDurationString(_duration!)})'
+                : AppLocalizations.of(context)!.editYourSticker,
+          ),
         ),
         child: SafeArea(
           child: LayoutBuilder(
@@ -326,7 +328,7 @@ class _EditPageState extends State<EditPage> with TickerProviderStateMixin {
               );
 
               var editButtons = Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -528,7 +530,7 @@ class _EditPageState extends State<EditPage> with TickerProviderStateMixin {
                 secondChild: Padding(
                   padding: isHorizontal
                       ? EdgeInsets.zero
-                      : EdgeInsets.only(top: 12),
+                      : EdgeInsets.only(top: 6),
                   child: Row(
                     children: [
                       Expanded(
@@ -588,8 +590,9 @@ class _EditPageState extends State<EditPage> with TickerProviderStateMixin {
 
               // Declare compressionOption before the Row to avoid syntax error
               Widget compressionOption = SizedBox();
-              if (widget.mediaType == MediaType.video ||
-                  widget.mediaType == MediaType.animatedWebp) {
+              if (!_drawing &&
+                  (widget.mediaType == MediaType.video ||
+                      widget.mediaType == MediaType.animatedWebp)) {
                 compressionOption = ListenableBuilder(
                   listenable: settingsController,
                   builder: (context, _) {
@@ -614,34 +617,39 @@ class _EditPageState extends State<EditPage> with TickerProviderStateMixin {
                 );
               }
 
-              var doneButton = Row(
-                children: [
-                  if (widget.editorData != null)
-                    FilledButton.tonal(
-                      onPressed: _exporting
-                          ? null
-                          : () async {
-                              await addSticker(context, replace: true);
-                            },
-                      child: Text("Replace"),
-                    ),
-                  if (widget.editorData != null)
-                    SizedBox(
-                      width: 16,
-                    ),
-                  Expanded(
-                    child: FilledButton.icon(
-                      icon: Icon(Icons.done),
-                      onPressed: _exporting
-                          ? null
-                          : () async {
-                              await addSticker(context);
-                            },
-                      label: Text(AppLocalizations.of(context)!.addToPack),
-                    ),
-                  ),
-                ],
-              );
+              var doneButton = _drawing
+                  ? SizedBox()
+                  : Row(
+                      children: [
+                        if (widget.editorData != null)
+                          FilledButton.tonalIcon(
+                            onPressed: _exporting
+                                ? null
+                                : () async {
+                                    await addSticker(context, replace: true);
+                                  },
+                            icon: Icon(Icons.refresh),
+                            label: Text("Replace"),
+                          ),
+                        if (widget.editorData != null)
+                          SizedBox(
+                            width: 12,
+                          ),
+                        Expanded(
+                          child: FilledButton.icon(
+                            icon: Icon(Icons.done),
+                            onPressed: _exporting
+                                ? null
+                                : () async {
+                                    await addSticker(context);
+                                  },
+                            label: Text(
+                              AppLocalizations.of(context)!.addToPack,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
               if (isHorizontal) {
                 final double halfWidth = min(
                   constraints.maxHeight - 16,
@@ -698,8 +706,6 @@ class _EditPageState extends State<EditPage> with TickerProviderStateMixin {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          editButtons,
-                          colorButtons,
                           imageDisplay,
                           if (_fileSize > 0)
                             Padding(
@@ -710,6 +716,8 @@ class _EditPageState extends State<EditPage> with TickerProviderStateMixin {
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ),
+                          colorButtons,
+                          editButtons,
                           undoButtons,
                           SizedBox(height: 12),
                           compressionOption,
