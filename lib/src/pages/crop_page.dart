@@ -269,6 +269,7 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
 enum MediaType {
   video,
   picture,
+  gif,
 }
 
 class EditArguments {
@@ -278,10 +279,14 @@ class EditArguments {
   int index;
   String mediaPath;
   MediaType type;
+  Duration trimStart;
+  Duration? trimEnd;
 
   EditArguments(
       {required this.pack,
       required this.index,
       required this.mediaPath,
-      this.type = MediaType.picture});
+      this.type = MediaType.picture,
+      this.trimStart = Duration.zero,
+      this.trimEnd});
 }

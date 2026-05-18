@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +35,6 @@ class VideoCropPage extends StatefulWidget {
 
 class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateMixin {
   late final AnimationController _maskColorController;
-  final ImageEditorController _editorController = ImageEditorController();
   late final VideoPlayerController _controller;
   double _btnOpacity = 1;
   bool _ready = false;
@@ -69,6 +69,7 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
       }
     }).then((_) => setState(() {
           _ready = true;
+          _range = _initialRange(_controller.value.duration);
         }));
     _controller.addListener(_videoListener);
     _controller.setVolume(0);
@@ -180,6 +181,8 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                           _editing = true;
                         },
                         onChanged: (values) {
+                          final movedStart = _range.start != values.start;
+                          values = _clampRange(values, movedStart: movedStart);
                           final Duration seekTarget;
                           if (_range.start != values.start) {
                             seekTarget = _controller.value.duration * values.start;
@@ -205,6 +208,18 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                         ),
                       ),
                   ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                  child: _ready && _controller.value.duration > maxAnimatedStickerDuration
+                      ? Opacity(
+                          opacity: .8,
+                          child: Text(
+                            AppLocalizations.of(context)!.animatedDurationLimit,
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(10, 8, 10, 16),
@@ -269,6 +284,19 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
   bool _editing = false;
 
   Future<void> doCrop() async {
+    final start = _controller.value.duration * _range.start;
+    final end = _controller.value.duration * _range.end;
+    final selected = end - start;
+    if (selected <= Duration.zero || selected > maxAnimatedStickerDuration) {
+      showDialog(
+        context: context,
+        builder: (context) => ErrorDialog(
+          title: AppLocalizations.of(context)!.animatedDurationLimitTitle,
+          message: AppLocalizations.of(context)!.animatedDurationLimitMessage,
+        ),
+      );
+      return;
+    }
     setState(() {
       _exporting = true;
     });
@@ -278,8 +306,8 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
       await service.start(
         inputFile: widget.imagePath,
         outputFile: output,
-        start: _controller.value.duration * _range.start,
-        end: _controller.value.duration * _range.end,
+        start: start,
+        end: end,
       );
       await for (final s in service.progressStream) {
         if (s.status == Status.SUCCESS) {
@@ -311,5 +339,31 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
         _exporting = false;
       });
     }
+  }
+
+  RangeValues _initialRange(Duration duration) {
+    if (duration <= Duration.zero) return RangeValues(0, 1);
+    if (duration <= maxAnimatedStickerDuration) return RangeValues(0, 1);
+    return RangeValues(0, maxAnimatedStickerDuration.inMilliseconds / duration.inMilliseconds);
+  }
+
+  RangeValues _clampRange(RangeValues values, {required bool movedStart}) {
+    final duration = _controller.value.duration;
+    if (duration <= Duration.zero) return RangeValues(0, 1);
+    final maxSpan = min(1.0, maxAnimatedStickerDuration.inMilliseconds / duration.inMilliseconds);
+    var start = values.start.clamp(0.0, 1.0).toDouble();
+    var end = values.end.clamp(0.0, 1.0).toDouble();
+
+    if (end - start > maxSpan) {
+      if (movedStart) {
+        end = min(1.0, start + maxSpan);
+      } else {
+        start = max(0.0, end - maxSpan);
+      }
+    }
+    if (end <= start) {
+      end = min(1.0, start + .001);
+    }
+    return RangeValues(start, end);
   }
 }

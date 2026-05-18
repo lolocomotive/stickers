@@ -75,10 +75,39 @@ class OverlayAndEncodeService {
     }
   }
 
+  Future<void> startGif({
+    required String gifFile,
+    required String overlayFile,
+    required String outputFile,
+    required Duration start,
+    required Duration end,
+    required WebPConfig config,
+    required int fps,
+  }) async {
+    try {
+      await _methodChannel.invokeMethod(
+        'startGifOverlay',
+        {
+          'gifFile': gifFile,
+          'overlayFile': overlayFile,
+          'outputFile': outputFile,
+          'startMs': start.inMilliseconds,
+          'endMs': end.inMilliseconds,
+          'fps': fps,
+          'config': config.toMap(),
+        },
+      );
+    } on PlatformException catch (e) {
+      // ignore: avoid_print
+      print("Failed to start GIF overlay process: '${e.message}'.");
+      _progressController.add(Progress(status: Status.FAILED));
+    }
+  }
+
   /// Calls the native method to cancel the ongoing process.
   Future<void> cancel() async {
     try {
-      await _methodChannel.invokeMethod('cancel');
+      await _methodChannel.invokeMethod('cancelOverlay');
     } on PlatformException catch (e) {
       // ignore: avoid_print
       print("Failed to cancel overlay process: '${e.message}'.");

@@ -5,9 +5,10 @@ import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/util.dart';
 
 class CreatePackDialog extends StatefulWidget {
-  CreatePackDialog(this.packs, {super.key});
+  CreatePackDialog(this.packs, {this.initialAnimated = false, super.key});
 
   final List<StickerPack> packs;
+  final bool initialAnimated;
 
   @override
   State<CreatePackDialog> createState() => _CreatePackDialogState();
@@ -20,7 +21,13 @@ class _CreatePackDialogState extends State<CreatePackDialog> {
 
   final _formKey = GlobalKey<FormState>();
 
-  bool _animated = false;
+  late bool _animated;
+
+  @override
+  void initState() {
+    super.initState();
+    _animated = widget.initialAnimated;
+  }
 
   @override
   Widget build(BuildContext context) {

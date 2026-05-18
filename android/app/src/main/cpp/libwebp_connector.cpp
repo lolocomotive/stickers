@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <string>
+#include <cstring>
 #include <android/log.h>
 
 // libwebp headers
@@ -426,13 +427,14 @@ Java_de_loicezt_stickers_video_LibWebP_nativeAddFrame(
 JNIEXPORT jbyteArray JNICALL
 Java_de_loicezt_stickers_video_LibWebP_nativeReleaseEncoder(
         JNIEnv *env,
-        jobject /* this */) {
+        jobject /* this */,
+        jint final_timestamp_ms) {
 
 
     if (state == nullptr) { /* ... error handling ... */ return nullptr; }
 
     // Assemble the animation
-    WebPAnimEncoderAdd(state->anim_encoder, nullptr, 0, nullptr);
+    WebPAnimEncoderAdd(state->anim_encoder, nullptr, final_timestamp_ms, nullptr);
     WebPData webp_data;
     WebPDataInit(&webp_data);
     if (!WebPAnimEncoderAssemble(state->anim_encoder, &webp_data)) {

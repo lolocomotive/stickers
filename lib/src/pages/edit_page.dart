@@ -31,8 +31,18 @@ class EditPage extends StatefulWidget {
   final String imagePath;
   final StickerPack pack;
   final int index;
+  final Duration trimStart;
+  final Duration? trimEnd;
 
-  const EditPage(this.pack, this.index, this.imagePath, this.mediaType, {super.key});
+  const EditPage(
+    this.pack,
+    this.index,
+    this.imagePath,
+    this.mediaType, {
+    this.trimStart = Duration.zero,
+    this.trimEnd,
+    super.key,
+  });
 
   static const routeName = "/edit";
 
@@ -296,7 +306,7 @@ class _EditPageState extends State<EditPage> {
                             onMatrixUpdate: (_, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) =>
                                 onMatrixUpdate(translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix),
                             child: Stack(children: [
-                              if (widget.mediaType == MediaType.picture)
+                              if (widget.mediaType == MediaType.picture || widget.mediaType == MediaType.gif)
                                 Image.file(_source)
                               else
                                 Center(
@@ -551,6 +561,13 @@ class _EditPageState extends State<EditPage> {
   }
 
   Future<Uint8List> exportAnimatedSticker(ImageEditorOption option, BuildContext context) async {
+    if (widget.mediaType == MediaType.gif) {
+      final trimEnd = widget.trimEnd ?? maxAnimatedStickerDuration;
+      final selected = trimEnd - widget.trimStart;
+      if (selected <= Duration.zero || selected > maxAnimatedStickerDuration) {
+        throw Exception(AppLocalizations.of(context)!.animatedDurationLimitMessage);
+      }
+    }
     final transparent = await rootBundle.load("assets/transparent.webp");
     final out =
         await ImageEditor.editImageAndGetFile(image: transparent.buffer.asUint8List(), imageEditorOption: option);
@@ -579,8 +596,26 @@ class _EditPageState extends State<EditPage> {
         alphaCompression: 1,
         method: 4,
       );
-      await service.start(
-          videoFile: _source.path, overlayFile: out.path, outputFile: output.path, config: config, fps: fps);
+      if (widget.mediaType == MediaType.gif) {
+        final trimEnd = widget.trimEnd ?? maxAnimatedStickerDuration;
+        await service.startGif(
+          gifFile: _source.path,
+          overlayFile: out.path,
+          outputFile: output.path,
+          start: widget.trimStart,
+          end: trimEnd,
+          config: config,
+          fps: fps,
+        );
+      } else {
+        await service.start(
+          videoFile: _source.path,
+          overlayFile: out.path,
+          outputFile: output.path,
+          config: config,
+          fps: fps,
+        );
+      }
       await for (final update in service.progressStream) {
         if (update.status == Status.SUCCESS) {
           break;
@@ -599,6 +634,7 @@ class _EditPageState extends State<EditPage> {
               },
             );
           }
+          throw Exception("Exporting to WebP failed");
         }
       }
       print("Exported WebP in ${sw.elapsedMilliseconds}ms");

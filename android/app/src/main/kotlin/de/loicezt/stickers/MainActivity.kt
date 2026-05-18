@@ -1,8 +1,5 @@
 package de.loicezt.stickers
 
-import android.os.Build
-import androidx.annotation.NonNull
-import androidx.annotation.RequiresApi
 import de.loicezt.stickers.video.CropAndScale
 import de.loicezt.stickers.video.OverlayAndEncode
 import de.loicezt.stickers.video.WebPConfig
@@ -73,6 +70,35 @@ class MainActivity : FlutterActivity() {
                         result.error(
                             "MISSING_ARGUMENT",
                             "Missing a required file path argument.",
+                            null
+                        )
+                    }
+                }
+
+                "startGifOverlay" -> {
+                    val args = call.arguments as? Map<*, *>
+                    if (args == null) {
+                        result.error("INVALID_ARGUMENTS", "Arguments must be a map", null)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        val gifFile = File(args["gifFile"]!! as String)
+                        val overlayFile = File(args["overlayFile"]!! as String)
+                        val outputFile = File(args["outputFile"]!! as String)
+                        overlayAndEncode.startGif(
+                            gifFile,
+                            overlayFile,
+                            outputFile,
+                            (args["startMs"]!! as Number).toInt(),
+                            (args["endMs"]!! as Number).toInt(),
+                            WebPConfig.fromMap(args["config"]!! as Map<*, *>),
+                            args["fps"]!! as Int
+                        )
+                        result.success(null)
+                    } catch (e: NullPointerException) {
+                        result.error(
+                            "MISSING_ARGUMENT",
+                            "Missing a required GIF overlay argument.",
                             null
                         )
                     }

@@ -135,7 +135,7 @@ class LibWebP {
      * Finalizes the WebP file, writes it to disk, and cleans up resources.
      * @return The path to the output file if successful, otherwise null.
      */
-    external fun nativeReleaseEncoder(): ByteArray?
+    external fun nativeReleaseEncoder(finalTimestampMs: Int): ByteArray?
 
     companion object {
         init {

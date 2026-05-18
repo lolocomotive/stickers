@@ -22,10 +22,12 @@ class SelectPackPage extends StatefulWidget {
 class _SelectPackPageState extends State<SelectPackPage> {
   @override
   Widget build(BuildContext context) {
+    final attachmentPath = widget.media.attachments!.first!.path;
+    final isGif = attachmentPath.toLowerCase().endsWith(".gif");
     return DefaultSliverActivity(
       fab: FloatingActionButton(
         onPressed: () {
-          showDialog(context: context, builder: (_) => CreatePackDialog(packs)).then(
+          showDialog(context: context, builder: (_) => CreatePackDialog(packs, initialAnimated: isGif)).then(
             (_) => setState(() {
               savePacks(packs);
             }),
@@ -37,7 +39,7 @@ class _SelectPackPageState extends State<SelectPackPage> {
       child: ListView.separated(
         separatorBuilder: (context, index) => Container(),
         itemBuilder: (context, index) {
-          bool disabled = packs[index].animated || packs[index].stickers.length >= 30;
+          bool disabled = packs[index].animated != isGif || packs[index].stickers.length >= 30;
           debugPrint("disabled: $disabled");
           return Stack(
             children: [
@@ -83,13 +85,15 @@ class _SelectPackPageState extends State<SelectPackPage> {
                   onTap: disabled
                       ? null
                       : () {
+                          final routeName = isGif ? "/crop_gif" : "/crop";
                           Navigator.pushNamed(
                             context,
-                            "/crop",
+                            routeName,
                             arguments: EditArguments(
                               pack: packs[index],
                               index: packs[index].stickers.length,
-                              mediaPath: widget.media.attachments!.first!.path,
+                              mediaPath: attachmentPath,
+                              type: isGif ? MediaType.gif : MediaType.picture,
                             ),
                           ).then(
                             (value) => setState(

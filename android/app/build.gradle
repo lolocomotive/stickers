@@ -11,6 +11,7 @@ if (keystorePropertiesFile.exists()) {
         keystoreProperties.load(reader)
     }
 }
+def hasReleaseKeystore = keystoreProperties["storeFile"] != null
 
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
@@ -59,16 +60,20 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"]
-            keyPassword = keystoreProperties["keyPassword"]
-            storeFile = new File(keystoreProperties["storeFile"])
-            storePassword = keystoreProperties["storePassword"]
+        if (hasReleaseKeystore) {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"]
+                keyPassword = keystoreProperties["keyPassword"]
+                storeFile = new File(keystoreProperties["storeFile"])
+                storePassword = keystoreProperties["storePassword"]
+            }
         }
     }
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            if (hasReleaseKeystore) {
+                signingConfig signingConfigs.release
+            }
         }
     }
     externalNativeBuild {
@@ -83,4 +88,6 @@ flutter {
     source '../..'
 }
 
-dependencies {}
+dependencies {
+    implementation "pl.droidsonroids.gif:android-gif-drawable:1.2.31"
+}

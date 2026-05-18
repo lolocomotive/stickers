@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
@@ -193,21 +194,10 @@ class StickerPackPageState extends State<StickerPackPage> {
 
   Future<void> _createSticker(int index) async {
     try {
-      final ImagePicker picker = ImagePicker();
       if (widget.pack.animated) {
-        final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
-        if (video == null) return;
-        if (!mounted) return;
-        Navigator.pushNamed(
-          context,
-          "/crop_video",
-          arguments: EditArguments(
-            pack: widget.pack,
-            index: index,
-            mediaPath: video.path,
-          ),
-        ).then((value) => setState(() {}));
+        await _createAnimatedSticker(index);
       } else {
+        final ImagePicker picker = ImagePicker();
         final XFile? image = await picker.pickImage(source: ImageSource.gallery);
         if (image == null) return; //TODO add Snackbar warning
         if (!mounted) return;
@@ -234,4 +224,68 @@ class StickerPackPageState extends State<StickerPackPage> {
       }
     }
   }
+
+  Future<void> _createAnimatedSticker(int index) async {
+    final localizations = AppLocalizations.of(context)!;
+    final chooseVideoTitle = localizations.chooseVideo;
+    final chooseGifTitle = localizations.chooseGif;
+    final result = await showModalBottomSheet<_AnimatedMediaType>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.video_library),
+              title: Text(chooseVideoTitle),
+              onTap: () => Navigator.of(context).pop(_AnimatedMediaType.video),
+            ),
+            ListTile(
+              leading: const Icon(Icons.gif),
+              title: Text(chooseGifTitle),
+              onTap: () => Navigator.of(context).pop(_AnimatedMediaType.gif),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result == null) return;
+    if (result == _AnimatedMediaType.video) {
+      final ImagePicker picker = ImagePicker();
+      final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
+      if (video == null) return;
+      if (!mounted) return;
+      Navigator.pushNamed(
+        context,
+        "/crop_video",
+        arguments: EditArguments(
+          pack: widget.pack,
+          index: index,
+          mediaPath: video.path,
+        ),
+      ).then((value) => setState(() {}));
+    } else {
+      final FilePickerResult? gif = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ["gif"],
+        allowMultiple: false,
+        dialogTitle: chooseGifTitle,
+      );
+      final path = gif?.files.single.path;
+      if (path == null) return;
+      if (!mounted) return;
+      Navigator.pushNamed(
+        context,
+        "/crop_gif",
+        arguments: EditArguments(
+          pack: widget.pack,
+          index: index,
+          mediaPath: path,
+          type: MediaType.gif,
+        ),
+      ).then((value) => setState(() {}));
+    }
+  }
 }
+
+enum _AnimatedMediaType { video, gif }

@@ -11,6 +11,7 @@ import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/edit_page.dart';
 import 'package:stickers/src/pages/fonts_manager_page.dart';
+import 'package:stickers/src/pages/gif_crop_page.dart';
 import 'package:stickers/src/pages/select_pack_page.dart';
 import 'package:stickers/src/pages/sticker_pack_page.dart';
 import 'package:stickers/src/pages/sticker_packs_page.dart';
@@ -149,6 +150,13 @@ class StickersAppState extends State<StickersApp> {
                       index: args.index,
                       imagePath: args.mediaPath,
                     );
+                  case GifCropPage.routeName:
+                    final args = routeSettings.arguments as EditArguments;
+                    return GifCropPage(
+                      pack: args.pack,
+                      index: args.index,
+                      imagePath: args.mediaPath,
+                    );
                   case CropPage.routeName:
                     final args = routeSettings.arguments as EditArguments;
                     return CropPage(
@@ -158,7 +166,14 @@ class StickersAppState extends State<StickersApp> {
                     );
                   case EditPage.routeName:
                     final args = routeSettings.arguments as EditArguments;
-                    return EditPage(args.pack, args.index, args.mediaPath, args.type);
+                    return EditPage(
+                      args.pack,
+                      args.index,
+                      args.mediaPath,
+                      args.type,
+                      trimStart: args.trimStart,
+                      trimEnd: args.trimEnd,
+                    );
                   case StickerPackPage.routeName:
                     return StickerPackPage(routeSettings.arguments as StickerPack, () {
                       setState(() {});
@@ -194,7 +209,9 @@ class StickersAppState extends State<StickersApp> {
       }
       return;
     }
-    if (media.attachments!.first!.type != SharedAttachmentType.image) {
+    final attachment = media.attachments!.first!;
+    final isGif = attachment.path.toLowerCase().endsWith(".gif");
+    if (attachment.type != SharedAttachmentType.image && !isGif) {
       if (mounted) {
         showDialog(
             context: navigatorKey.currentState!.context,
@@ -206,7 +223,7 @@ class StickersAppState extends State<StickersApp> {
       return;
     }
     this.media = media;
-    if (widget.settingsController.quickMode) {
+    if (widget.settingsController.quickMode && !isGif) {
       _quickAdd(media, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
       this.media = null;
     }
