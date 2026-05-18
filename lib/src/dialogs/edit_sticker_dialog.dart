@@ -46,7 +46,11 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
               clipBehavior: Clip.antiAlias,
               child: CustomPaint(
                 painter: CheckerPainter(context),
-                child: Image.file(File(widget.pack.stickers[widget.index].source)),
+                child: Image.file(
+                  File(widget.pack.stickers[widget.index].source),
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.broken_image),
+                ),
               ),
             ),
             Form(
@@ -57,7 +61,8 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                 children: [
                   TextFormField(
                     decoration: InputDecoration(
-                        label: Text(AppLocalizations.of(context)!.associatedEmojis)),
+                        label: Text(
+                            AppLocalizations.of(context)!.associatedEmojis)),
                     textAlign: TextAlign.center,
                     validator: validator,
                     controller: controller,
@@ -73,25 +78,35 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         TextButton(
-                          onPressed: () {
+                          onPressed: () async {
                             Navigator.of(context).pop();
-                            File(widget.pack.stickers[widget.index].source).delete();
+                            final stickerFile =
+                                File(widget.pack.stickers[widget.index].source);
+                            if (await stickerFile.exists()) {
+                              await stickerFile.delete();
+                            }
                             widget.pack.stickers.removeAt(widget.index);
-                            widget.pack.onEdit();
+                            await widget.pack.onEdit();
                           },
                           child: Text(
                             AppLocalizations.of(context)!.deleteSticker,
-                            style: TextStyle(color: Theme.of(context).colorScheme.error),
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.error),
                           ),
                         ),
                         FilledButton(
                           onPressed: valid
-                              ? () {
-                                  if (formKey.currentState?.validate() == false) return;
+                              ? () async {
+                                  if (formKey.currentState?.validate() ==
+                                      false) {
+                                    return;
+                                  }
                                   widget.pack.stickers[widget.index].emojis =
                                       controller.value.text.characters.toList();
-                                  widget.pack.onEdit();
-                                  Navigator.of(context).pop();
+                                  await widget.pack.onEdit();
+                                  if (context.mounted) {
+                                    Navigator.of(context).pop();
+                                  }
                                 }
                               : null,
                           child: Text(AppLocalizations.of(context)!.done),

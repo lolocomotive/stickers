@@ -29,6 +29,8 @@ class StickerPacksPageState extends State<StickerPacksPage> {
 
   void update() {
     if (!mounted) return;
+    // We don't necessarily need to await savePacks here if it was already called elsewhere,
+    // but we should ensure the UI reflects the current state of 'packs'.
     setState(() {});
   }
 
@@ -49,6 +51,7 @@ class StickerPacksPageState extends State<StickerPacksPage> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           FloatingActionButton(
+            heroTag: "import_fab",
             tooltip: AppLocalizations.of(context)!.import,
             onPressed: () async {
               FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -59,7 +62,7 @@ class StickerPacksPageState extends State<StickerPacksPage> {
               for (final f in result.files) {
                 try {
                   await importPack(File(f.path!));
-                  setState(() {});
+                  if (mounted) setState(() {});
                 } on Exception catch (e, st) {
                   debugPrint(e.toString());
                   debugPrintStack(stackTrace: st);
@@ -71,7 +74,6 @@ class StickerPacksPageState extends State<StickerPacksPage> {
                           message: AppLocalizations.of(context)!.checkPack));
                 }
               }
-              setState(() {});
             },
             mini: true,
             child: const Icon(Icons.upload_file),
@@ -80,12 +82,14 @@ class StickerPacksPageState extends State<StickerPacksPage> {
             width: 8,
           ),
           FloatingActionButton.extended(
+            heroTag: "create_fab",
             backgroundColor: Theme.of(context).colorScheme.primary,
             onPressed: () {
               showDialog(context: context, builder: (_) => CreatePackDialog(packs)).then(
-                (_) => setState(() {
-                  savePacks(packs);
-                }),
+                (_) async {
+                  await savePacks(packs);
+                  if (mounted) setState(() {});
+                },
               );
             },
             icon: Icon(

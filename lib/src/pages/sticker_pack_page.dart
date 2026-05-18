@@ -65,9 +65,11 @@ class StickerPackPageState extends State<StickerPackPage> {
                           if (context.mounted) {
                             Navigator.of(context).pop();
                           }
-                          Directory("$packsDir/${widget.pack.id}")
-                              .delete(recursive: true);
-                          savePacks(packs);
+                          final dir = Directory("$packsDir/${widget.pack.id}");
+                          if (await dir.exists()) {
+                            await dir.delete(recursive: true);
+                          }
+                          await savePacks(packs);
                         }
                       },
                     );
@@ -138,7 +140,11 @@ class StickerPackPageState extends State<StickerPackPage> {
                                 painter: CheckerPainter(context),
                                 child: GestureDetector(
                                   child: Image.file(
-                                      File(widget.pack.stickers[index].source)),
+                                    File(widget.pack.stickers[index].source),
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            const Icon(Icons.broken_image),
+                                  ),
                                   onTap: () {
                                     showDialog(
                                       context: context,

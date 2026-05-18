@@ -26,11 +26,13 @@ class _SelectPackPageState extends State<SelectPackPage> {
     final isGif = attachmentPath.toLowerCase().endsWith(".gif");
     return DefaultSliverActivity(
       fab: FloatingActionButton(
+        heroTag: "select_pack_add_fab",
         onPressed: () {
           showDialog(context: context, builder: (_) => CreatePackDialog(packs, initialAnimated: isGif)).then(
-            (_) => setState(() {
-              savePacks(packs);
-            }),
+            (_) async {
+              await savePacks(packs);
+              if (mounted) setState(() {});
+            },
           );
         },
         child: const Icon(Icons.add),

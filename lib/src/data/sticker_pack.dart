@@ -20,8 +20,12 @@ class StickerPack {
   List<Sticker> stickers;
   String? trayIcon;
 
-  StickerPack(this.title, this.author, this.id, this.stickers, this.imageDataVersion, this.animated,
-      {this.trayIcon, this.publisherWebsite, this.licenseAgreementWebsite, this.privacyPolicyWebsite});
+  StickerPack(this.title, this.author, this.id, this.stickers,
+      this.imageDataVersion, this.animated,
+      {this.trayIcon,
+      this.publisherWebsite,
+      this.licenseAgreementWebsite,
+      this.privacyPolicyWebsite});
 
   Future<void> sendToWhatsapp() async {
     if (stickers.isEmpty) throw Exception("No stickers!");
@@ -55,9 +59,9 @@ class StickerPack {
     await stickerPack.sendToWhatsApp();
   }
 
-  void onEdit() {
-    savePacks(packs);
+  Future<void> onEdit() async {
     imageDataVersion = (int.parse(imageDataVersion) + 1).toString();
+    await savePacks(packs);
   }
 
   Map<String, Object?> toJson() {
@@ -80,7 +84,9 @@ class StickerPack {
       json["title"],
       json["author"],
       json["id"],
-      (json["stickers"] as List).map((sticker) => Sticker.fromJson(sticker)).toList(),
+      (json["stickers"] as List)
+          .map((sticker) => Sticker.fromJson(sticker))
+          .toList(),
       json["imageDataVersion"],
       json["animated"] ?? false,
       trayIcon: json["trayIcon"],
@@ -90,11 +96,13 @@ class StickerPack {
     );
   }
 
-  setTray(String source) {
+  Future<void> setTray(String source) async {
     Directory parent = Directory("$packsDir/$id/");
-    File output = File("$packsDir/$id/tray_${DateTime.now().millisecondsSinceEpoch}.webp");
-    if (!parent.existsSync()) parent.createSync(recursive: true);
-    File(source).copySync(output.path);
+    File output = File(
+        "$packsDir/$id/tray_${DateTime.now().millisecondsSinceEpoch}.webp");
+    if (!parent.existsSync()) await parent.create(recursive: true);
+    await File(source).copy(output.path);
     trayIcon = output.path;
+    await onEdit();
   }
 }

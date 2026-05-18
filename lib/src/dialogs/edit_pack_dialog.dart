@@ -34,7 +34,8 @@ class _EditPackDialogState extends State<EditPackDialog> {
     _authorController.text = widget.pack.author;
     _publisherURLController.text = widget.pack.publisherWebsite ?? "";
     _privacyPolicyURLController.text = widget.pack.privacyPolicyWebsite ?? "";
-    _licenseAgreementURLController.text = widget.pack.licenseAgreementWebsite ?? "";
+    _licenseAgreementURLController.text =
+        widget.pack.licenseAgreementWebsite ?? "";
   }
 
   @override
@@ -46,7 +47,8 @@ class _EditPackDialogState extends State<EditPackDialog> {
           children: [
             Container(
               margin: EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(10)),
+              decoration:
+                  BoxDecoration(borderRadius: BorderRadius.circular(10)),
               clipBehavior: Clip.antiAlias,
               height: 150,
               width: 150,
@@ -57,15 +59,22 @@ class _EditPackDialogState extends State<EditPackDialog> {
                   onTap: _changeTrayIcon,
                   child: Stack(
                     children: [
-                      if (widget.pack.trayIcon != null || widget.pack.stickers.isNotEmpty)
+                      if (widget.pack.trayIcon != null ||
+                          widget.pack.stickers.isNotEmpty)
                         Image.file(
-                          File(widget.pack.trayIcon ?? widget.pack.stickers.first.source),
+                          File(widget.pack.trayIcon ??
+                              widget.pack.stickers.first.source),
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.broken_image),
                         ),
                       Center(
                         child: Container(
                           padding: EdgeInsets.fromLTRB(4, 0, 4, 0),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface.withAlpha(130),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surface
+                                .withAlpha(130),
                             borderRadius: BorderRadius.circular(100),
                           ),
                           child: OutlinedButton(
@@ -115,7 +124,8 @@ class _EditPackDialogState extends State<EditPackDialog> {
                         controller: _publisherURLController,
                         validator: _urlValidator,
                         decoration: InputDecoration(
-                          label: Text(AppLocalizations.of(context)!.publisherWebsite),
+                          label: Text(
+                              AppLocalizations.of(context)!.publisherWebsite),
                         ),
                       ),
                     if (_showMore)
@@ -124,7 +134,8 @@ class _EditPackDialogState extends State<EditPackDialog> {
                         controller: _privacyPolicyURLController,
                         validator: _urlValidator,
                         decoration: InputDecoration(
-                          label: Text(AppLocalizations.of(context)!.privacyPolicyWebsite),
+                          label: Text(AppLocalizations.of(context)!
+                              .privacyPolicyWebsite),
                         ),
                       ),
                     if (_showMore)
@@ -133,7 +144,8 @@ class _EditPackDialogState extends State<EditPackDialog> {
                         controller: _licenseAgreementURLController,
                         validator: _urlValidator,
                         decoration: InputDecoration(
-                          label: Text(AppLocalizations.of(context)!.licenseAgreementWebsite),
+                          label: Text(AppLocalizations.of(context)!
+                              .licenseAgreementWebsite),
                         ),
                       ),
                   ],
@@ -156,15 +168,16 @@ class _EditPackDialogState extends State<EditPackDialog> {
             },
             child: Text(AppLocalizations.of(context)!.cancel)),
         ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
             if (!_formKey.currentState!.validate()) return;
             widget.pack.author = _authorController.text;
             widget.pack.title = _nameController.text;
             widget.pack.publisherWebsite = _publisherURLController.text;
             widget.pack.privacyPolicyWebsite = _privacyPolicyURLController.text;
-            widget.pack.licenseAgreementWebsite = _licenseAgreementURLController.text;
-            widget.pack.onEdit();
-            Navigator.of(context).pop();
+            widget.pack.licenseAgreementWebsite =
+                _licenseAgreementURLController.text;
+            await widget.pack.onEdit();
+            if (context.mounted) Navigator.of(context).pop();
           },
           child: Text(AppLocalizations.of(context)!.done),
         ),
@@ -186,7 +199,7 @@ class _EditPackDialogState extends State<EditPackDialog> {
         pack: widget.pack,
       ),
     ).then((_) {
-      setState(() {});
+      if (mounted) setState(() {});
     });
   }
 }
@@ -207,9 +220,10 @@ class TrayIconMethodSelector extends StatelessWidget {
             onTap: () {
               showDialog(
                   context: context,
-                  builder: (_) => SelectStickerDialog(callback: (sticker) {
-                        pack.setTray(sticker.source);
-                        Navigator.of(context).pop();
+                  builder: (_) =>
+                      SelectStickerDialog(callback: (sticker) async {
+                        await pack.setTray(sticker.source);
+                        if (context.mounted) Navigator.of(context).pop();
                       }));
             },
             leading: Icon(Icons.search),
@@ -218,7 +232,8 @@ class TrayIconMethodSelector extends StatelessWidget {
           ListTile(
             onTap: () async {
               final ImagePicker picker = ImagePicker();
-              final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+              final XFile? image =
+                  await picker.pickImage(source: ImageSource.gallery);
               if (image == null) return; //TODO add Snackbar warning
               if (!context.mounted) return;
               Navigator.pushNamed(

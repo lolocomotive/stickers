@@ -37,7 +37,8 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
         closedColor: surface,
         openColor: Theme.of(context).colorScheme.surface,
         middleColor: surface,
-        closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        closedShape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         closedBuilder: (context, action) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -50,18 +51,26 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
               leading: widget.pack.stickers.isEmpty
                   ? null
                   : Container(
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(24), boxShadow: [
-                        BoxShadow(
-                          offset: Offset(1, 1),
-                          blurRadius: 3,
-                          color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.black12,
-                        )
-                      ]),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              offset: Offset(1, 1),
+                              blurRadius: 3,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.black26
+                                  : Colors.black12,
+                            )
+                          ]),
                       clipBehavior: Clip.antiAlias,
                       child: CustomPaint(
                         painter: CheckerPainter(context),
                         child: Image.file(
-                          File(widget.pack.trayIcon ?? widget.pack.stickers.first.source),
+                          File(widget.pack.trayIcon ??
+                              widget.pack.stickers.first.source),
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.broken_image),
                         ),
                       ),
                     ),
@@ -72,7 +81,10 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
                       tooltip: AppLocalizations.of(context)!.edit,
                       icon: const Icon(Icons.edit),
                       onPressed: () {
-                        showDialog(context: context, builder: (context) => EditPackDialog(widget.pack)).then(
+                        showDialog(
+                            context: context,
+                            builder: (context) =>
+                                EditPackDialog(widget.pack)).then(
                           (_) => setState(() {}),
                         );
                       }),
@@ -80,14 +92,20 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
                     tooltip: AppLocalizations.of(context)!.delete,
                     icon: const Icon(Icons.delete),
                     onPressed: () {
-                      showDialog<bool>(context: context, builder: (context) => DeleteConfirmDialog(widget.pack.title))
-                          .then(
+                      showDialog<bool>(
+                          context: context,
+                          builder: (context) =>
+                              DeleteConfirmDialog(widget.pack.title)).then(
                         (value) async {
                           if (value == true) {
                             packs.remove(widget.pack);
                             widget.deleteCallback();
-                            Directory("$packsDir/${widget.pack.id}").delete(recursive: true);
-                            savePacks(packs);
+                            final dir =
+                                Directory("$packsDir/${widget.pack.id}");
+                            if (await dir.exists()) {
+                              await dir.delete(recursive: true);
+                            }
+                            await savePacks(packs);
                           }
                         },
                       );
@@ -109,18 +127,26 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
                     child: Container(
                       width: 84,
                       height: 84,
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(defaultBorderRadius), boxShadow: [
-                        BoxShadow(
-                          offset: Offset(1, 1),
-                          blurRadius: 3,
-                          color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.black12,
-                        )
-                      ]),
+                      decoration: BoxDecoration(
+                          borderRadius:
+                              BorderRadius.circular(defaultBorderRadius),
+                          boxShadow: [
+                            BoxShadow(
+                              offset: Offset(1, 1),
+                              blurRadius: 3,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.black26
+                                  : Colors.black12,
+                            )
+                          ]),
                       clipBehavior: Clip.antiAlias,
                       child: CustomPaint(
                         painter: CheckerPainter(context),
                         child: Image.file(
                           File(sticker.source),
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.broken_image),
                         ),
                       ),
                     ),
@@ -131,7 +157,8 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
             ),
           ],
         ),
-        openBuilder: (BuildContext context, void Function({Object? returnValue}) action) =>
+        openBuilder: (BuildContext context,
+                void Function({Object? returnValue}) action) =>
             StickerPackPage(widget.pack, widget.deleteCallback),
       ),
     );

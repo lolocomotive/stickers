@@ -233,7 +233,7 @@ class StickersAppState extends State<StickersApp> {
     }
     this.media = media;
     if (widget.settingsController.quickMode && !isGif) {
-      _quickAdd(media, widget.settingsController.defaultTitle,
+      await _quickAdd(media, widget.settingsController.defaultTitle,
           widget.settingsController.defaultAuthor);
       this.media = null;
     }
@@ -261,7 +261,7 @@ class StickersAppState extends State<StickersApp> {
     final cropRect =
         Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble());
     final cropped = await cropSticker(cropRect, rawImageData, pack, index, 0);
-    addToPack(pack, index, cropped);
+    await addToPack(pack, index, cropped);
 
     navigatorKey.currentState!
         .pushNamed("/pack", arguments: pack)

@@ -574,7 +574,7 @@ class _EditPageState extends State<EditPage> {
       } else {
         data = await exportAnimatedSticker(option, context);
       }
-      addToPack(widget.pack, widget.index, data);
+      await addToPack(widget.pack, widget.index, data);
       widget.batchQueue?.onChanged?.call();
       if (!context.mounted) return;
       _advanceBatchOrReturn(context);
