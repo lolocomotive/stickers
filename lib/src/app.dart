@@ -23,7 +23,8 @@ import 'settings/settings_page.dart';
 
 /// The Widget that configures your application.
 class StickersApp extends StatefulWidget {
-  static StickersAppState? of(BuildContext context) => context.findAncestorStateOfType<StickersAppState>();
+  static StickersAppState? of(BuildContext context) =>
+      context.findAncestorStateOfType<StickersAppState>();
 
   const StickersApp({
     super.key,
@@ -42,7 +43,8 @@ class StickersAppState extends State<StickersApp> {
   @override
   void initState() {
     super.initState();
-    _locale = Locale.fromSubtags(languageCode: widget.settingsController.locale);
+    _locale =
+        Locale.fromSubtags(languageCode: widget.settingsController.locale);
     initPlatformState();
   }
 
@@ -65,7 +67,8 @@ class StickersAppState extends State<StickersApp> {
       homeState?.setState(() {});
     }
     handler.sharedMediaStream.listen((SharedMedia media) async {
-      navigatorKey.currentState!.pushNamedAndRemoveUntil('/', (Route<dynamic> route) => false);
+      navigatorKey.currentState!
+          .pushNamedAndRemoveUntil('/', (Route<dynamic> route) => false);
       if (!mounted) return;
       debugPrint("Media Stream received");
       await _processMedia(media);
@@ -117,7 +120,8 @@ class StickersAppState extends State<StickersApp> {
           //
           // The appTitle is defined in .arb files found in the localization
           // directory.
-          onGenerateTitle: (BuildContext context) => AppLocalizations.of(context)!.appTitle,
+          onGenerateTitle: (BuildContext context) =>
+              AppLocalizations.of(context)!.appTitle,
 
           // Define a light and dark color theme. Then, read the user's
           // preferred ThemeMode (light, dark, or system default) from the
@@ -149,6 +153,7 @@ class StickersAppState extends State<StickersApp> {
                       pack: args.pack,
                       index: args.index,
                       imagePath: args.mediaPath,
+                      batchQueue: args.batchQueue,
                     );
                   case GifCropPage.routeName:
                     final args = routeSettings.arguments as EditArguments;
@@ -156,6 +161,7 @@ class StickersAppState extends State<StickersApp> {
                       pack: args.pack,
                       index: args.index,
                       imagePath: args.mediaPath,
+                      batchQueue: args.batchQueue,
                     );
                   case CropPage.routeName:
                     final args = routeSettings.arguments as EditArguments;
@@ -163,6 +169,7 @@ class StickersAppState extends State<StickersApp> {
                       pack: args.pack,
                       index: args.index,
                       imagePath: args.mediaPath,
+                      batchQueue: args.batchQueue,
                     );
                   case EditPage.routeName:
                     final args = routeSettings.arguments as EditArguments;
@@ -173,9 +180,11 @@ class StickersAppState extends State<StickersApp> {
                       args.type,
                       trimStart: args.trimStart,
                       trimEnd: args.trimEnd,
+                      batchQueue: args.batchQueue,
                     );
                   case StickerPackPage.routeName:
-                    return StickerPackPage(routeSettings.arguments as StickerPack, () {
+                    return StickerPackPage(
+                        routeSettings.arguments as StickerPack, () {
                       setState(() {});
                     });
                   case StickerPacksPage.routeName:
@@ -224,14 +233,17 @@ class StickersAppState extends State<StickersApp> {
     }
     this.media = media;
     if (widget.settingsController.quickMode && !isGif) {
-      _quickAdd(media, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
+      _quickAdd(media, widget.settingsController.defaultTitle,
+          widget.settingsController.defaultAuthor);
       this.media = null;
     }
   }
 
-  Future<void> _quickAdd(SharedMedia media, String defaultTitle, String defaultAuthor) async {
+  Future<void> _quickAdd(
+      SharedMedia media, String defaultTitle, String defaultAuthor) async {
     final rawImageData = File(media.attachments!.first!.path).readAsBytesSync();
-    final pack = packs.firstWhere((pack) => pack.stickers.length < 30 && !pack.animated, orElse: () {
+    final pack = packs.firstWhere(
+        (pack) => pack.stickers.length < 30 && !pack.animated, orElse: () {
       final pack = StickerPack(
         defaultTitle,
         defaultAuthor,
@@ -246,11 +258,14 @@ class StickersAppState extends State<StickersApp> {
     });
     final index = pack.stickers.length;
     final img = await decodeImageFromList(rawImageData);
-    final cropRect = Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble());
+    final cropRect =
+        Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble());
     final cropped = await cropSticker(cropRect, rawImageData, pack, index, 0);
     addToPack(pack, index, cropped);
 
-    navigatorKey.currentState!.pushNamed("/pack", arguments: pack).then((value) {
+    navigatorKey.currentState!
+        .pushNamed("/pack", arguments: pack)
+        .then((value) {
       if (homeState != null) {
         homeState!.update();
       }

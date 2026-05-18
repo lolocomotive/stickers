@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
+import 'package:stickers/src/batch/batch_import_queue.dart';
 import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
@@ -18,12 +19,15 @@ class VideoCropPage extends StatefulWidget {
   final StickerPack pack;
   final int index;
   final String imagePath;
-  final GlobalKey<ExtendedImageEditorState> editorKey = GlobalKey<ExtendedImageEditorState>();
+  final BatchImportQueue? batchQueue;
+  final GlobalKey<ExtendedImageEditorState> editorKey =
+      GlobalKey<ExtendedImageEditorState>();
 
   VideoCropPage({
     required this.pack,
     required this.index,
     required this.imagePath,
+    this.batchQueue,
     super.key,
   });
 
@@ -33,7 +37,8 @@ class VideoCropPage extends StatefulWidget {
   State<VideoCropPage> createState() => _VideoCropPageState();
 }
 
-class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateMixin {
+class _VideoCropPageState extends State<VideoCropPage>
+    with TickerProviderStateMixin {
   late final AnimationController _maskColorController;
   late final VideoPlayerController _controller;
   double _btnOpacity = 1;
@@ -48,7 +53,9 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
     _maskColorController = AnimationController(vsync: this);
     Tween<double> tween = Tween(begin: 0.0, end: 1.0);
     Animation anim = CurvedAnimation(
-        parent: _maskColorController, curve: Curves.ease, reverseCurve: Curves.ease);
+        parent: _maskColorController,
+        curve: Curves.ease,
+        reverseCurve: Curves.ease);
     anim.drive(tween);
     _maskColorController.addListener(_animationListener);
     _controller = VideoPlayerController.file(
@@ -132,7 +139,9 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                                 icon: Icon(
                                   Icons.pause,
                                   color: Colors.white,
-                                  shadows: [Shadow(color: Colors.black, blurRadius: 32)],
+                                  shadows: [
+                                    Shadow(color: Colors.black, blurRadius: 32)
+                                  ],
                                 ),
                                 iconSize: 100,
                               ),
@@ -142,7 +151,9 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                               icon: Icon(
                                 Icons.play_arrow,
                                 color: Colors.white,
-                                shadows: [Shadow(color: Colors.black, blurRadius: 32)],
+                                shadows: [
+                                  Shadow(color: Colors.black, blurRadius: 32)
+                                ],
                               ),
                               iconSize: 100,
                             ),
@@ -163,11 +174,15 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                         year2023: false,
                         values: _range,
                         onChangeEnd: (_) async {
-                          if (_seekTarget == _controller.value.duration * _range.end) {
+                          if (_seekTarget ==
+                              _controller.value.duration * _range.end) {
                             _requestSeek(
-                                _controller.value.duration * _range.end - Duration(seconds: 1));
-                            if (_seekTarget < _controller.value.duration * _range.start) {
-                              _seekTarget = _controller.value.duration * _range.start;
+                                _controller.value.duration * _range.end -
+                                    Duration(seconds: 1));
+                            if (_seekTarget <
+                                _controller.value.duration * _range.start) {
+                              _seekTarget =
+                                  _controller.value.duration * _range.start;
                             }
                           }
                           _play();
@@ -185,9 +200,11 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                           values = _clampRange(values, movedStart: movedStart);
                           final Duration seekTarget;
                           if (_range.start != values.start) {
-                            seekTarget = _controller.value.duration * values.start;
+                            seekTarget =
+                                _controller.value.duration * values.start;
                           } else if (_range.end != values.end) {
-                            seekTarget = _controller.value.duration * values.end;
+                            seekTarget =
+                                _controller.value.duration * values.end;
                           } else {
                             return;
                           }
@@ -211,7 +228,9 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                  child: _ready && _controller.value.duration > maxAnimatedStickerDuration
+                  child: _ready &&
+                          _controller.value.duration >
+                              maxAnimatedStickerDuration
                       ? Opacity(
                           opacity: .8,
                           child: Text(
@@ -302,7 +321,8 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
     });
     try {
       _controller.pause();
-      final output = "$mediaCacheDir/import_${DateTime.now().millisecondsSinceEpoch}.mp4";
+      final output =
+          "$mediaCacheDir/import_${DateTime.now().millisecondsSinceEpoch}.mp4";
       await service.start(
         inputFile: widget.imagePath,
         outputFile: output,
@@ -333,6 +353,7 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
             index: widget.index,
             mediaPath: output,
             type: MediaType.video,
+            batchQueue: widget.batchQueue,
           ));
     } finally {
       setState(() {
@@ -344,13 +365,15 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
   RangeValues _initialRange(Duration duration) {
     if (duration <= Duration.zero) return RangeValues(0, 1);
     if (duration <= maxAnimatedStickerDuration) return RangeValues(0, 1);
-    return RangeValues(0, maxAnimatedStickerDuration.inMilliseconds / duration.inMilliseconds);
+    return RangeValues(
+        0, maxAnimatedStickerDuration.inMilliseconds / duration.inMilliseconds);
   }
 
   RangeValues _clampRange(RangeValues values, {required bool movedStart}) {
     final duration = _controller.value.duration;
     if (duration <= Duration.zero) return RangeValues(0, 1);
-    final maxSpan = min(1.0, maxAnimatedStickerDuration.inMilliseconds / duration.inMilliseconds);
+    final maxSpan = min(1.0,
+        maxAnimatedStickerDuration.inMilliseconds / duration.inMilliseconds);
     var start = values.start.clamp(0.0, 1.0).toDouble();
     var end = values.end.clamp(0.0, 1.0).toDouble();
 

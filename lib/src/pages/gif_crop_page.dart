@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
+import 'package:stickers/src/batch/batch_import_queue.dart';
 import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
@@ -15,11 +16,13 @@ class GifCropPage extends StatefulWidget {
   final StickerPack pack;
   final int index;
   final String imagePath;
+  final BatchImportQueue? batchQueue;
 
   const GifCropPage({
     required this.pack,
     required this.index,
     required this.imagePath,
+    this.batchQueue,
     super.key,
   });
 
@@ -58,7 +61,8 @@ class _GifCropPageState extends State<GifCropPage> {
         _position = Duration.zero;
         _loading = false;
       });
-      _timer = Timer.periodic(const Duration(milliseconds: 100), (_) => _tick());
+      _timer =
+          Timer.periodic(const Duration(milliseconds: 100), (_) => _tick());
     } on Exception catch (e) {
       if (!mounted) return;
       setState(() {
@@ -111,7 +115,8 @@ class _GifCropPageState extends State<GifCropPage> {
                           child: Opacity(
                             opacity: .8,
                             child: Text(
-                              AppLocalizations.of(context)!.animatedDurationLimit,
+                              AppLocalizations.of(context)!
+                                  .animatedDurationLimit,
                               textAlign: TextAlign.center,
                             ),
                           ),
@@ -125,7 +130,8 @@ class _GifCropPageState extends State<GifCropPage> {
                               values: _range,
                               onChanged: (values) {
                                 final movedStart = values.start != _range.start;
-                                final next = _clampRange(values, movedStart: movedStart);
+                                final next =
+                                    _clampRange(values, movedStart: movedStart);
                                 setState(() {
                                   _range = next;
                                   _position = _durationFromFraction(next.start);
@@ -134,10 +140,12 @@ class _GifCropPageState extends State<GifCropPage> {
                             ),
                             IgnorePointer(
                               child: Slider(
-                                thumbColor: Theme.of(context).colorScheme.onSurface,
+                                thumbColor:
+                                    Theme.of(context).colorScheme.onSurface,
                                 activeColor: Colors.transparent,
                                 inactiveColor: Colors.transparent,
-                                value: _position.inMilliseconds / info.duration.inMilliseconds,
+                                value: _position.inMilliseconds /
+                                    info.duration.inMilliseconds,
                                 onChanged: (_) {},
                                 year2023: false,
                               ),
@@ -150,8 +158,10 @@ class _GifCropPageState extends State<GifCropPage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(_formatDuration(_durationFromFraction(_range.start))),
-                            Text(_formatDuration(_durationFromFraction(_range.end))),
+                            Text(_formatDuration(
+                                _durationFromFraction(_range.start))),
+                            Text(_formatDuration(
+                                _durationFromFraction(_range.end))),
                           ],
                         ),
                       ),
@@ -172,12 +182,14 @@ class _GifCropPageState extends State<GifCropPage> {
 
   RangeValues _initialRange(Duration duration) {
     if (duration <= maxAnimatedStickerDuration) return const RangeValues(0, 1);
-    return RangeValues(0, maxAnimatedStickerDuration.inMilliseconds / duration.inMilliseconds);
+    return RangeValues(
+        0, maxAnimatedStickerDuration.inMilliseconds / duration.inMilliseconds);
   }
 
   RangeValues _clampRange(RangeValues values, {required bool movedStart}) {
     final duration = _info!.duration;
-    final maxSpan = min(1.0, maxAnimatedStickerDuration.inMilliseconds / duration.inMilliseconds);
+    final maxSpan = min(1.0,
+        maxAnimatedStickerDuration.inMilliseconds / duration.inMilliseconds);
     var start = values.start.clamp(0.0, 1.0).toDouble();
     var end = values.end.clamp(0.0, 1.0).toDouble();
 
@@ -207,7 +219,8 @@ class _GifCropPageState extends State<GifCropPage> {
   }
 
   Duration _durationFromFraction(double value) {
-    return Duration(milliseconds: (_info!.duration.inMilliseconds * value).round());
+    return Duration(
+        milliseconds: (_info!.duration.inMilliseconds * value).round());
   }
 
   void _continueToEditor() {
@@ -233,6 +246,7 @@ class _GifCropPageState extends State<GifCropPage> {
         type: MediaType.gif,
         trimStart: start,
         trimEnd: end,
+        batchQueue: widget.batchQueue,
       ),
     );
   }

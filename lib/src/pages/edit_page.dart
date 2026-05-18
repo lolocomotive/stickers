@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:image_editor/image_editor.dart';
 import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
+import 'package:stickers/src/batch/batch_import_queue.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/constants.dart';
 import 'package:stickers/src/data/load_store.dart';
@@ -19,6 +20,9 @@ import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
+import 'package:stickers/src/pages/gif_crop_page.dart';
+import 'package:stickers/src/pages/sticker_pack_page.dart';
+import 'package:stickers/src/pages/video_crop_page.dart';
 import 'package:stickers/src/video/common.dart';
 import 'package:stickers/src/video/overlay_encode.dart';
 import 'package:stickers/src/widgets/draw_layer.dart';
@@ -33,6 +37,7 @@ class EditPage extends StatefulWidget {
   final int index;
   final Duration trimStart;
   final Duration? trimEnd;
+  final BatchImportQueue? batchQueue;
 
   const EditPage(
     this.pack,
@@ -41,6 +46,7 @@ class EditPage extends StatefulWidget {
     this.mediaType, {
     this.trimStart = Duration.zero,
     this.trimEnd,
+    this.batchQueue,
     super.key,
   });
 
@@ -121,7 +127,8 @@ class _EditPageState extends State<EditPage> {
           child: LayoutBuilder(builder: (context, constraints) {
             final isHorizontal = constraints.maxWidth > constraints.maxHeight;
             final double buttonSize = isHorizontal
-                ? (min(constraints.maxHeight - 48, 500 - 12)) / (colors.length / 2)
+                ? (min(constraints.maxHeight - 48, 500 - 12)) /
+                    (colors.length / 2)
                 : min(constraints.maxWidth - 48, 500) / (colors.length / 2);
 
             final colorButtons = AnimatedCrossFade(
@@ -134,7 +141,9 @@ class _EditPageState extends State<EditPage> {
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: colors.getRange(0, (colors.length / 2).floor()).map((c) {
+                      children: colors
+                          .getRange(0, (colors.length / 2).floor())
+                          .map((c) {
                         return ColorButton(
                           c,
                           size: buttonSize,
@@ -146,7 +155,8 @@ class _EditPageState extends State<EditPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: colors
-                          .getRange((colors.length / 2).floor() + 1, colors.length)
+                          .getRange(
+                              (colors.length / 2).floor() + 1, colors.length)
                           .map((c) => ColorButton(
                                 c,
                                 size: buttonSize,
@@ -159,11 +169,14 @@ class _EditPageState extends State<EditPage> {
                       height: 10,
                     ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                       child: Row(
                         children: [
                           Container(
-                            decoration: BoxDecoration(color: _brushColor, borderRadius: BorderRadius.circular(10)),
+                            decoration: BoxDecoration(
+                                color: _brushColor,
+                                borderRadius: BorderRadius.circular(10)),
                             height: 7,
                             width: 7,
                           ),
@@ -180,7 +193,9 @@ class _EditPageState extends State<EditPage> {
                                 }),
                           ),
                           Container(
-                            decoration: BoxDecoration(color: _brushColor, borderRadius: BorderRadius.circular(25)),
+                            decoration: BoxDecoration(
+                                color: _brushColor,
+                                borderRadius: BorderRadius.circular(25)),
                             height: 25,
                             width: 25,
                           ),
@@ -189,7 +204,9 @@ class _EditPageState extends State<EditPage> {
                     ),
                   ],
                 ),
-                crossFadeState: _drawing ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                crossFadeState: _drawing
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
                 duration: Duration(milliseconds: 200));
 
             final drawButton = AnimatedCrossFade(
@@ -212,8 +229,9 @@ class _EditPageState extends State<EditPage> {
                   children: [
                     Theme(
                       data: ThemeData(
-                        colorScheme:
-                            ColorScheme.fromSeed(seedColor: Colors.green, brightness: Theme.of(context).brightness),
+                        colorScheme: ColorScheme.fromSeed(
+                            seedColor: Colors.green,
+                            brightness: Theme.of(context).brightness),
                       ),
                       child: FilledButton.icon(
                         onPressed: () {
@@ -227,7 +245,9 @@ class _EditPageState extends State<EditPage> {
                     ),
                   ],
                 ),
-                crossFadeState: _drawing ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                crossFadeState: _drawing
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
                 duration: Duration(milliseconds: 200));
 
             var editButtons = Padding(
@@ -253,7 +273,9 @@ class _EditPageState extends State<EditPage> {
                           rbKey: _rbKey,
                           onDelete: (layer) {
                             _layers.remove(layer);
-                            if (_currentTextLayer == layer) _currentTextLayer = null;
+                            if (_currentTextLayer == layer) {
+                              _currentTextLayer = null;
+                            }
                             setState(() {});
                           },
                         ));
@@ -273,7 +295,8 @@ class _EditPageState extends State<EditPage> {
             );
 
             final imageDisplay = Container(
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(24)),
+              decoration:
+                  BoxDecoration(borderRadius: BorderRadius.circular(24)),
               clipBehavior: Clip.antiAlias,
               child: RepaintBoundary(
                 key: _rbKey,
@@ -287,7 +310,8 @@ class _EditPageState extends State<EditPage> {
                       child: AspectRatio(
                         aspectRatio: 1,
                         child: CustomPaint(
-                          painter: CheckerPainter(context, sizeCallback: (size) {
+                          painter:
+                              CheckerPainter(context, sizeCallback: (size) {
                             if (imageSize != size) {
                               imageSize = size;
                               scaleFactor = size.width / 512;
@@ -303,10 +327,13 @@ class _EditPageState extends State<EditPage> {
                           child: MatrixGestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onGestureStart: onGestureStart,
-                            onMatrixUpdate: (_, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) =>
-                                onMatrixUpdate(translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix),
+                            onMatrixUpdate: (_, translationDeltaMatrix,
+                                    scaleDeltaMatrix, rotationDeltaMatrix) =>
+                                onMatrixUpdate(translationDeltaMatrix,
+                                    scaleDeltaMatrix, rotationDeltaMatrix),
                             child: Stack(children: [
-                              if (widget.mediaType == MediaType.picture || widget.mediaType == MediaType.gif)
+                              if (widget.mediaType == MediaType.picture ||
+                                  widget.mediaType == MediaType.gif)
                                 Image.file(_source)
                               else
                                 Center(
@@ -331,14 +358,22 @@ class _EditPageState extends State<EditPage> {
                                   left: 0,
                                   right: 0,
                                   child: Container(
-                                    color: Theme.of(context).colorScheme.surface.withAlpha(200),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surface
+                                        .withAlpha(200),
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
                                       children: [
                                         Text(
-                                          AppLocalizations.of(context)!.exporting,
-                                          style: Theme.of(context).textTheme.displaySmall,
+                                          AppLocalizations.of(context)!
+                                              .exporting,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .displaySmall,
                                         ),
                                         SizedBox(
                                           height: 12,
@@ -375,19 +410,25 @@ class _EditPageState extends State<EditPage> {
               secondCurve: _curve,
               firstChild: Container(),
               secondChild: Padding(
-                padding: isHorizontal ? EdgeInsets.zero : EdgeInsets.only(top: 12),
+                padding:
+                    isHorizontal ? EdgeInsets.zero : EdgeInsets.only(top: 12),
                 child: Row(children: [
                   Expanded(
                     child: FilledButton.tonalIcon(
                       onPressed: _layers
                               .whereType<DrawLayer>()
-                              .where((layer) => layer.painter.strokes.isNotEmpty)
+                              .where(
+                                  (layer) => layer.painter.strokes.isNotEmpty)
                               .isEmpty
                           ? null
                           : () {
-                              final layer =
-                                  _layers.whereType<DrawLayer>().lastWhere((layer) => layer.painter.strokes.isNotEmpty);
-                              _undo.add(UndoEntry(layer.painter.strokes.removeLast(), layer.painter));
+                              final layer = _layers
+                                  .whereType<DrawLayer>()
+                                  .lastWhere((layer) =>
+                                      layer.painter.strokes.isNotEmpty);
+                              _undo.add(UndoEntry(
+                                  layer.painter.strokes.removeLast(),
+                                  layer.painter));
                               setState(() {});
                             },
                       label: Text(AppLocalizations.of(context)!.undo),
@@ -413,7 +454,9 @@ class _EditPageState extends State<EditPage> {
                   ),
                 ]),
               ),
-              crossFadeState: _drawing ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              crossFadeState: _drawing
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
               duration: Duration(milliseconds: 200),
             );
 
@@ -427,7 +470,8 @@ class _EditPageState extends State<EditPage> {
               label: Text(AppLocalizations.of(context)!.addToPack),
             );
             if (isHorizontal) {
-              final double halfWidth = min(constraints.maxHeight - 16, min(500, constraints.maxWidth / 2 - 16));
+              final double halfWidth = min(constraints.maxHeight - 16,
+                  min(500, constraints.maxWidth / 2 - 16));
               return Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Center(
@@ -510,7 +554,8 @@ class _EditPageState extends State<EditPage> {
           transform[13] = transform[13] / scaleFactor;
           layer.text.fontSize /= scaleFactor;
           layer.text.outlineWidth /= scaleFactor;
-          layer.text.fontSize *= FontsRegistry.sizeMultiplier(layer.text.fontName) ?? 1;
+          layer.text.fontSize *=
+              FontsRegistry.sizeMultiplier(layer.text.fontName) ?? 1;
           (layerOption as AddTextOption).addText(layer.text);
         } else if (layer is DrawLayer) {
           layerOption = layer.drawOption;
@@ -524,14 +569,15 @@ class _EditPageState extends State<EditPage> {
 
       final Uint8List data;
       if (widget.mediaType == MediaType.picture) {
-        data = (await ImageEditor.editFileImage(file: _source, imageEditorOption: option))!;
+        data = (await ImageEditor.editFileImage(
+            file: _source, imageEditorOption: option))!;
       } else {
         data = await exportAnimatedSticker(option, context);
       }
       addToPack(widget.pack, widget.index, data);
+      widget.batchQueue?.onChanged?.call();
       if (!context.mounted) return;
-      Navigator.of(context).pop();
-      Navigator.of(context).pop();
+      _advanceBatchOrReturn(context);
     } on Exception catch (e) {
       if (mounted) {
         showDialog(
@@ -539,7 +585,8 @@ class _EditPageState extends State<EditPage> {
             builder: (context) {
               return ErrorDialog(
                 title: AppLocalizations.of(context)!.couldntExportSticker,
-                message: AppLocalizations.of(context)!.errorMessage + e.toString(),
+                message:
+                    AppLocalizations.of(context)!.errorMessage + e.toString(),
               );
             });
       }
@@ -553,26 +600,78 @@ class _EditPageState extends State<EditPage> {
         text.outlineWidth *= scaleFactor;
         text.fontSize /= FontsRegistry.sizeMultiplier(text.fontName) ?? 1;
       }
-      setState(() {
-        _exporting = false;
-      });
+      if (mounted) {
+        setState(() {
+          _exporting = false;
+        });
+      }
     }
     return;
   }
 
-  Future<Uint8List> exportAnimatedSticker(ImageEditorOption option, BuildContext context) async {
+  void _advanceBatchOrReturn(BuildContext context) {
+    final queue = widget.batchQueue;
+    final navigator = Navigator.of(context);
+    final nextItem = widget.pack.stickers.length < 30 ? queue?.next() : null;
+
+    if (queue == null || nextItem == null) {
+      navigator.pop();
+      navigator.pop();
+      return;
+    }
+
+    navigator.popUntil((route) =>
+        route.settings.name == StickerPackPage.routeName || route.isFirst);
+    navigator.pushNamed(
+      _routeForBatchItem(nextItem),
+      arguments: EditArguments(
+        pack: widget.pack,
+        index: widget.pack.stickers.length,
+        mediaPath: nextItem.path,
+        type: _mediaTypeForBatchItem(nextItem),
+        batchQueue: queue,
+      ),
+    );
+  }
+
+  String _routeForBatchItem(BatchImportItem item) {
+    switch (item.kind) {
+      case BatchImportMediaKind.picture:
+        return CropPage.routeName;
+      case BatchImportMediaKind.video:
+        return VideoCropPage.routeName;
+      case BatchImportMediaKind.gif:
+        return GifCropPage.routeName;
+    }
+  }
+
+  MediaType _mediaTypeForBatchItem(BatchImportItem item) {
+    switch (item.kind) {
+      case BatchImportMediaKind.picture:
+        return MediaType.picture;
+      case BatchImportMediaKind.video:
+        return MediaType.video;
+      case BatchImportMediaKind.gif:
+        return MediaType.gif;
+    }
+  }
+
+  Future<Uint8List> exportAnimatedSticker(
+      ImageEditorOption option, BuildContext context) async {
     if (widget.mediaType == MediaType.gif) {
       final trimEnd = widget.trimEnd ?? maxAnimatedStickerDuration;
       final selected = trimEnd - widget.trimStart;
       if (selected <= Duration.zero || selected > maxAnimatedStickerDuration) {
-        throw Exception(AppLocalizations.of(context)!.animatedDurationLimitMessage);
+        throw Exception(
+            AppLocalizations.of(context)!.animatedDurationLimitMessage);
       }
     }
     final transparent = await rootBundle.load("assets/transparent.webp");
-    final out =
-        await ImageEditor.editImageAndGetFile(image: transparent.buffer.asUint8List(), imageEditorOption: option);
+    final out = await ImageEditor.editImageAndGetFile(
+        image: transparent.buffer.asUint8List(), imageEditorOption: option);
     final service = OverlayAndEncodeService();
-    final output = File("$mediaCacheDir/exported_${DateTime.now().millisecondsSinceEpoch}.webp");
+    final output = File(
+        "$mediaCacheDir/exported_${DateTime.now().millisecondsSinceEpoch}.webp");
     Stopwatch sw = Stopwatch()..start();
     Uint8List? data;
     double quality = 60;
@@ -677,10 +776,17 @@ class _EditPageState extends State<EditPage> {
     return data;
   }
 
-  void onMatrixUpdate(Matrix4 translationDeltaMatrix, Matrix4 scaleDeltaMatrix, Matrix4 rotationDeltaMatrix) {
+  void onMatrixUpdate(Matrix4 translationDeltaMatrix, Matrix4 scaleDeltaMatrix,
+      Matrix4 rotationDeltaMatrix) {
     if (_drawing) {
-      _brushPos = Offset(_brushPos.dx + translationDeltaMatrix.row0.w, _brushPos.dy + translationDeltaMatrix.row1.w);
-      (_layers.last as DrawLayer).painter.strokes.last.points.add(_brushPos / scaleFactor);
+      _brushPos = Offset(_brushPos.dx + translationDeltaMatrix.row0.w,
+          _brushPos.dy + translationDeltaMatrix.row1.w);
+      (_layers.last as DrawLayer)
+          .painter
+          .strokes
+          .last
+          .points
+          .add(_brushPos / scaleFactor);
       setState(() {});
       return;
     }
@@ -726,7 +832,8 @@ class _EditPageState extends State<EditPage> {
     if (c == Colors.transparent) {
       _pickedColor = await showDialog(
           context: context,
-          builder: (context) => EyedropperDialog(_rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
+          builder: (context) => EyedropperDialog(_rbKey.currentContext!
+              .findRenderObject() as RenderRepaintBoundary));
       c = _pickedColor!;
     }
     setState(() {

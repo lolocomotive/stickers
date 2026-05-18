@@ -5,6 +5,7 @@ import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
+import 'package:stickers/src/batch/batch_import_queue.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
@@ -14,12 +15,15 @@ class CropPage extends StatefulWidget {
   final StickerPack pack;
   final int index;
   final String imagePath;
-  final GlobalKey<ExtendedImageEditorState> editorKey = GlobalKey<ExtendedImageEditorState>();
+  final BatchImportQueue? batchQueue;
+  final GlobalKey<ExtendedImageEditorState> editorKey =
+      GlobalKey<ExtendedImageEditorState>();
 
   CropPage({
     required this.pack,
     required this.index,
     required this.imagePath,
+    this.batchQueue,
     super.key,
   });
 
@@ -41,7 +45,9 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
     _maskColorController = AnimationController(vsync: this);
     Tween<double> tween = Tween(begin: 0.0, end: 1.0);
     Animation anim = CurvedAnimation(
-        parent: _maskColorController, curve: Curves.ease, reverseCurve: Curves.ease);
+        parent: _maskColorController,
+        curve: Curves.ease,
+        reverseCurve: Curves.ease);
     anim.drive(tween);
     _maskColorController.addListener(_animationListener);
   }
@@ -90,10 +96,12 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                     return EditorConfig(
                       editorMaskColorHandler: (ctx, pointerDown) {
                         if (_previousPtrVal && !pointerDown) {
-                          _maskColorController.animateTo(1, duration: Duration(milliseconds: 150));
+                          _maskColorController.animateTo(1,
+                              duration: Duration(milliseconds: 150));
                         }
                         if (!_previousPtrVal && pointerDown) {
-                          _maskColorController.animateTo(0, duration: Duration(milliseconds: 150));
+                          _maskColorController.animateTo(0,
+                              duration: Duration(milliseconds: 150));
                         }
                         _previousPtrVal = pointerDown;
                         return Color.lerp(
@@ -105,7 +113,8 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                       animationCurve: Curves.ease,
                       tickerDuration: Duration(),
                       lineHeight: 3,
-                      lineColor: Theme.of(context).colorScheme.primary.withAlpha(100),
+                      lineColor:
+                          Theme.of(context).colorScheme.primary.withAlpha(100),
                       animationDuration: const Duration(milliseconds: 400),
                       maxScale: double.infinity,
                       cropRectPadding: const EdgeInsets.all(40.0),
@@ -217,19 +226,24 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                       child: FilledButton(
                         onPressed: () async {
                           final state = widget.editorKey.currentState!;
-                          if (state.getCropRect()!.height < .5 || state.getCropRect()!.width < .5) {
+                          if (state.getCropRect()!.height < .5 ||
+                              state.getCropRect()!.width < .5) {
                             showDialog(
                                 context: context,
                                 builder: (ctx) => AlertDialog(
-                                      title: Text(AppLocalizations.of(context)!.cropTooSmall),
-                                      content:
-                                          Text(AppLocalizations.of(context)!.cropTooSmallDetails),
+                                      title: Text(AppLocalizations.of(context)!
+                                          .cropTooSmall),
+                                      content: Text(
+                                          AppLocalizations.of(context)!
+                                              .cropTooSmallDetails),
                                       actions: [
                                         TextButton(
-                                            onPressed: () => Navigator.of(context).pop(),
+                                            onPressed: () =>
+                                                Navigator.of(context).pop(),
                                             child: Text("Okay 💗")),
                                         FilledButton(
-                                            onPressed: () => Navigator.of(context).pop(),
+                                            onPressed: () =>
+                                                Navigator.of(context).pop(),
                                             child: Text("Yay 💗")),
                                       ],
                                     ));
@@ -249,6 +263,7 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                               pack: widget.pack,
                               index: widget.index,
                               mediaPath: output.path,
+                              batchQueue: widget.batchQueue,
                             ),
                           );
                         },
@@ -281,6 +296,7 @@ class EditArguments {
   MediaType type;
   Duration trimStart;
   Duration? trimEnd;
+  BatchImportQueue? batchQueue;
 
   EditArguments(
       {required this.pack,
@@ -288,5 +304,6 @@ class EditArguments {
       required this.mediaPath,
       this.type = MediaType.picture,
       this.trimStart = Duration.zero,
-      this.trimEnd});
+      this.trimEnd,
+      this.batchQueue});
 }
