@@ -43,7 +43,6 @@ String? authorValidator(String? value, BuildContext context) {
   return null;
 }
 
-
 extension DirectoryCopy on Directory {
   Future<void> copy(String targetPath) async {
     await Directory(targetPath).create(recursive: true);
@@ -63,7 +62,6 @@ extension DirectoryCopy on Directory {
   }
 }
 
-
 Future<void> sendToWhatsappWithErrorHandling(StickerPack pack, BuildContext context) async {
   try {
     await pack.sendToWhatsapp();
@@ -79,23 +77,31 @@ Future<void> sendToWhatsappWithErrorHandling(StickerPack pack, BuildContext cont
         message: e.cause ?? e.runtimeType.toString(),
       ),
     );
-  } on PlatformException catch (e) {
+  } on PlatformException catch (e, st) {
+    print(e);
+    print(st);
     if (e.message == "WhatsApp is not installed on target device!") {
       showDialog(
-          context: navigatorKey.currentContext!,
-          builder: (_) => ErrorDialog(
-              title: AppLocalizations.of(context)!.couldnTAddStickerPack,
-              message: AppLocalizations.of(context)!.whatsappNotInstalled));
+        context: navigatorKey.currentContext!,
+        builder: (_) => ErrorDialog(
+          title: AppLocalizations.of(context)!.couldnTAddStickerPack,
+          message: AppLocalizations.of(context)!.whatsappNotInstalled,
+        ),
+      );
     } else {
       showDialog(
-          context: navigatorKey.currentContext!,
-          builder: (_) =>
-              ErrorDialog(title: AppLocalizations.of(context)!.couldnTAddStickerPack, message: e.message ?? ""));
-    }
-  } on Exception catch (e) {
-    showDialog(
         context: navigatorKey.currentContext!,
-        builder: (_) => ErrorDialog(title: AppLocalizations.of(context)!.couldnTAddStickerPack, message: e.toString()));
+        builder: (_) =>
+            ErrorDialog(title: AppLocalizations.of(context)!.couldnTAddStickerPack, message: e.message ?? ""),
+      );
+    }
+  } on Exception catch (e, st) {
+    print(e);
+    print(st);
+    showDialog(
+      context: navigatorKey.currentContext!,
+      builder: (_) => ErrorDialog(title: AppLocalizations.of(context)!.couldnTAddStickerPack, message: e.toString()),
+    );
   }
 }
 
