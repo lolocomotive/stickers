@@ -179,7 +179,7 @@ class _EditPackDialogState extends State<EditPackDialog> {
     return AppLocalizations.of(context)!.pleaseEnterAValidUrl;
   }
 
-  _changeTrayIcon() {
+  void _changeTrayIcon() {
     showDialog(
       context: context,
       builder: (context) => TrayIconMethodSelector(

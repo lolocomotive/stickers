@@ -164,8 +164,9 @@ Future<Uint8List> cropSticker(
   Uint8List rawImageData,
   StickerPack pack,
   int index,
-  double rotation,
-) async {
+  double rotation, [
+  bool stretch = false,
+]) async {
   // Apply crop then scale then put on 512x512 transparent image in center
 
   final crop = ImageEditorOption();
@@ -173,11 +174,15 @@ Future<Uint8List> cropSticker(
   crop.addOption(RotateOption(rotation.toInt()));
   crop.addOption(ClipOption.fromRect(cropRect));
   Size newSize;
-  // Make the longest border exactly 512 pixels wide, preserving aspect ratio
-  if (oldSize.height > oldSize.width) {
-    newSize = Size(oldSize.width * 512 / oldSize.height, 512);
+  // Make the longest border exactly 512 pixels wide, preserving aspect ratio if we're not stretching
+  if (!stretch) {
+    if (oldSize.height > oldSize.width) {
+      newSize = Size(oldSize.width * 512 / oldSize.height, 512);
+    } else {
+      newSize = Size(512, oldSize.height * 512 / oldSize.width);
+    }
   } else {
-    newSize = Size(512, oldSize.height * 512 / oldSize.width);
+    newSize = Size(512, 512);
   }
   crop.addOption(
     ScaleOption(
