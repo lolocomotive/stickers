@@ -50,9 +50,8 @@ class StickerPacksPageState extends State<StickerPacksPage> {
           FloatingActionButton(
             tooltip: AppLocalizations.of(context)!.import,
             onPressed: () async {
-              FilePickerResult? result = await FilePicker.platform.pickFiles(
+              FilePickerResult? result = await FilePicker.pickFiles(
                   type: FileType.any,
-                  allowMultiple: true,
                   dialogTitle: AppLocalizations.of(context)!.selectPack);
               if (result == null) return;
               for (final f in result.files) {
