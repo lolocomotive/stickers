@@ -182,24 +182,36 @@ class StickersAppState extends State<StickersApp> {
   }
 
   Future<void> _processMedia(SharedMedia media) async {
-    if (media.attachments!.first!.path.toLowerCase().endsWith(".stickify") ||
-        media.attachments!.first!.path.toLowerCase().endsWith(".zip") ||
-        media.attachments!.first!.path.toLowerCase().endsWith(".wastickers")) {
-      try {
-        await importPack(File(media.attachments!.first!.path));
-        if (context.mounted) setState(() {});
-      } on Exception catch (_) {
-        if (mounted) {
-          showDialog(
-              context: navigatorKey.currentState!.context,
-              builder: (context) => ErrorDialog(
-                    message: AppLocalizations.of(context)!.checkIfFileValid,
-                    title: AppLocalizations.of(context)!.importError,
-                  ));
+    if (media.attachments == null || media.attachments!.isEmpty) return;
+
+    final packAttachments = media.attachments!.where((a) {
+      if (a == null) return false;
+      final p = a.path.toLowerCase();
+      return p.endsWith(".stickify") || p.endsWith(".zip") || p.endsWith(".wastickers");
+    }).toList();
+
+    if (packAttachments.isNotEmpty) {
+      for (final attachment in packAttachments) {
+        try {
+          await importPack(File(attachment!.path));
+          if (mounted) setState(() {});
+          homeState?.update();
+        } on Exception catch (e, st) {
+          debugPrint(e.toString());
+          debugPrintStack(stackTrace: st);
+          if (mounted) {
+            showDialog(
+                context: navigatorKey.currentState!.context,
+                builder: (context) => ErrorDialog(
+                      message: AppLocalizations.of(context)!.checkIfFileValid,
+                      title: AppLocalizations.of(context)!.importError,
+                    ));
+          }
         }
       }
       return;
     }
+
     if (media.attachments!.first!.type != SharedAttachmentType.image) {
       if (mounted) {
         showDialog(
