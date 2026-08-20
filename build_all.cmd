@@ -3,6 +3,7 @@ REM builds and renames all apks and the appbudle
 
 echo Cleaning...
 call flutter clean
+call flutter pub get
 
 echo Building split per abi...
 call flutter build apk --split-per-abi
