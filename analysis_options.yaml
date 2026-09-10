@@ -11,6 +11,7 @@ include: package:flutter_lints/flutter.yaml
 
 formatter:
   trailing_commas: preserve
+  page_width: 120
 
 linter:
   # The lint rules applied to this project can be customized in the
@@ -25,6 +26,15 @@ linter:
   # producing the lint.
   rules:
     avoid_print: false  # Uncomment to disable the `avoid_print` rule
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
 
 # Additional information about this file can be found at

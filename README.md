@@ -96,6 +96,13 @@ And the you just need to
 flutter build apk
 ```
 
+### API Keys
+Because the Google Fonts API key is kept out of Git, you will need to create a stub file to compile the app locally:
+Create `lib/src/api_keys.dart` with the following content:
+```dart
+String fontsKey = ""; // Or place your real API key here
+```
+
 ## Contributing
 
 Any contributions (Pull requests, feature requests and bug reports) are very welcome!

@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - dev
+
+permissions:
+  contents: read
+  pull-requests: write # Required for size-diff-action to post PR comments
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Create API Keys Stub
+        run: echo 'String fontsKey = "";' > lib/src/api_keys.dart
+
+      - name: Check formatting
+        run: dart format --line-length=120 --output=none --set-exit-if-changed .
+        continue-on-error: true
+
+      - name: Analyze project source
+        run: flutter analyze
+        continue-on-error: true
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Rename unsigned APK
+        run: |
+          if [ -f build/app/outputs/flutter-apk/app-release-unsigned.apk ]; then
+            mv build/app/outputs/flutter-apk/app-release-unsigned.apk build/app/outputs/flutter-apk/app-release.apk
+          fi
+
+      - name: Calculate APK size difference
+        uses: jacobras/size-diff-action@v2
+        with:
+          path: build/app/outputs/flutter-apk/app-release.apk
+          repo-token: ${{ secrets.GITHUB_TOKEN }}

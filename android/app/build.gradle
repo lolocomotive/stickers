@@ -54,16 +54,20 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"]
-            keyPassword = keystoreProperties["keyPassword"]
-            storeFile = new File(keystoreProperties["storeFile"])
-            storePassword = keystoreProperties["storePassword"]
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"]
+                keyPassword = keystoreProperties["keyPassword"]
+                storeFile = new File(keystoreProperties["storeFile"])
+                storePassword = keystoreProperties["storePassword"]
+            }
         }
     }
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
         }
     }
     externalNativeBuild {

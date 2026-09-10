@@ -5,10 +5,10 @@ import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:stickers/src/api_keys.dart';
 import 'package:stickers/src/fonts_api/fonts_models.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
+import 'package:stickers/src/api_keys.dart';
 
 String apiURL = "https://www.googleapis.com/webfonts/v1/webfonts";
 /*
@@ -22,6 +22,11 @@ String apiURL = "https://www.googleapis.com/webfonts/v1/webfonts";
  *    sort: alpha | date | popularity | style | trending.
  */
 Future<GoogleFontsReply> getFonts({String? family, String? category}) async {
+  if (fontsKey.isEmpty) {
+    debugPrint("Google Fonts API key is missing. Google Fonts will not be available.");
+    return GoogleFontsReply(kind: "webfonts#webfontList", items: []);
+  }
+
   File fontsListCache = File("$fontsCacheDir/google_fonts.json");
   if (await fontsListCache.exists()) {
     try {
