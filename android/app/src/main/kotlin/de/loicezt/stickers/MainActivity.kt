@@ -1,5 +1,8 @@
 package de.loicezt.stickers
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
 import android.os.Build
 import androidx.annotation.NonNull
 import androidx.annotation.RequiresApi
@@ -28,6 +31,43 @@ class MainActivity : FlutterActivity() {
     private val scope = CoroutineScope(
         Dispatchers.Main + SupervisorJob()
     )
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        handleViewIntent(intent)
+        super.onCreate(savedInstanceState)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        handleViewIntent(intent)
+        setIntent(intent)
+        super.onNewIntent(intent)
+    }
+
+    private fun handleViewIntent(intent: Intent?) {
+        if (intent == null || intent.action != Intent.ACTION_VIEW) return
+
+        val uris = ArrayList<Uri>()
+        intent.data?.let { uris.add(it) }
+        intent.clipData?.let { clipData ->
+            for (i in 0 until clipData.itemCount) {
+                val itemUri = clipData.getItemAt(i).uri
+                if (itemUri != null && !uris.contains(itemUri)) {
+                    uris.add(itemUri)
+                }
+            }
+        }
+
+        if (uris.isEmpty()) return
+
+        if (uris.size == 1) {
+            intent.action = Intent.ACTION_SEND
+            intent.putExtra(Intent.EXTRA_STREAM, uris[0])
+        } else {
+            intent.action = Intent.ACTION_SEND_MULTIPLE
+            intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+        }
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
