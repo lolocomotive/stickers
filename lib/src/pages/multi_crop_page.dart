@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -154,13 +155,23 @@ class _MultiCropPageState extends State<MultiCropPage> {
                                             button: true,
                                             child: Padding(
                                               padding: const EdgeInsets.all(8),
-                                              child: selection.crop == null
-                                                  ? Image.file(
-                                                      File(selection.path),
-                                                      fit: BoxFit.contain,
-                                                      errorBuilder: (_, error, stack) => const Icon(Icons.broken_image),
-                                                    )
-                                                  : Image.memory(selection.crop!, fit: BoxFit.contain),
+                                              child: LayoutBuilder(
+                                                builder: (context, constraints) {
+                                                  final pixelRatio = MediaQuery.devicePixelRatioOf(context);
+                                                  return Image(
+                                                    image: ResizeImage(
+                                                      selection.crop == null
+                                                          ? FileImage(File(selection.path))
+                                                          : MemoryImage(selection.crop!),
+                                                      width: math.max(1, (constraints.maxWidth * pixelRatio).ceil()),
+                                                      height: math.max(1, (constraints.maxHeight * pixelRatio).ceil()),
+                                                      policy: ResizeImagePolicy.fit,
+                                                    ),
+                                                    fit: BoxFit.contain,
+                                                    errorBuilder: (_, error, stack) => const Icon(Icons.broken_image),
+                                                  );
+                                                },
+                                              ),
                                             ),
                                           ),
                                         ),

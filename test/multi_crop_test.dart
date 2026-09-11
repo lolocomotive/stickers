@@ -175,6 +175,34 @@ void main() {
     expect(editor.merges, 2);
     expect(jsonDecode(File('$packsDir/packs.json').readAsStringSync()).single['stickers'].length, 3);
   });
+  testWidgets('gallery decodes thumbnails to physical tile bounds without changing import resolution', (tester) async {
+    await tester.runAsync(() async {
+      File(first).writeAsBytesSync(await imageBytes(1600, 800));
+      File(second).writeAsBytesSync(await imageBytes(800, 1600));
+    });
+    await showPack(tester);
+    await select(tester);
+    for (final ratio in [1.0, 3.0]) {
+      tester.view.devicePixelRatio = ratio;
+      tester.view.physicalSize = Size(390 * ratio, 844 * ratio);
+      await settle(tester);
+      for (final entry in {'first.png': 2.0, 'second.png': .5}.entries) {
+        final tile = find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Crop ${entry.key}');
+        final raw = find.descendant(of: tile, matching: find.byType(RawImage));
+        await until(tester, () => raw.evaluate().isNotEmpty && tester.widget<RawImage>(raw).image != null);
+        final decoded = tester.widget<RawImage>(raw).image!;
+        final bounds = tester.getSize(raw);
+        expect(decoded.width, lessThanOrEqualTo((bounds.width * ratio).ceil()));
+        expect(decoded.height, lessThanOrEqualTo((bounds.height * ratio).ceil()));
+        expect(decoded.width / decoded.height, closeTo(entry.value, .03));
+        expect(decoded.width, greaterThan(50 * ratio));
+      }
+    }
+    await save(tester, 2);
+    final clips = editor.edits.map((edit) => edit.options.whereType<ClipOption>().single).toList();
+    expect([clips[0].width, clips[0].height], [1600, 800]);
+    expect([clips[1].width, clips[1].height], [800, 1600]);
+  });
   testWidgets('real crop screen returns a preview without saving; bulk save uses that crop', (tester) async {
     await showPack(tester);
     await select(tester);
