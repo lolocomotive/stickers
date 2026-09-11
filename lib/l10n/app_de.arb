@@ -1,4 +1,13 @@
 {
+  "reviewStickers": "Sticker prüfen",
+  "noStickersSelected": "Keine Bilder ausgewählt",
+  "cropSelectedSticker": "{name} zuschneiden",
+  "removeSelectedSticker": "{name} entfernen",
+  "resetCrop": "Zuschnitt zurücksetzen",
+  "saveCrop": "Zuschnitt speichern",
+  "saveAllStickers": "Alle speichern ({count})",
+  "savingStickers": "Vorbereitung: {current} von {total}",
+  "batchImportErrors": "Es wurde nichts gespeichert. Schneide die markierten Bilder zu oder entferne sie und versuche es erneut.",
     "@@locale": "de",
     "@@author": "lolocomotive",
     "appTitle": "Stickers",
