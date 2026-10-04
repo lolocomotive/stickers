@@ -123,6 +123,36 @@
   "couldntLoadMedia": "Couldn't load media",
   "couldntLoadVideo": "Couldn't load video",
   "trimVideo": "Trim video",
+  "cropFit": "Fit",
+  "@cropFit": {
+    "description": "Crop export mode that preserves the aspect ratio of the selected area"
+  },
+  "cropStretch": "Stretch",
+  "@cropStretch": {
+    "description": "Crop export mode that stretches the selected area to a square"
+  },
+  "rotateLeft": "Rotate left",
+  "@rotateLeft": {
+    "description": "Tooltip for rotating the video 90 degrees counterclockwise"
+  },
+  "rotateRight": "Rotate right",
+  "@rotateRight": {
+    "description": "Tooltip for rotating the video 90 degrees clockwise"
+  },
+  "cropSelectionInstructions": "Crop selection. Drag corners to resize, or use arrow keys to move.",
+  "@cropSelectionInstructions": {
+    "description": "Screen reader instructions for resizing and moving the video crop selection"
+  },
+  "trimStart": "Start",
+  "trimEnd": "End",
+  "clipLength": "Length",
+  "previousFrame": "Previous frame",
+  "nextFrame": "Next frame",
+  "trimOneFrameEarlier": "Move selected trim edge one frame earlier",
+  "trimOneFrameLater": "Move selected trim edge one frame later",
+  "previewPlay": "Play preview",
+  "previewPause": "Pause preview",
+  "previewPosition": "Preview position",
   "trimFailed": "Video trimming failed",
   "trimFailedMsg": "Try another video, and if it still doesn't work, head to GitHub to submit an Issue",
   "fontsManagerDetails": "Add/remove fonts of the app",

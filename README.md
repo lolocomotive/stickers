@@ -11,6 +11,8 @@ Or download from the latest [GitHub Release](https://github.com/lolocomotive/sti
 - Quick mode: sharing an image to the app automatically adds it to whatsapp
 - Editor
     - Crop your sticker to your heart's content
+    - Trim videos with thumbnail previews and frame-by-frame adjustments
+    - Crop and rotate videos, preserving their aspect ratio or stretching them to a square
     - Add texts with different sizes, fonts and colors
     - Draw with different colors and brush sizes, with undo/redo support
     - Every element has its own layer unde the hood, so you can draw above and below texts
@@ -131,7 +133,7 @@ Some features I plan to work on in the future
 - [ ] Image layers on stickers
 - [ ] Start with an existing sticker
 - [ ] Create animated stickers from gifs
-- [ ] Crop and rotate videos
+- [x] Crop and rotate videos
 
 ## iOS Support
 

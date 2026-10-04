@@ -50,9 +50,40 @@ class CropScaleGL : SurfaceTexture.OnFrameAvailableListener {
         frameSemaphore.release()
     }
 
-    fun setup(encoderSurface: Surface, width: Int, height: Int) {
+    fun setup(
+        encoderSurface: Surface, width: Int, height: Int,
+        left: Float, top: Float, right: Float, bottom: Float, rotation: Int
+    ) {
         this.targetWidth = width
         this.targetHeight = height
+        val displayCorners = floatArrayOf(
+            left, bottom, right, bottom, left, top, right, top
+        )
+        val textureCorners = FloatArray(displayCorners.size)
+        for (i in displayCorners.indices step 2) {
+            val x = displayCorners[i]
+            val y = displayCorners[i + 1]
+            when (rotation) {
+                90 -> {
+                    textureCorners[i] = y
+                    textureCorners[i + 1] = x
+                }
+                180 -> {
+                    textureCorners[i] = 1f - x
+                    textureCorners[i + 1] = y
+                }
+                270 -> {
+                    textureCorners[i] = 1f - y
+                    textureCorners[i + 1] = 1f - x
+                }
+                else -> {
+                    textureCorners[i] = x
+                    textureCorners[i + 1] = 1f - y
+                }
+            }
+        }
+        texCoordBuffer.position(0)
+        texCoordBuffer.put(textureCorners).position(0)
 
         eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
         val version = IntArray(2)

@@ -8,6 +8,7 @@ import androidx.annotation.NonNull
 import androidx.annotation.RequiresApi
 import de.loicezt.stickers.video.CropAndScale
 import de.loicezt.stickers.video.OverlayAndEncode
+import de.loicezt.stickers.video.VideoTimeline
 import de.loicezt.stickers.video.WebPConfig
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -82,13 +83,25 @@ class MainActivity : FlutterActivity() {
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "startTrim" -> {
-                    val args = call.arguments as Map<String, String>
-                    val inputFile = File(args["inputFile"]!!)
-                    val outputFile = File(args["outputFile"]!!)
-                    val startTimeUs = args["startTimeUs"]!!.toLong()
-                    val endTimeUs = args["endTimeUs"]!!.toLong()
-                    cropAndScale.start(inputFile, outputFile, startTimeUs, endTimeUs, 24)
-                    result.success(null)
+                    try {
+                        val args = call.arguments as Map<*, *>
+                        val inputFile = File(args["inputFile"] as String)
+                        val outputFile = File(args["outputFile"] as String)
+                        val startTimeUs = (args["startTimeUs"] as String).toLong()
+                        val endTimeUs = (args["endTimeUs"] as String).toLong()
+                        cropAndScale.start(
+                            inputFile, outputFile, startTimeUs, endTimeUs, 24,
+                            (args["cropLeft"] as Number).toFloat(),
+                            (args["cropTop"] as Number).toFloat(),
+                            (args["cropRight"] as Number).toFloat(),
+                            (args["cropBottom"] as Number).toFloat(),
+                            args["stretch"] as Boolean,
+                            args["quarterTurns"] as Int
+                        )
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("INVALID_CROP", e.message, null)
+                    }
                 }
 
                 "startOverlay" -> {
@@ -126,6 +139,44 @@ class MainActivity : FlutterActivity() {
                 "cancelTrim" -> {
                     cropAndScale.cancel()
                     result.success(null)
+                }
+
+                "videoTimelineThumbnails" -> {
+                    val path = call.argument<String>("inputFile")
+                    if (path == null) {
+                        result.error("INVALID_ARGUMENTS", "Missing video file", null)
+                    } else {
+                        scope.launch {
+                            try {
+                                val frames = kotlinx.coroutines.withContext(Dispatchers.IO) {
+                                    VideoTimeline.thumbnails(File(path), 10)
+                                }
+                                result.success(frames)
+                            } catch (e: Exception) {
+                                result.error("VIDEO_TIMELINE", e.message, null)
+                            }
+                        }
+                    }
+                }
+
+                "adjacentVideoFrame" -> {
+                    val path = call.argument<String>("inputFile")
+                    val positionUs = call.argument<Number>("positionUs")?.toLong()
+                    val direction = call.argument<Int>("direction")
+                    if (path == null || positionUs == null || direction == null) {
+                        result.error("INVALID_ARGUMENTS", "Missing frame navigation arguments", null)
+                    } else {
+                        scope.launch {
+                            try {
+                                val frameTimeUs = kotlinx.coroutines.withContext(Dispatchers.IO) {
+                                    VideoTimeline.adjacentFrameTimeUs(File(path), positionUs, direction)
+                                }
+                                result.success(frameTimeUs)
+                            } catch (e: Exception) {
+                                result.error("VIDEO_FRAME", e.message, null)
+                            }
+                        }
+                    }
                 }
 
                 else -> result.notImplemented()

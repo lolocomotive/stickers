@@ -13,9 +13,11 @@ class CropAndScaleService {
 
   Stream<Progress> get progressStream => _progressController.stream;
 
+  late final StreamSubscription<dynamic> _subscription;
+
   CropAndScaleService() {
     // Listen to the native event channel as soon as the service is created
-    _eventChannel.receiveBroadcastStream().listen(_onProgress, onError: _onError);
+    _subscription = _eventChannel.receiveBroadcastStream().listen(_onProgress, onError: _onError);
   }
 
   void _onProgress(dynamic data) {
@@ -32,13 +34,13 @@ class CropAndScaleService {
         currentFrame: data['currentFrame'] as int? ?? 0,
         totalFrames: data['totalFrames'] as int? ?? 0,
       );
-      _progressController.add(progress);
+      if (!_progressController.isClosed) _progressController.add(progress);
     }
   }
 
   void _onError(Object error) {
     print("Error on EventChannel: $error");
-    _progressController.add(Progress(status: Status.FAILED));
+    if (!_progressController.isClosed) _progressController.add(Progress(status: Status.FAILED));
   }
 
   Future<void> start({
@@ -46,6 +48,9 @@ class CropAndScaleService {
     required String outputFile,
     required Duration start,
     required Duration end,
+    required Rect crop,
+    required bool stretch,
+    required int quarterTurns,
   }) async {
     try {
       await _methodChannel.invokeMethod('startTrim', {
@@ -53,9 +58,16 @@ class CropAndScaleService {
         'outputFile': outputFile,
         'startTimeUs': start.inMicroseconds.toString(),
         'endTimeUs': end.inMicroseconds.toString(),
+        'cropLeft': crop.left.clamp(0.0, 1.0),
+        'cropTop': crop.top.clamp(0.0, 1.0),
+        'cropRight': crop.right.clamp(0.0, 1.0),
+        'cropBottom': crop.bottom.clamp(0.0, 1.0),
+        'stretch': stretch,
+        'quarterTurns': quarterTurns,
       });
     } on PlatformException catch (e) {
       print("Failed to start transcoding: '${e.message}'.");
+      rethrow;
     }
   }
 
@@ -68,6 +80,7 @@ class CropAndScaleService {
   }
 
   void dispose() {
+    _subscription.cancel();
     _progressController.close();
   }
 }
