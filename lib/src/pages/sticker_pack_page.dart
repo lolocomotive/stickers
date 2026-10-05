@@ -223,14 +223,26 @@ class StickerPackPageState extends State<StickerPackPage> {
         }
         if (!mounted) return;
         if (images.isEmpty) return;
-        await Navigator.of(context).push<void>(MaterialPageRoute(
-          builder: (_) => MultiCropPage(
-            pack: widget.pack,
-            paths: images.take(remaining).map((image) => image.path).toList(),
-            // Some Android file providers do not enforce the picker limit.
-            selectionWasLimited: images.length > remaining,
-          ),
-        ));
+        if (images.length == 1) {
+          await Navigator.pushNamed(
+            context,
+            "/crop",
+            arguments: EditArguments(
+              pack: widget.pack,
+              index: widget.pack.stickers.length,
+              mediaPath: images.first.path,
+            ),
+          );
+        } else {
+          await Navigator.of(context).push<void>(MaterialPageRoute(
+            builder: (_) => MultiCropPage(
+              pack: widget.pack,
+              paths: images.take(remaining).map((image) => image.path).toList(),
+              // Some Android file providers do not enforce the picker limit.
+              selectionWasLimited: images.length > remaining,
+            ),
+          ));
+        }
       }
     } on Exception catch (e) {
       if (mounted) {
