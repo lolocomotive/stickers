@@ -131,9 +131,14 @@
     "couldntLoadMedia": "Medium konnte nicht geladen werden",
     "couldntLoadVideo":  "Video konnte nicht geladen werden",
     "trimVideo": "Video zuschneiden",
+    "rotateLeft": "Nach links drehen",
+    "rotateRight": "Nach rechts drehen",
+    "fit": "Einpassen",
+    "stretch": "Strecken",
     "trimFailed": "Zuschneiden fehlgeschlagen",
     "trimFailedMsg": "Versuchen Sie es mit einem anderen Video. Wenn es immer noch nicht funktioniert, gehen Sie zu GitHub, um ein Problem zu melden",
     "fontsManagerDetails": "Schriftarten zur App hinzufügen oder entfernen",
     "clearCache": "Cache leeren",
-    "thisWillRestart": "Die App wird dabei neu gestartet"
+    "thisWillRestart": "Die App wird dabei neu gestartet",
+    "speed": "Geschwindigkeit"
 }

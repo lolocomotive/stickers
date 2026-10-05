@@ -1,16 +1,14 @@
-import 'dart:collection';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/pages/default_page.dart';
+import 'package:stickers/src/widgets/crop_aspect_ratio_selector.dart';
 
 class CropPage extends StatefulWidget {
   final StickerPack pack;
@@ -151,83 +149,11 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SegmentedButton<double>(
-                        showSelectedIcon: false,
-                        emptySelectionAllowed: true,
-                        multiSelectionEnabled: false,
-                        segments: [
-                          ButtonSegment(
-                            value: 16 / 9,
-                            icon: Column(
-                              children: [
-                                Icon(Icons.crop_16_9),
-                                Text(
-                                  "16:9",
-                                  style: TextStyle(fontSize: 10),
-                                ),
-                              ],
-                            ),
-                          ),
-                          ButtonSegment(
-                            value: 3 / 2,
-                            icon: Column(
-                              children: [
-                                Icon(Icons.crop_3_2),
-                                Text(
-                                  "3:2",
-                                  style: TextStyle(fontSize: 10),
-                                ),
-                              ],
-                            ),
-                          ),
-                          ButtonSegment(
-                            value: 1,
-                            icon: Column(
-                              children: [
-                                Icon(Icons.crop_din),
-                                Text(
-                                  "1:1",
-                                  style: TextStyle(fontSize: 10),
-                                ),
-                              ],
-                            ),
-                          ),
-                          ButtonSegment(
-                            value: 2 / 3,
-                            icon: Column(
-                              children: [
-                                Transform.rotate(
-                                  angle: pi / 2,
-                                  child: Icon(Icons.crop_3_2),
-                                ),
-                                Text(
-                                  "2:3",
-                                  style: TextStyle(fontSize: 10),
-                                ),
-                              ],
-                            ),
-                          ),
-                          ButtonSegment(
-                            value: 9 / 16,
-                            icon: Column(
-                              children: [
-                                Transform.rotate(
-                                  angle: pi / 2,
-                                  child: Icon(Icons.crop_16_9),
-                                ),
-                                Text(
-                                  "9:16",
-                                  style: TextStyle(fontSize: 10),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        selected: {_aspectRatio == null ? 0 : _aspectRatio!},
-                        onSelectionChanged: (v) {
+                      CropAspectRatioSelector(
+                        aspectRatio: _aspectRatio,
+                        onChanged: (v) {
                           setState(() {
-                            _aspectRatio = v.firstOrNull;
-                            HapticFeedback.lightImpact();
+                            _aspectRatio = v;
                           });
                         },
                       ),

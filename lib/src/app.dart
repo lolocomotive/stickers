@@ -121,8 +121,10 @@ class StickersAppState extends State<StickersApp> {
           // Define a light and dark color theme. Then, read the user's
           // preferred ThemeMode (light, dark, or system default) from the
           // SettingsController to display the correct theme.
-          theme: ThemeData(),
-          darkTheme: ThemeData.dark(),
+          // ignore: deprecated_member_use
+          theme: ThemeData(sliderTheme: const SliderThemeData(year2023: false)),
+          // ignore: deprecated_member_use
+          darkTheme: ThemeData.dark().copyWith(sliderTheme: const SliderThemeData(year2023: false)),
           themeMode: widget.settingsController.themeMode,
           navigatorKey: navigatorKey,
 

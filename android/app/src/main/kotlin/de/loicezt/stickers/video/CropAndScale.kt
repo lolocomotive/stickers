@@ -73,7 +73,14 @@ class CropAndScale {
         outputFile: File,
         startTimeUs: Long,
         endTimeUs: Long,
-        maxFps: Int
+        maxFps: Int,
+        speed: Double = 1.0,
+        cropLeft: Float = 0f,
+        cropTop: Float = 0f,
+        cropRight: Float = 1f,
+        cropBottom: Float = 1f,
+        rotationDegrees: Int = 0,
+        stretch: Boolean = false
     ) {
         if (_status.value == State.RUNNING) {
             Log.w(LOG_TAG, "Transcoding is already in progress. Ignoring new request.")
@@ -84,7 +91,20 @@ class CropAndScale {
             _status.value = State.RUNNING
             _progress.value = ProgressState()
             try {
-                doTranscode(inputFile, outputFile, startTimeUs, endTimeUs, maxFps)
+                doTranscode(
+                    inputFile,
+                    outputFile,
+                    startTimeUs,
+                    endTimeUs,
+                    maxFps,
+                    speed,
+                    cropLeft,
+                    cropTop,
+                    cropRight,
+                    cropBottom,
+                    rotationDegrees,
+                    stretch
+                )
                 _status.value = State.SUCCESS
                 Log.d(LOG_TAG, "Transcoding finished successfully.")
             } catch (e: CancellationException) {
@@ -120,7 +140,14 @@ class CropAndScale {
         outputFile: File,
         startTimeUs: Long,
         endTimeUs: Long,
-        maxFps: Int
+        maxFps: Int,
+        speed: Double,
+        cropLeft: Float,
+        cropTop: Float,
+        cropRight: Float,
+        cropBottom: Float,
+        rotationDegrees: Int,
+        stretch: Boolean
     ) {
         val extractor = MediaExtractor()
         var decoder: MediaCodec? = null
@@ -147,8 +174,11 @@ class CropAndScale {
             val originalDurationUs = inputFormat.getLong(MediaFormat.KEY_DURATION)
             val effectiveStartTimeUs = startTimeUs
             val effectiveEndTimeUs = min(endTimeUs, originalDurationUs)
-            val trimmedDurationUs = effectiveEndTimeUs - effectiveStartTimeUs
-            if (trimmedDurationUs <= 0) throw IllegalArgumentException("End time must be after start time.")
+            val originalTrimmedDurationUs = effectiveEndTimeUs - effectiveStartTimeUs
+            if (originalTrimmedDurationUs <= 0) throw IllegalArgumentException("End time must be after start time.")
+            val safeSpeed = if (speed <= 0.0) 1.0 else speed
+            val trimmedDurationUs = (originalTrimmedDurationUs / safeSpeed).toLong()
+            if (trimmedDurationUs <= 0) throw IllegalArgumentException("Trimmed duration must be positive.")
 
             extractor.seekTo(effectiveStartTimeUs, MediaExtractor.SEEK_TO_PREVIOUS_SYNC)
 
@@ -160,7 +190,7 @@ class CropAndScale {
             } else {
                 24
             }
-            val targetFrameRate = maxFps?.let { min(it, originalFrameRate) } ?: originalFrameRate
+            val targetFrameRate = min(maxFps, originalFrameRate)
             val totalFrames = ((trimmedDurationUs / 1_000_000.0) * targetFrameRate).toInt()
             _progress.value = ProgressState(totalFrames = totalFrames)
 
@@ -180,16 +210,33 @@ class CropAndScale {
                 rotatedHeight = videoHeight
             }
 
+            val cropWidthRatio = (cropRight - cropLeft).coerceIn(0.01f, 1.0f)
+            val cropHeightRatio = (cropBottom - cropTop).coerceIn(0.01f, 1.0f)
+
+            val effectiveRotatedWidth: Int
+            val effectiveRotatedHeight: Int
+            val normRotation = ((rotationDegrees % 360) + 360) % 360
+            if (normRotation == 90 || normRotation == 270) {
+                effectiveRotatedWidth = (rotatedHeight * cropHeightRatio).toInt()
+                effectiveRotatedHeight = (rotatedWidth * cropWidthRatio).toInt()
+            } else {
+                effectiveRotatedWidth = (rotatedWidth * cropWidthRatio).toInt()
+                effectiveRotatedHeight = (rotatedHeight * cropHeightRatio).toInt()
+            }
+
             val outputWidth: Int
             val outputHeight: Int
-            if (rotatedWidth > rotatedHeight) {
+            if (stretch) {
+                outputWidth = TARGET_LONGEST_SIDE
+                outputHeight = TARGET_LONGEST_SIDE
+            } else if (effectiveRotatedWidth > effectiveRotatedHeight) {
                 outputWidth = TARGET_LONGEST_SIDE
                 outputHeight =
-                    (TARGET_LONGEST_SIDE * (rotatedHeight.toFloat() / rotatedWidth.toFloat())).toInt()
+                    (TARGET_LONGEST_SIDE * (effectiveRotatedHeight.toFloat() / effectiveRotatedWidth.toFloat())).toInt()
             } else {
                 outputHeight = TARGET_LONGEST_SIDE
                 outputWidth =
-                    (TARGET_LONGEST_SIDE * (rotatedWidth.toFloat() / rotatedHeight.toFloat())).toInt()
+                    (TARGET_LONGEST_SIDE * (effectiveRotatedWidth.toFloat() / effectiveRotatedHeight.toFloat())).toInt()
             }
             val finalOutputWidth = if (outputWidth % 2 == 1) outputWidth - 1 else outputWidth
             val finalOutputHeight = if (outputHeight % 2 == 1) outputHeight - 1 else outputHeight
@@ -212,6 +259,7 @@ class CropAndScale {
             encoder.start()
 
             glProcessor.setup(encoderInputSurface, finalOutputWidth, finalOutputHeight)
+            glProcessor.setCropAndRotation(cropLeft, cropTop, cropRight, cropBottom, normRotation)
             decoder = MediaCodec.createDecoderByType(inputFormat.getString(MediaFormat.KEY_MIME)!!)
             decoder.configure(inputFormat, glProcessor.decoderInputSurface, null, 0)
             decoder.start()
@@ -280,7 +328,8 @@ class CropAndScale {
                     // Frame dropping
                     var renderThisFrame = isFrameInRange
                     if (isFrameInRange) {
-                        val currentTimestampNs = decoderBufferInfo.presentationTimeUs * 1000
+                        val currentTimestampNs =
+                            (((decoderBufferInfo.presentationTimeUs - effectiveStartTimeUs) * 1000L) / safeSpeed).toLong()
                         if (lastRenderedTimestampNs != -1L && currentTimestampNs - lastRenderedTimestampNs < frameIntervalNs) {
                             renderThisFrame = false
                         } else {
@@ -294,13 +343,13 @@ class CropAndScale {
                         try {
                             glProcessor.awaitNewFrame()
                             val adjustedTimestampUs =
-                                decoderBufferInfo.presentationTimeUs - effectiveStartTimeUs
-                            val timestampNs = adjustedTimestampUs * 1000
+                                ((decoderBufferInfo.presentationTimeUs - effectiveStartTimeUs) / safeSpeed).toLong()
+                            val timestampNs = adjustedTimestampUs * 1000L
                             glProcessor.drawFrame(timestampNs)
 
                             currentFrame++
                             val progressPercentage =
-                                adjustedTimestampUs.toFloat() / trimmedDurationUs.toFloat()
+                                (adjustedTimestampUs.toFloat() / trimmedDurationUs.toFloat()).coerceIn(0f, 1f)
                             _progress.value =
                                 ProgressState(progressPercentage, currentFrame, totalFrames)
 

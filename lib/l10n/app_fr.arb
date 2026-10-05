@@ -131,9 +131,14 @@
   "couldntLoadMedia": "Impossible de charger le média",
   "couldntLoadVideo": "Impossible de charger la vidéo",
   "trimVideo": "Couper la vidéo",
+  "rotateLeft": "Pivoter à gauche",
+  "rotateRight": "Pivoter à droite",
+  "fit": "Ajuster",
+  "stretch": "Étirer",
   "trimFailed": "Échec du coupage de la vidéo",
   "trimFailedMsg": "Essayez une autre vidéo, et si cela ne fonctionne toujours pas, rendez-vous sur GitHub pour signaler un problème",
   "fontsManagerDetails": "Ajouter/supprimer des polices de l'application",
   "clearCache": "Vider le cache",
-  "thisWillRestart": "Ceci redémarrera l'application"
+  "thisWillRestart": "Ceci redémarrera l'application",
+  "speed": "Vitesse"
 }

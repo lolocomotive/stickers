@@ -84,6 +84,61 @@ class CropScaleGL : SurfaceTexture.OnFrameAvailableListener {
         decoderInputSurface = Surface(decoderSurfaceTexture)
     }
 
+    fun setCropAndRotation(
+        cropLeft: Float,
+        cropTop: Float,
+        cropRight: Float,
+        cropBottom: Float,
+        rotationDegrees: Int = 0
+    ) {
+        val pBL = floatArrayOf(cropLeft, 1f - cropBottom)
+        val pBR = floatArrayOf(cropRight, 1f - cropBottom)
+        val pTL = floatArrayOf(cropLeft, 1f - cropTop)
+        val pTR = floatArrayOf(cropRight, 1f - cropTop)
+
+        val cBL: FloatArray
+        val cBR: FloatArray
+        val cTL: FloatArray
+        val cTR: FloatArray
+
+        val normRot = ((rotationDegrees % 360) + 360) % 360
+        when (normRot) {
+            90 -> {
+                cBL = pBR
+                cBR = pTR
+                cTL = pBL
+                cTR = pTL
+            }
+            180 -> {
+                cBL = pTR
+                cBR = pTL
+                cTL = pBR
+                cTR = pBL
+            }
+            270 -> {
+                cBL = pTL
+                cBR = pBL
+                cTL = pTR
+                cTR = pBR
+            }
+            else -> {
+                cBL = pBL
+                cBR = pBR
+                cTL = pTL
+                cTR = pTR
+            }
+        }
+
+        val texCoordData = floatArrayOf(
+            cBL[0], cBL[1],
+            cBR[0], cBR[1],
+            cTL[0], cTL[1],
+            cTR[0], cTR[1]
+        )
+        texCoordBuffer.clear()
+        texCoordBuffer.put(texCoordData).position(0)
+    }
+
     fun awaitNewFrame() {
         if (!frameSemaphore.tryAcquire(2, TimeUnit.SECONDS)) {
             throw TimeoutException("Timeout waiting for new video frame")

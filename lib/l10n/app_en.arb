@@ -172,9 +172,14 @@
   "couldntLoadMedia": "Couldn't load media",
   "couldntLoadVideo": "Couldn't load video",
   "trimVideo": "Trim video",
+  "rotateLeft": "Rotate left",
+  "rotateRight": "Rotate right",
+  "fit": "Fit",
+  "stretch": "Stretch",
   "trimFailed": "Video trimming failed",
   "trimFailedMsg": "Try another video, and if it still doesn't work, head to GitHub to submit an Issue",
   "fontsManagerDetails": "Add/remove fonts of the app",
   "clearCache": "Clear cache",
-  "thisWillRestart": "This will restart the app"
+  "thisWillRestart": "This will restart the app",
+  "speed": "Speed"
 }

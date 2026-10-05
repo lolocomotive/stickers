@@ -134,9 +134,14 @@
   "couldntLoadMedia": "Ошибка загрузки медиа",
   "couldntLoadVideo": "Ошибка загрузки видео",
   "trimVideo": "Обрезать видео",
+  "rotateLeft": "Повернуть влево",
+  "rotateRight": "Повернуть вправо",
+  "fit": "Вписать",
+  "stretch": "Растянуть",
   "trimFailed": "Ошибка обрезки",
   "trimFailedMsg": "Попробуйте другое видео или сообщите об ошибке на GitHub",
   "fontsManagerDetails": "Управление шрифтами",
   "clearCache": "Очистить кэш",
-  "thisWillRestart": "Приложение перезапустится"
+  "thisWillRestart": "Приложение перезапустится",
+  "speed": "Скорость"
 }

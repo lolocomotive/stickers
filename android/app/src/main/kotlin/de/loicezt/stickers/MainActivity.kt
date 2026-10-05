@@ -82,12 +82,32 @@ class MainActivity : FlutterActivity() {
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "startTrim" -> {
-                    val args = call.arguments as Map<String, String>
-                    val inputFile = File(args["inputFile"]!!)
-                    val outputFile = File(args["outputFile"]!!)
-                    val startTimeUs = args["startTimeUs"]!!.toLong()
-                    val endTimeUs = args["endTimeUs"]!!.toLong()
-                    cropAndScale.start(inputFile, outputFile, startTimeUs, endTimeUs, 24)
+                    val args = call.arguments as Map<*, *>
+                    val inputFile = File(args["inputFile"] as String)
+                    val outputFile = File(args["outputFile"] as String)
+                    val startTimeUs = (args["startTimeUs"] as String).toLong()
+                    val endTimeUs = (args["endTimeUs"] as String).toLong()
+                    val speed = (args["speed"] as? Number)?.toDouble() ?: 1.0
+                    val cropLeft = (args["cropLeft"] as? Number)?.toFloat() ?: 0f
+                    val cropTop = (args["cropTop"] as? Number)?.toFloat() ?: 0f
+                    val cropRight = (args["cropRight"] as? Number)?.toFloat() ?: 1f
+                    val cropBottom = (args["cropBottom"] as? Number)?.toFloat() ?: 1f
+                    val rotation = (args["rotation"] as? Number)?.toInt() ?: 0
+                    val stretch = (args["stretch"] as? Boolean) ?: false
+                    cropAndScale.start(
+                        inputFile,
+                        outputFile,
+                        startTimeUs,
+                        endTimeUs,
+                        24,
+                        speed,
+                        cropLeft,
+                        cropTop,
+                        cropRight,
+                        cropBottom,
+                        rotation,
+                        stretch
+                    )
                     result.success(null)
                 }
 
