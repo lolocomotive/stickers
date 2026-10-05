@@ -1,4 +1,44 @@
 {
+  "reviewStickers": "Review stickers",
+  "noStickersSelected": "No images selected",
+  "cropSelectedSticker": "Crop {name}",
+  "removeSelectedSticker": "Remove {name}",
+  "resetCrop": "Reset crop",
+  "saveCrop": "Save crop",
+  "saveAllStickers": "Save all ({count})",
+  "savingStickers": "Preparing {current} of {total}",
+  "batchImportErrors": "Nothing was saved. Crop or remove the marked images, then try again.",
+  "@saveAllStickers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@savingStickers": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@cropSelectedSticker": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@removeSelectedSticker": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "@@locale": "en",
   "@@author": "lolocomotive",
   "appTitle": "Sticker maker",

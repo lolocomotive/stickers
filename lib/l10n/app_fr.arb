@@ -1,4 +1,13 @@
 {
+  "reviewStickers": "Vérifier les stickers",
+  "noStickersSelected": "Aucune image sélectionnée",
+  "cropSelectedSticker": "Recadrer {name}",
+  "removeSelectedSticker": "Retirer {name}",
+  "resetCrop": "Réinitialiser le recadrage",
+  "saveCrop": "Enregistrer le recadrage",
+  "saveAllStickers": "Tout enregistrer ({count})",
+  "savingStickers": "Préparation de {current} sur {total}",
+  "batchImportErrors": "Rien n’a été enregistré. Recadrez ou retirez les images signalées, puis réessayez.",
   "@@locale": "fr",
   "@@author": "lolocomotive",
   "appTitle": "Stickers",

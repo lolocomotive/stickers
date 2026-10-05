@@ -13,6 +13,7 @@ import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
+import 'package:stickers/src/pages/multi_crop_page.dart';
 import 'package:stickers/src/util.dart';
 
 class StickerPackPage extends StatefulWidget {
@@ -28,6 +29,8 @@ class StickerPackPage extends StatefulWidget {
 }
 
 class StickerPackPageState extends State<StickerPackPage> {
+  bool _importing = false;
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -78,7 +81,7 @@ class StickerPackPageState extends State<StickerPackPage> {
                     ),
                     itemBuilder: (context, index) {
                       if (index == widget.pack.stickers.length) {
-                        bool disabled = widget.pack.stickers.length >= 30;
+                        bool disabled = _importing || widget.pack.stickers.length >= 30;
                         return Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(24),
@@ -89,7 +92,7 @@ class StickerPackPageState extends State<StickerPackPage> {
                           ),
                           child: InkWell(
                             borderRadius: BorderRadius.circular(24),
-                            onTap: disabled ? null : () => _createSticker(index),
+                            onTap: disabled ? null : _createSticker,
                             child: Icon(
                               Icons.add,
                               size: 40,
@@ -190,35 +193,44 @@ class StickerPackPageState extends State<StickerPackPage> {
     );
   }
 
-  Future<void> _createSticker(int index) async {
+  Future<void> _createSticker() async {
+    if (_importing || widget.pack.stickers.length >= 30) return;
+    setState(() => _importing = true);
     try {
       final ImagePicker picker = ImagePicker();
       if (widget.pack.animated) {
         final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
         if (video == null) return;
         if (!mounted) return;
-        Navigator.pushNamed(
+        await Navigator.pushNamed(
           context,
           "/crop_video",
           arguments: EditArguments(
             pack: widget.pack,
-            index: index,
+            index: widget.pack.stickers.length,
             mediaPath: video.path,
           ),
-        ).then((value) => setState(() {}));
+        );
       } else {
-        final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-        if (image == null) return; //TODO add Snackbar warning
+        final remaining = 30 - widget.pack.stickers.length;
+        // The multi-image picker requires a limit of at least two.
+        final List<XFile> images;
+        if (remaining == 1) {
+          final image = await picker.pickImage(source: ImageSource.gallery);
+          images = image == null ? [] : [image];
+        } else {
+          images = await picker.pickMultiImage(limit: remaining);
+        }
         if (!mounted) return;
-        Navigator.pushNamed(
-          context,
-          "/crop",
-          arguments: EditArguments(
+        if (images.isEmpty) return;
+        await Navigator.of(context).push<void>(MaterialPageRoute(
+          builder: (_) => MultiCropPage(
             pack: widget.pack,
-            index: index,
-            mediaPath: image.path,
+            paths: images.take(remaining).map((image) => image.path).toList(),
+            // Some Android file providers do not enforce the picker limit.
+            selectionWasLimited: images.length > remaining,
           ),
-        ).then((value) => setState(() {}));
+        ));
       }
     } on Exception catch (e) {
       if (mounted) {
@@ -231,6 +243,8 @@ class StickerPackPageState extends State<StickerPackPage> {
               );
             });
       }
+    } finally {
+      if (mounted) setState(() => _importing = false);
     }
   }
 }

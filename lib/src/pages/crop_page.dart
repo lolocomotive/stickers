@@ -9,18 +9,21 @@ import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/pages/default_page.dart';
 
 class CropPage extends StatefulWidget {
   final StickerPack pack;
   final int index;
   final String imagePath;
+  final bool returnCrop;
   final GlobalKey<ExtendedImageEditorState> editorKey = GlobalKey<ExtendedImageEditorState>();
 
   CropPage({
     required this.pack,
     required this.index,
     required this.imagePath,
+    this.returnCrop = false,
     super.key,
   });
 
@@ -35,6 +38,7 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
   final ImageEditorController _editorController = ImageEditorController();
 
   bool _previousPtrVal = false;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -254,8 +258,12 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                       child: FilledButton(
-                        onPressed: _onDone,
-                        child: Text(AppLocalizations.of(context)!.done),
+                        onPressed: _saving ? null : _onDone,
+                        child: Text(
+                          widget.returnCrop
+                              ? AppLocalizations.of(context)!.saveCrop
+                              : AppLocalizations.of(context)!.done,
+                        ),
                       ),
                     ),
                   ],
@@ -268,8 +276,11 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
     );
   }
 
-  void _onDone() async {
+  Future<void> _onDone() async {
+    if (_saving) return;
+    if (widget.editorKey.currentState == null) return;
     final state = widget.editorKey.currentState!;
+    if (state.getCropRect() == null) return;
     if (state.getCropRect()!.height < .5 || state.getCropRect()!.width < .5) {
       showDialog(
         context: context,
@@ -284,24 +295,37 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
       );
       return;
     }
-    final cropped = await cropSticker(
-      state.getCropRect()!,
-      state.rawImageData,
-      widget.pack,
-      widget.index,
-      _editorController.rotateDegrees,
-      _stretch,
-    );
-    final output = await saveTemp(cropped);
-    if (!mounted) return;
-    Navigator.of(context).pushNamed(
-      "/edit",
-      arguments: EditArguments(
-        pack: widget.pack,
-        index: widget.index,
-        mediaPath: output.path,
-      ),
-    );
+    setState(() => _saving = true);
+    try {
+      final cropped = await cropSticker(
+        state.getCropRect()!,
+        state.rawImageData,
+        widget.pack,
+        widget.index,
+        _editorController.rotateDegrees,
+        _stretch,
+      );
+      if (!mounted) return;
+      if (widget.returnCrop) {
+        Navigator.of(context).pop(cropped);
+        return;
+      }
+      final output = await saveTemp(cropped);
+      if (!mounted) return;
+      Navigator.of(context).pushNamed(
+        "/edit",
+        arguments: EditArguments(pack: widget.pack, index: widget.index, mediaPath: output.path),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (_) =>
+            ErrorDialog(title: AppLocalizations.of(context)!.couldntExportSticker, message: error.toString()),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 }
 

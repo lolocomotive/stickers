@@ -1,4 +1,13 @@
 {
+  "reviewStickers": "Просмотр стикеров",
+  "noStickersSelected": "Изображения не выбраны",
+  "cropSelectedSticker": "Обрезать {name}",
+  "removeSelectedSticker": "Удалить {name}",
+  "resetCrop": "Сбросить обрезку",
+  "saveCrop": "Сохранить обрезку",
+  "saveAllStickers": "Сохранить всё ({count})",
+  "savingStickers": "Подготовка: {current} из {total}",
+  "batchImportErrors": "Ничего не сохранено. Обрежьте или удалите отмеченные изображения и повторите попытку.",
   "@@locale": "ru",
   "@@author": "lolocomotive",
   "appTitle": "Стикеры",
