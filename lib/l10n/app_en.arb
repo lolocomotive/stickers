@@ -6,8 +6,17 @@
   "resetCrop": "Reset crop",
   "saveCrop": "Save crop",
   "saveAllStickers": "Save all ({count})",
-  "savingStickers": "Preparing {current} of {total}",
+  "importingStickers": "Importing {current}/{total}",
+  "packFullKeptFirst": "Not enough space in pack, only kept the first {count} stickers",
+  "tapStickersToEdit": "Tap stickers to edit",
   "batchImportErrors": "Nothing was saved. Crop or remove the marked images, then try again.",
+  "@packFullKeptFirst": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "@saveAllStickers": {
     "placeholders": {
       "count": {
@@ -15,7 +24,7 @@
       }
     }
   },
-  "@savingStickers": {
+  "@importingStickers": {
     "placeholders": {
       "current": {
         "type": "int"

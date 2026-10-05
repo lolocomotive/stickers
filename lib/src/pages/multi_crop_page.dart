@@ -10,7 +10,9 @@ import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
+import 'package:stickers/src/pages/video_crop_page.dart';
 import 'package:stickers/src/util.dart';
+import 'package:stickers/src/widgets/progress_bar_button.dart';
 
 class _Selection {
   _Selection(this.path);
@@ -43,16 +45,16 @@ class _MultiCropPageState extends State<MultiCropPage> {
     if (_saving || _openingCrop) return;
     setState(() => _openingCrop = true);
     try {
-      final result = await Navigator.of(context).push<Uint8List>(
-        MaterialPageRoute(
-          builder: (_) => CropPage(
-            pack: widget.pack,
-            index: 0,
-            imagePath: selection.path,
-            returnCrop: true,
-          ),
+      final result = await Navigator.of(context).pushNamed(
+        widget.pack.animated ? VideoCropPage.routeName : CropPage.routeName,
+        arguments: EditArguments(
+          pack: widget.pack,
+          index: 0,
+          mediaPath: selection.path,
+          type: widget.pack.animated ? StickerMediaType.video : StickerMediaType.picture,
+          returnResult: true,
         ),
-      );
+      ) as Uint8List?;
       if (!mounted || result == null) return;
       setState(() {
         selection.crop = result;
@@ -118,10 +120,17 @@ class _MultiCropPageState extends State<MultiCropPage> {
           child: Column(
             children: [
               if (widget.selectionWasLimited)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(l10n.youCanTHaveMoreThan30Stickers),
+                Text(
+                  l10n.packFullKeptFirst(_selections.length),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
+              Text(
+                l10n.tapStickersToEdit,
+                style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
+              ),
               Expanded(
                 child: _selections.isEmpty
                     ? Center(child: Text(l10n.noStickersSelected))
@@ -132,7 +141,7 @@ class _MultiCropPageState extends State<MultiCropPage> {
                           crossAxisCount: colCount(MediaQuery.sizeOf(context).width),
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
-                          childAspectRatio: .8,
+                          childAspectRatio: 1.0,
                         ),
                         itemBuilder: (context, index) {
                           final selection = _selections[index];
@@ -141,7 +150,7 @@ class _MultiCropPageState extends State<MultiCropPage> {
                             children: [
                               Expanded(
                                 child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(24),
+                                  borderRadius: BorderRadius.circular(16),
                                   child: Material(
                                     color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                     child: Stack(
@@ -153,32 +162,32 @@ class _MultiCropPageState extends State<MultiCropPage> {
                                           child: Semantics(
                                             label: l10n.cropSelectedSticker(selection.name),
                                             button: true,
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(8),
-                                              child: LayoutBuilder(
-                                                builder: (context, constraints) {
-                                                  final pixelRatio = MediaQuery.devicePixelRatioOf(context);
-                                                  return Image(
-                                                    image: ResizeImage(
-                                                      selection.crop == null
-                                                          ? FileImage(File(selection.path))
-                                                          : MemoryImage(selection.crop!),
-                                                      width: math.max(1, (constraints.maxWidth * pixelRatio).ceil()),
-                                                      height: math.max(1, (constraints.maxHeight * pixelRatio).ceil()),
-                                                      policy: ResizeImagePolicy.fit,
-                                                    ),
-                                                    fit: BoxFit.contain,
-                                                    errorBuilder: (_, error, stack) => const Icon(Icons.broken_image),
-                                                  );
-                                                },
-                                              ),
+                                            child: LayoutBuilder(
+                                              builder: (context, constraints) {
+                                                final pixelRatio = MediaQuery.devicePixelRatioOf(context);
+                                                return Image(
+                                                  image: ResizeImage(
+                                                    selection.crop == null
+                                                        ? FileImage(File(selection.path))
+                                                        : MemoryImage(selection.crop!),
+                                                    width: math.max(1, (constraints.maxWidth * pixelRatio).ceil()),
+                                                    height: math.max(1, (constraints.maxHeight * pixelRatio).ceil()),
+                                                    policy: ResizeImagePolicy.fit,
+                                                  ),
+                                                  fit: BoxFit.contain,
+                                                  errorBuilder: (_, error, stack) => const Icon(Icons.broken_image),
+                                                );
+                                              },
                                             ),
                                           ),
                                         ),
                                         Positioned(
-                                          top: 4,
-                                          right: 4,
+                                          top: -2,
+                                          right: -2,
                                           child: IconButton.filledTonal(
+                                            iconSize: 16,
+                                            padding: EdgeInsets.all(6),
+                                            constraints: const BoxConstraints(),
                                             tooltip: l10n.removeSelectedSticker(selection.name),
                                             onPressed: busy
                                                 ? null
@@ -188,9 +197,12 @@ class _MultiCropPageState extends State<MultiCropPage> {
                                         ),
                                         if (selection.crop != null)
                                           Positioned(
-                                            left: 4,
-                                            bottom: 4,
+                                            left: -2,
+                                            bottom: -2,
                                             child: IconButton.filledTonal(
+                                              constraints: const BoxConstraints(),
+                                              padding: EdgeInsets.all(6),
+                                              iconSize: 16,
                                               tooltip: l10n.resetCrop,
                                               onPressed: busy ? null : () => setState(() => selection.crop = null),
                                               icon: const Icon(Icons.undo),
@@ -201,16 +213,15 @@ class _MultiCropPageState extends State<MultiCropPage> {
                                   ),
                                 ),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text(selection.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                              ),
                               if (selection.error != null)
-                                Tooltip(
-                                  message: selection.error!,
-                                  child: Text(
-                                    l10n.couldntLoadMedia,
-                                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Tooltip(
+                                    message: selection.error!,
+                                    child: Text(
+                                      l10n.couldntLoadMedia,
+                                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                                    ),
                                   ),
                                 ),
                             ],
@@ -227,16 +238,13 @@ class _MultiCropPageState extends State<MultiCropPage> {
                       Text(l10n.batchImportErrors, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                       const SizedBox(height: 8),
                     ],
-                    if (_saving) ...[
-                      LinearProgressIndicator(value: _prepared / _selections.length),
-                      const SizedBox(height: 8),
-                    ],
-                    FilledButton.icon(
+                    ProgressBarButton(
                       onPressed: busy || _selections.isEmpty ? null : _saveAll,
-                      icon: const Icon(Icons.check),
-                      label: Text(
+                      showProgress: _saving,
+                      progress: _prepared / _selections.length,
+                      child: Text(
                         _saving
-                            ? l10n.savingStickers(_prepared, _selections.length)
+                            ? l10n.importingStickers(_prepared, _selections.length)
                             : l10n.saveAllStickers(_selections.length),
                       ),
                     ),

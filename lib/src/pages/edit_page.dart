@@ -36,12 +36,13 @@ class EditPage extends StatefulWidget {
   final StickerPack pack;
   final int index;
   final String? editorData;
+  final bool returnResult;
 
-  const EditPage(this.pack, this.index, this.mediaType, {super.key, this.mediaPath, this.editorData});
+  const EditPage(this.pack, this.index, this.mediaType, {super.key, this.mediaPath, this.editorData, this.returnResult = false});
 
   static const routeName = "/edit";
 
-  final MediaType mediaType;
+  final StickerMediaType mediaType;
 
   @override
   State<EditPage> createState() => _EditPageState();
@@ -84,7 +85,7 @@ class _EditPageState extends State<EditPage> {
     } else {
       _source = File(widget.mediaPath!);
     }
-    if (widget.mediaType == MediaType.video) {
+    if (widget.mediaType == StickerMediaType.video) {
       _controller = VideoPlayerController.file(
         _source,
         viewType: VideoViewType.textureView,
@@ -304,7 +305,7 @@ class _EditPageState extends State<EditPage> {
                               onMatrixUpdate: (_, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) =>
                                   onMatrixUpdate(translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix),
                               child: Stack(children: [
-                                if (widget.mediaType == MediaType.picture)
+                                if (widget.mediaType == StickerMediaType.picture)
                                   Image.file(_source)
                                 else
                                   Center(
@@ -565,12 +566,17 @@ class _EditPageState extends State<EditPage> {
       option.outputFormat = const OutputFormat.webp_lossy();
 
       final Uint8List data;
-      if (widget.mediaType == MediaType.picture) {
+      if (widget.mediaType == StickerMediaType.picture) {
         data = (await ImageEditor.editFileImage(file: _source, imageEditorOption: option))!;
       } else {
         data = await exportAnimatedSticker(option, context);
       }
       final editorData = EditorData(background: _source.path, layers: _layers);
+      if (widget.returnResult) {
+        if (!context.mounted) return;
+        Navigator.of(context).pop(data);
+        return;
+      }
       if (replace) {
         await addToPack(widget.pack, widget.index, data, editorData, replace);
       } else {

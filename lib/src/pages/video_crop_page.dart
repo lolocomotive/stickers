@@ -12,18 +12,21 @@ import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/util.dart';
 import 'package:stickers/src/video/common.dart';
 import 'package:stickers/src/video/crop_scale.dart';
+import 'package:stickers/src/widgets/progress_bar_button.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoCropPage extends StatefulWidget {
   final StickerPack pack;
   final int index;
   final String imagePath;
+  final bool returnResult;
   final GlobalKey<ExtendedImageEditorState> editorKey = GlobalKey<ExtendedImageEditorState>();
 
   VideoCropPage({
     required this.pack,
     required this.index,
     required this.imagePath,
+    this.returnResult = false,
     super.key,
   });
 
@@ -210,27 +213,18 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(10, 8, 10, 16),
-                  child: FilledButton(
-                    clipBehavior: Clip.antiAlias,
-                    style: ButtonStyle(
-                      padding: WidgetStateProperty.all(EdgeInsets.zero),
-                    ),
+                  child: ProgressBarButton(
                     onPressed: _exporting ? null : () => doCrop(),
-                    child: Column(
-                      children: [
-                        SizedBox(height: 8),
-                        Text(AppLocalizations.of(context)!.done),
-                        SizedBox(height: 8),
-                        if (_exporting)
-                          StreamBuilder(
-                              stream: service.progressStream,
-                              builder: (context, asyncSnapshot) {
-                                return LinearProgressIndicator(
-                                  value: asyncSnapshot.data?.progress,
-                                );
-                              })
-                      ],
+                    showProgress: _exporting,
+                    progressIndicator: StreamBuilder(
+                      stream: service.progressStream,
+                      builder: (context, asyncSnapshot) {
+                        return LinearProgressIndicator(
+                          value: asyncSnapshot.data?.progress,
+                        );
+                      },
                     ),
+                    child: Text(AppLocalizations.of(context)!.done),
                   ),
                 ),
               ],
@@ -301,13 +295,19 @@ class _VideoCropPageState extends State<VideoCropPage> with TickerProviderStateM
         }
       }
       if (!mounted) return;
-      Navigator.of(context).pushNamed("/edit",
-          arguments: EditArguments(
-            pack: widget.pack,
-            index: widget.index,
-            mediaPath: output,
-            type: .video,
-          ));
+      final result = await Navigator.of(context).pushNamed(
+        "/edit",
+        arguments: EditArguments(
+          pack: widget.pack,
+          index: widget.index,
+          mediaPath: output,
+          type: StickerMediaType.video,
+          returnResult: widget.returnResult,
+        ),
+      );
+      if (widget.returnResult && mounted && result != null) {
+        Navigator.of(context).pop(result);
+      }
     } finally {
       setState(() {
         _exporting = false;

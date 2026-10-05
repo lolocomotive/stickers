@@ -148,6 +148,7 @@ class StickersAppState extends State<StickersApp> {
                       pack: args.pack,
                       index: args.index,
                       imagePath: args.mediaPath!,
+                      returnResult: args.returnResult,
                     );
                   case CropPage.routeName:
                     final args = routeSettings.arguments as EditArguments;
@@ -155,6 +156,7 @@ class StickersAppState extends State<StickersApp> {
                       pack: args.pack,
                       index: args.index,
                       imagePath: args.mediaPath!,
+                      returnCrop: args.returnResult,
                     );
                   case EditPage.routeName:
                     final args = routeSettings.arguments as EditArguments;
@@ -164,6 +166,7 @@ class StickersAppState extends State<StickersApp> {
                       args.type,
                       editorData: args.editorData,
                       mediaPath: args.mediaPath,
+                      returnResult: args.returnResult,
                     );
                   case StickerPackPage.routeName:
                     return StickerPackPage(routeSettings.arguments as StickerPack, () {

@@ -306,16 +306,20 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
         _stretch,
       );
       if (!mounted) return;
-      if (widget.returnCrop) {
-        Navigator.of(context).pop(cropped);
-        return;
-      }
       final output = await saveTemp(cropped);
       if (!mounted) return;
-      Navigator.of(context).pushNamed(
+      final result = await Navigator.of(context).pushNamed(
         "/edit",
-        arguments: EditArguments(pack: widget.pack, index: widget.index, mediaPath: output.path),
+        arguments: EditArguments(
+          pack: widget.pack,
+          index: widget.index,
+          mediaPath: output.path,
+          returnResult: widget.returnCrop,
+        ),
       );
+      if (widget.returnCrop && mounted && result != null) {
+        Navigator.of(context).pop(result);
+      }
     } catch (error) {
       if (!mounted) return;
       await showDialog<void>(
@@ -329,7 +333,7 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
   }
 }
 
-enum MediaType {
+enum StickerMediaType {
   video,
   picture,
 }
@@ -340,14 +344,16 @@ class EditArguments {
   // Index 30 is tray icon
   int index;
   String? mediaPath;
-  MediaType type;
+  StickerMediaType type;
   String? editorData;
+  bool returnResult;
 
   EditArguments({
     required this.pack,
     required this.index,
     this.mediaPath,
     this.editorData,
-    this.type = MediaType.picture,
+    this.type = StickerMediaType.picture,
+    this.returnResult = false,
   });
 }
