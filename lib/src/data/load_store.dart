@@ -19,7 +19,7 @@ Future<void> savePacks(List<StickerPack> packs) async {
   await output.writeAsString(jsonEncode(packs.map((pack) => pack.toJson()).toList()));
 }
 
-Future<File> createPackZip(StickerPack pack, Directory exportDir) async {
+Future<File> createPackZip(StickerPack pack, Directory exportDir, {bool includeEditData = true}) async {
   Directory packDir = Directory("${exportDir.path}/${uid()}/");
   await packDir.create(recursive: true);
   File jsonFile = File("${packDir.path}/pack.json");
@@ -36,7 +36,7 @@ Future<File> createPackZip(StickerPack pack, Directory exportDir) async {
       }
     }
     exportData["stickers"][i]["source"] = "$i.webp";
-    if (exportData["stickers"][i]["editorData"] != null) {
+    if (includeEditData && exportData["stickers"][i]["editorData"] != null) {
       final edFile = File(pack.stickers[i].editorData!);
       if (await edFile.exists()) {
         exportData["stickers"][i]["editorData"] = "$i.json";
@@ -47,7 +47,11 @@ Future<File> createPackZip(StickerPack pack, Directory exportDir) async {
         if (await edDir.exists()) {
           await edDir.copy("${packDir.path}$i");
         }
+      } else {
+        exportData["stickers"][i]["editorData"] = null;
       }
+    } else {
+      exportData["stickers"][i]["editorData"] = null;
     }
   }
   if (pack.trayIcon != null) {
@@ -69,11 +73,11 @@ Future<File> createPackZip(StickerPack pack, Directory exportDir) async {
   return zipFile;
 }
 
-Future<bool> exportPack(StickerPack pack) async {
-  return await exportPacks([pack]);
+Future<bool> exportPack(StickerPack pack, {bool includeEditData = true}) async {
+  return await exportPacks([pack], includeEditData: includeEditData);
 }
 
-Future<bool> exportPacks(List<StickerPack> packsToExport) async {
+Future<bool> exportPacks(List<StickerPack> packsToExport, {bool includeEditData = true}) async {
   if (packsToExport.isEmpty) return false;
   Stopwatch sw = Stopwatch()..start();
   Directory exportDir = Directory(exportCacheDir);
@@ -81,7 +85,7 @@ Future<bool> exportPacks(List<StickerPack> packsToExport) async {
 
   List<XFile> files = [];
   for (final pack in packsToExport) {
-    File zip = await createPackZip(pack, exportDir);
+    File zip = await createPackZip(pack, exportDir, includeEditData: includeEditData);
     files.add(XFile(zip.path));
   }
 
@@ -185,6 +189,9 @@ Future<void> importPack(File f) async {
       final pack = StickerPack.fromJson(jsonDecode(await jsonFile.readAsString()));
       for (var sticker in pack.stickers) {
         sticker.source = unzipDir.path + sticker.source;
+        if (sticker.editorData != null) {
+          sticker.editorData = unzipDir.path + sticker.editorData!;
+        }
       }
       if (pack.trayIcon != null) {
         pack.trayIcon = unzipDir.path + pack.trayIcon!;
@@ -202,6 +209,20 @@ Future<void> importPack(File f) async {
     for (var i = 0; i < pack.stickers.length; i++) {
       await File(pack.stickers[i].source).copy("$packsDir/${pack.id}/$i.webp");
       pack.stickers[i].source = File("$packsDir/${pack.id}/$i.webp").path;
+      if (pack.stickers[i].editorData != null) {
+        final edFile = File(pack.stickers[i].editorData!);
+        if (await edFile.exists()) {
+          final targetJson = "$packsDir/${pack.id}/$i.json";
+          await edFile.copy(targetJson);
+          pack.stickers[i].editorData = targetJson;
+          final edDir = Directory(edFile.path.replaceAll(RegExp(r"\.json$"), ""));
+          if (await edDir.exists()) {
+            await edDir.copy("$packsDir/${pack.id}/$i");
+          }
+        } else {
+          pack.stickers[i].editorData = null;
+        }
+      }
     }
     if (pack.trayIcon != null) {
       await File("${pack.trayIcon}").copy("$packsDir/${pack.id}/tray.webp");

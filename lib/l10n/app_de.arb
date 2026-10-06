@@ -148,5 +148,7 @@
     "deselectAll": "Auswahl aufheben",
     "reorderStickers": "Sticker neu anordnen",
     "exportSelected": "Ausgewählte exportieren",
-    "exportComplete": "Export abgeschlossen"
+    "exportComplete": "Export abgeschlossen",
+    "includeEditData": "Bearbeitungsdaten einschließen",
+    "includeEditDataDescription": "Ermöglicht das Bearbeiten von Stickerebenen nach dem Importieren"
 }

@@ -148,5 +148,7 @@
   "deselectAll": "Tout désélectionner",
   "reorderStickers": "Réorganiser les stickers",
   "exportSelected": "Exporter la sélection",
-  "exportComplete": "Exportation terminée"
+  "exportComplete": "Exportation terminée",
+  "includeEditData": "Inclure les données d'édition",
+  "includeEditDataDescription": "Permet de modifier les calques des stickers après l'importation"
 }

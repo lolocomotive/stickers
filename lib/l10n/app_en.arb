@@ -210,5 +210,7 @@
   "deselectAll": "Deselect all",
   "reorderStickers": "Reorder stickers",
   "exportSelected": "Export selected",
-  "exportComplete": "Export complete"
+  "exportComplete": "Export complete",
+  "includeEditData": "Include edit data",
+  "includeEditDataDescription": "Allows editing sticker layers after importing"
 }

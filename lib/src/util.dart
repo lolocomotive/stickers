@@ -105,6 +105,30 @@ Future<void> sendToWhatsappWithErrorHandling(StickerPack pack, BuildContext cont
   }
 }
 
+/// Runs [export] and reports the outcome with a snackbar, or an error dialog if it throws.
+Future<void> exportWithFeedback(BuildContext context, Future<bool> Function() export) async {
+  try {
+    final success = await export();
+    if (success && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.exportComplete),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  } catch (e) {
+    if (!context.mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) => ErrorDialog(
+        title: AppLocalizations.of(context)!.couldntExportSticker,
+        message: e.toString(),
+      ),
+    );
+  }
+}
+
 int colCount(double width) {
   if (width < 500) {
     return 3;

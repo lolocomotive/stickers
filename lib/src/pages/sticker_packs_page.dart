@@ -7,6 +7,7 @@ import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/create_pack_dialog.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
+import 'package:stickers/src/dialogs/export_pack_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/widgets/sticker_pack_preview_card.dart';
@@ -53,8 +54,13 @@ class StickerPacksPageState extends State<StickerPacksPage> {
 
   Future<void> _exportSelectedPacks() async {
     if (_selectedPacks.isEmpty) return;
+    final includeEditData = await showDialog<bool>(
+      context: context,
+      builder: (context) => ExportPackDialog(packCount: _selectedPacks.length),
+    );
+    if (includeEditData == null) return;
     try {
-      final success = await exportPacks(_selectedPacks.toList());
+      final success = await exportPacks(_selectedPacks.toList(), includeEditData: includeEditData);
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

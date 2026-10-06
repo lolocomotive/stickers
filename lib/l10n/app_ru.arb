@@ -151,5 +151,7 @@
   "deselectAll": "Снять выбор",
   "reorderStickers": "Изменить порядок стикеров",
   "exportSelected": "Экспортировать выбранные",
-  "exportComplete": "Экспорт завершён"
+  "exportComplete": "Экспорт завершён",
+  "includeEditData": "Включить данные редактирования",
+  "includeEditDataDescription": "Позволяет редактировать слои стикеров после импорта"
 }

@@ -10,6 +10,7 @@ import 'package:stickers/src/dialogs/delete_confirm_dialog.dart';
 import 'package:stickers/src/dialogs/edit_pack_dialog.dart';
 import 'package:stickers/src/dialogs/edit_sticker_dialog.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
+import 'package:stickers/src/dialogs/export_pack_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
@@ -116,27 +117,12 @@ class StickerPackPageState extends State<StickerPackPage> {
   }
 
   Future<void> _exportPack() async {
-    try {
-      final success = await exportPack(widget.pack);
-      if (!mounted) return;
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.exportComplete),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      showDialog(
-        context: context,
-        builder: (context) => ErrorDialog(
-          title: AppLocalizations.of(context)!.couldntExportSticker,
-          message: e.toString(),
-        ),
-      );
-    }
+    final includeEditData = await showDialog<bool>(
+      context: context,
+      builder: (context) => const ExportPackDialog(),
+    );
+    if (includeEditData == null || !mounted) return;
+    await exportWithFeedback(context, () => exportPack(widget.pack, includeEditData: includeEditData));
   }
 
   @override
