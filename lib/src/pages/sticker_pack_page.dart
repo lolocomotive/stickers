@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/video/gif_transcoder.dart';
 import 'package:stickers/src/dialogs/delete_confirm_dialog.dart';
 import 'package:stickers/src/dialogs/edit_pack_dialog.dart';
 import 'package:stickers/src/dialogs/edit_sticker_dialog.dart';
@@ -483,16 +485,78 @@ class StickerPackPageState extends State<StickerPackPage> {
     try {
       final ImagePicker picker = ImagePicker();
       if (widget.pack.animated) {
-        final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
-        if (video == null) return;
+        final method = await showModalBottomSheet<_AnimatedInputMethod>(
+          context: context,
+          showDragHandle: true,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (BuildContext context) {
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Text(
+                      AppLocalizations.of(context)!.addAnimatedSticker,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.video_library),
+                    title: Text(AppLocalizations.of(context)!.videoGallery),
+                    subtitle: Text(AppLocalizations.of(context)!.videoGallerySubtitle),
+                    onTap: () => Navigator.of(context).pop(_AnimatedInputMethod.video),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.gif_box),
+                    title: Text(AppLocalizations.of(context)!.gifFile),
+                    subtitle: Text(AppLocalizations.of(context)!.gifFileSubtitle),
+                    onTap: () => Navigator.of(context).pop(_AnimatedInputMethod.gif),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
+        );
+
+        if (method == null || !mounted) return;
+        final selectGifTitle = AppLocalizations.of(context)!.selectGif;
+
+        final String selectedPath;
+        final bool isValid;
+        if (method == _AnimatedInputMethod.video) {
+          final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
+          if (video == null) return;
+          selectedPath = video.path;
+          isValid = isSupportedVideo(selectedPath) || GifTranscoder.isGifFile(selectedPath);
+        } else {
+          final FilePickerResult? result = await FilePicker.pickFiles(
+            type: FileType.custom,
+            allowedExtensions: const ['gif'],
+            dialogTitle: selectGifTitle,
+          );
+          final path = result?.files.singleOrNull?.path;
+          if (path == null) return;
+          selectedPath = path;
+          isValid = GifTranscoder.isGifFile(selectedPath);
+        }
+
         if (!mounted) return;
+        if (!isValid) {
+          showUnsupportedFormatDialog(context);
+          return;
+        }
         await Navigator.pushNamed(
           context,
           "/crop_video",
           arguments: EditArguments(
             pack: widget.pack,
             index: widget.pack.stickers.length,
-            mediaPath: video.path,
+            mediaPath: selectedPath,
           ),
         );
       } else {
@@ -507,14 +571,21 @@ class StickerPackPageState extends State<StickerPackPage> {
         }
         if (!mounted) return;
         if (images.isEmpty) return;
-        if (images.length == 1) {
+
+        final validImages = images.where((image) => isSupportedImage(image.path)).toList();
+        if (validImages.isEmpty) {
+          showUnsupportedFormatDialog(context);
+          return;
+        }
+
+        if (validImages.length == 1) {
           await Navigator.pushNamed(
             context,
             "/crop",
             arguments: EditArguments(
               pack: widget.pack,
               index: widget.pack.stickers.length,
-              mediaPath: images.first.path,
+              mediaPath: validImages.first.path,
             ),
           );
         } else {
@@ -522,9 +593,8 @@ class StickerPackPageState extends State<StickerPackPage> {
             MaterialPageRoute(
               builder: (_) => MultiCropPage(
                 pack: widget.pack,
-                paths: images.take(remaining).map((image) => image.path).toList(),
-                // Some Android file providers do not enforce the picker limit.
-                selectionWasLimited: images.length > remaining,
+                paths: validImages.take(remaining).map((image) => image.path).toList(),
+                selectionWasLimited: validImages.length > remaining,
               ),
             ),
           );
@@ -547,3 +617,9 @@ class StickerPackPageState extends State<StickerPackPage> {
     }
   }
 }
+
+enum _AnimatedInputMethod {
+  video,
+  gif,
+}
+

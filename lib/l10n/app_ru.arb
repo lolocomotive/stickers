@@ -134,6 +134,7 @@
   "couldntLoadMedia": "Ошибка загрузки медиа",
   "couldntLoadVideo": "Ошибка загрузки видео",
   "trimVideo": "Обрезать видео",
+  "cropGif": "Обрезать GIF",
   "rotateLeft": "Повернуть влево",
   "rotateRight": "Повернуть вправо",
   "fit": "Вписать",
@@ -153,5 +154,11 @@
   "exportSelected": "Экспортировать выбранные",
   "exportComplete": "Экспорт завершён",
   "includeEditData": "Включить данные редактирования",
-  "includeEditDataDescription": "Позволяет редактировать слои стикеров после импорта"
+  "includeEditDataDescription": "Позволяет редактировать слои стикеров после импорта",
+  "addAnimatedSticker": "Добавить анимированный стикер",
+  "videoGallery": "Видео (Галерея)",
+  "videoGallerySubtitle": "Выбрать видео из галереи",
+  "gifFile": "GIF (Файлы)",
+  "gifFileSubtitle": "Выбрать GIF-файл (.gif)",
+  "selectGif": "Выбрать GIF"
 }

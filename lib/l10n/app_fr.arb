@@ -131,6 +131,7 @@
   "couldntLoadMedia": "Impossible de charger le média",
   "couldntLoadVideo": "Impossible de charger la vidéo",
   "trimVideo": "Couper la vidéo",
+  "cropGif": "Recadrer le GIF",
   "rotateLeft": "Pivoter à gauche",
   "rotateRight": "Pivoter à droite",
   "fit": "Ajuster",
@@ -150,5 +151,11 @@
   "exportSelected": "Exporter la sélection",
   "exportComplete": "Exportation terminée",
   "includeEditData": "Inclure les données d'édition",
-  "includeEditDataDescription": "Permet de modifier les calques des stickers après l'importation"
+  "includeEditDataDescription": "Permet de modifier les calques des stickers après l'importation",
+  "addAnimatedSticker": "Ajouter un autocollant animé",
+  "videoGallery": "Vidéo (Galerie)",
+  "videoGallerySubtitle": "Sélectionner une vidéo dans la galerie",
+  "gifFile": "GIF (Explorateur de fichiers)",
+  "gifFileSubtitle": "Sélectionner un fichier GIF (.gif)",
+  "selectGif": "Sélectionner un GIF"
 }

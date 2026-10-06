@@ -9,6 +9,7 @@ import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/widgets/crop_aspect_ratio_selector.dart';
+import 'package:stickers/src/util.dart';
 
 class CropPage extends StatefulWidget {
   final StickerPack pack;
@@ -37,10 +38,20 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
 
   bool _previousPtrVal = false;
   bool _saving = false;
+  late final bool _isSupported = isSupportedImage(widget.imagePath);
 
   @override
   void initState() {
     super.initState();
+    if (!_isSupported) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        showUnsupportedFormatDialog(context).then((_) {
+          if (mounted) Navigator.of(context).pop();
+        });
+      });
+      return;
+    }
     _maskColorController = AnimationController(vsync: this);
     Tween<double> tween = Tween(begin: 0.0, end: 1.0);
     Animation anim = CurvedAnimation(parent: _maskColorController, curve: Curves.ease, reverseCurve: Curves.ease);
@@ -54,9 +65,11 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    if (_isSupported) {
+      _maskColorController.removeListener(_animationListener);
+      _maskColorController.dispose();
+    }
     super.dispose();
-    _maskColorController.removeListener(_animationListener);
-    _maskColorController.dispose();
   }
 
   double? _aspectRatio;
@@ -64,6 +77,9 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isSupported) {
+      return const Scaffold(body: SizedBox.expand());
+    }
     return DefaultActivity(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.cropYourSticker),

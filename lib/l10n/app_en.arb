@@ -172,6 +172,7 @@
   "couldntLoadMedia": "Couldn't load media",
   "couldntLoadVideo": "Couldn't load video",
   "trimVideo": "Trim video",
+  "cropGif": "Crop GIF",
   "rotateLeft": "Rotate left",
   "rotateRight": "Rotate right",
   "fit": "Fit",
@@ -212,5 +213,11 @@
   "exportSelected": "Export selected",
   "exportComplete": "Export complete",
   "includeEditData": "Include edit data",
-  "includeEditDataDescription": "Allows editing sticker layers after importing"
+  "includeEditDataDescription": "Allows editing sticker layers after importing",
+  "addAnimatedSticker": "Add animated sticker",
+  "videoGallery": "Video (Gallery)",
+  "videoGallerySubtitle": "Select a video from your gallery",
+  "gifFile": "GIF (File picker)",
+  "gifFileSubtitle": "Select a GIF file (.gif)",
+  "selectGif": "Select GIF"
 }

@@ -131,6 +131,7 @@
     "couldntLoadMedia": "Medium konnte nicht geladen werden",
     "couldntLoadVideo":  "Video konnte nicht geladen werden",
     "trimVideo": "Video zuschneiden",
+    "cropGif": "GIF zuschneiden",
     "rotateLeft": "Nach links drehen",
     "rotateRight": "Nach rechts drehen",
     "fit": "Einpassen",
@@ -150,5 +151,11 @@
     "exportSelected": "Ausgewählte exportieren",
     "exportComplete": "Export abgeschlossen",
     "includeEditData": "Bearbeitungsdaten einschließen",
-    "includeEditDataDescription": "Ermöglicht das Bearbeiten von Stickerebenen nach dem Importieren"
+    "includeEditDataDescription": "Ermöglicht das Bearbeiten von Stickerebenen nach dem Importieren",
+    "addAnimatedSticker": "Animierten Sticker hinzufügen",
+    "videoGallery": "Video (Galerie)",
+    "videoGallerySubtitle": "Wähle ein Video aus deiner Galerie",
+    "gifFile": "GIF (Dateiauswahl)",
+    "gifFileSubtitle": "Wähle eine GIF-Datei (.gif)",
+    "selectGif": "GIF auswählen"
 }

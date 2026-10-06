@@ -138,3 +138,49 @@ int colCount(double width) {
     return 9;
   }
 }
+
+const Set<String> supportedVideoExtensions = {
+  'mp4',
+  'm4v',
+  'mov',
+  'mkv',
+  'webm',
+  '3gp',
+  'avi',
+};
+
+const Set<String> supportedImageExtensions = {
+  'png',
+  'jpg',
+  'jpeg',
+  'webp',
+  'bmp',
+  'gif',
+};
+
+const Set<String> supportedPackExtensions = {
+  'zip',
+  'wastickers',
+  'stickify',
+};
+
+bool _hasExtension(String filePath, Set<String> extensions) {
+  final parts = filePath.toLowerCase().split('.');
+  return parts.length >= 2 && extensions.contains(parts.last);
+}
+
+bool isSupportedVideo(String filePath) => _hasExtension(filePath, supportedVideoExtensions);
+
+bool isSupportedImage(String filePath) => _hasExtension(filePath, supportedImageExtensions);
+
+bool isSupportedPack(String filePath) => _hasExtension(filePath, supportedPackExtensions);
+
+Future<void> showUnsupportedFormatDialog(BuildContext context) {
+  return showDialog(
+    context: context,
+    builder: (context) => ErrorDialog(
+      title: AppLocalizations.of(context)!.unrecognizedFormat,
+      message: AppLocalizations.of(context)!.checkIfFileValid,
+    ),
+  );
+}

@@ -6,11 +6,13 @@ import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/create_pack_dialog.dart';
+import 'package:stickers/src/dialogs/delete_confirm_dialog.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/dialogs/export_pack_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/widgets/sticker_pack_preview_card.dart';
+import 'package:stickers/src/util.dart';
 
 class StickerPacksPage extends StatefulWidget {
   const StickerPacksPage({super.key});
@@ -58,60 +60,18 @@ class StickerPacksPageState extends State<StickerPacksPage> {
       context: context,
       builder: (context) => ExportPackDialog(packCount: _selectedPacks.length),
     );
-    if (includeEditData == null) return;
-    try {
-      final success = await exportPacks(_selectedPacks.toList(), includeEditData: includeEditData);
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.exportComplete),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => ErrorDialog(
-            title: AppLocalizations.of(context)!.couldntExportSticker,
-            message: e.toString(),
-          ),
-        );
-      }
-    }
+    if (includeEditData == null || !mounted) return;
+    await exportWithFeedback(context, () => exportPacks(_selectedPacks.toList(), includeEditData: includeEditData));
   }
 
   Future<void> _deleteSelectedPacks() async {
     if (_selectedPacks.isEmpty) return;
     final count = _selectedPacks.length;
-    final title = count == 1
-        ? AppLocalizations.of(context)!.deletePack(_selectedPacks.first.title)
-        : AppLocalizations.of(context)!.deleteSelectedPacks(count);
-
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(AppLocalizations.of(context)!.cancel),
-          ),
-          Theme(
-            data: ThemeData.from(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Theme.of(context).colorScheme.error,
-                brightness: Theme.of(context).brightness,
-              ),
-            ),
-            child: FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(AppLocalizations.of(context)!.delete),
-            ),
-          ),
-        ],
-      ),
+      builder: (context) => count == 1
+          ? DeleteConfirmDialog(_selectedPacks.first.title)
+          : DeleteConfirmDialog.titled(AppLocalizations.of(context)!.deleteSelectedPacks(count)),
     );
 
     if (confirmed == true) {
@@ -121,7 +81,7 @@ class StickerPacksPageState extends State<StickerPacksPage> {
       }
       _selectedPacks.clear();
       await savePacks(packs);
-      setState(() {});
+      if (mounted) setState(() {});
     }
   }
 
@@ -197,12 +157,17 @@ class StickerPacksPageState extends State<StickerPacksPage> {
                     tooltip: AppLocalizations.of(context)!.import,
                     onPressed: () async {
                       FilePickerResult? result = await FilePicker.pickFiles(
-                        type: FileType.any,
+                        type: FileType.custom,
+                        allowedExtensions: const ['stickify', 'zip', 'wastickers'],
                         dialogTitle: AppLocalizations.of(context)!.selectPack,
                       );
                       if (result == null) return;
                       for (final f in result.files) {
                         try {
+                          if (f.path == null || !isSupportedPack(f.path!)) {
+                            if (context.mounted) showUnsupportedFormatDialog(context);
+                            continue;
+                          }
                           await importPack(File(f.path!));
                           setState(() {});
                         } on Exception catch (e, st) {

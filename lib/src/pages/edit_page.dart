@@ -22,6 +22,7 @@ import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/video/common.dart';
+import 'package:stickers/src/video/gif_transcoder.dart';
 import 'package:stickers/src/video/overlay_encode.dart';
 import 'package:stickers/src/widgets/draw_layer.dart';
 import 'package:stickers/src/widgets/text_layer.dart';
@@ -61,6 +62,7 @@ class _EditPageState extends State<EditPage> {
   final double maxWidth = 200;
   String? _message;
   double? _exportProgress;
+  bool _isWebpVideo = false;
 
   /// The sticker is 512x512 as opposed to the canvas, which is why we need a scale factor
   double scaleFactor = 0;
@@ -85,24 +87,34 @@ class _EditPageState extends State<EditPage> {
     } else {
       _source = File(widget.mediaPath!);
     }
-    if (widget.mediaType == StickerMediaType.video) {
-      _controller = VideoPlayerController.file(
+    _isWebpVideo = widget.mediaType == StickerMediaType.video &&
+        _source.path.toLowerCase().endsWith('.webp');
+    if (widget.mediaType == StickerMediaType.video && !_isWebpVideo) {
+      final controller = VideoPlayerController.file(
         _source,
         viewType: VideoViewType.textureView,
         videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
       );
-      _controller.setLooping(true);
-      _controller.setVolume(0);
-      _controller.initialize().then((_) {
-        _controller.play();
+      _controller = controller;
+      controller.setLooping(true);
+      controller.setVolume(0);
+      controller.initialize().then((_) {
+        if (!mounted) return;
+        controller.play();
         setState(() {});
       });
     }
   }
 
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
   final GlobalKey _rbKey = GlobalKey();
   bool _exporting = false;
-  late VideoPlayerController _controller;
+  VideoPlayerController? _controller;
 
   @override
   Widget build(BuildContext context) {
@@ -305,15 +317,17 @@ class _EditPageState extends State<EditPage> {
                               onMatrixUpdate: (_, translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix) =>
                                   onMatrixUpdate(translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix),
                               child: Stack(children: [
-                                if (widget.mediaType == StickerMediaType.picture)
+                                if (widget.mediaType == StickerMediaType.picture || _isWebpVideo)
                                   Image.file(_source)
-                                else
+                                else if (_controller != null && _controller!.value.isInitialized)
                                   Center(
                                     child: AspectRatio(
-                                      aspectRatio: _controller.value.aspectRatio,
-                                      child: VideoPlayer(_controller),
+                                      aspectRatio: _controller!.value.aspectRatio,
+                                      child: VideoPlayer(_controller!),
                                     ),
-                                  ),
+                                  )
+                                else
+                                  const SizedBox.expand(),
                                 ..._layers.map(
                                   (e) => Positioned(
                                     top: 0,
@@ -618,9 +632,36 @@ class _EditPageState extends State<EditPage> {
   }
 
   Future<Uint8List> exportAnimatedSticker(ImageEditorOption option, BuildContext context) async {
+    if (_isWebpVideo && _layers.isEmpty && _texts.isEmpty) {
+      return await _source.readAsBytes();
+    }
     final transparent = await rootBundle.load("assets/transparent.webp");
     final out =
         await ImageEditor.editImageAndGetFile(image: transparent.buffer.asUint8List(), imageEditorOption: option);
+    if (_isWebpVideo) {
+      if (context.mounted) {
+        _message = AppLocalizations.of(context)!.firstAttempt;
+        setState(() {});
+      }
+      final result = await GifTranscoder.transcodeWebpWithOverlay(
+        webpPath: _source.path,
+        overlayBytes: await out.readAsBytes(),
+      );
+      if (result.lengthInBytes / 1024 > 500) {
+        if (!context.mounted) throw Exception();
+        showDialog(
+          context: context,
+          builder: (context) {
+            return ErrorDialog(
+              title: AppLocalizations.of(context)!.exportWebpFailed,
+              message: AppLocalizations.of(context)!.stickerTooLargeMsg,
+            );
+          },
+        );
+        throw Exception("WebP file too big");
+      }
+      return result;
+    }
     final service = OverlayAndEncodeService();
     final output = File("$mediaCacheDir/exported_${uid()}.webp");
     Stopwatch sw = Stopwatch()..start();

@@ -12,6 +12,7 @@ import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/util.dart';
 import 'package:stickers/src/video/common.dart';
 import 'package:stickers/src/video/crop_scale.dart';
+import 'package:stickers/src/video/gif_transcoder.dart';
 import 'package:stickers/src/widgets/crop_aspect_ratio_selector.dart';
 import 'package:stickers/src/widgets/progress_bar_button.dart';
 import 'package:stickers/src/widgets/video_crop_overlay.dart';
@@ -38,7 +39,7 @@ class VideoCropPage extends StatefulWidget {
 }
 
 class _VideoCropPageState extends State<VideoCropPage> {
-  late final VideoPlayerController _controller;
+  VideoPlayerController? _controller;
   double _btnOpacity = 1;
   bool _ready = false;
   bool _exporting = false;
@@ -50,10 +51,18 @@ class _VideoCropPageState extends State<VideoCropPage> {
   double _speed = 1.0;
   int _rotationDegrees = 0;
   Rect? _cropRect;
-  Size _videoRenderSize = Size.zero;
+
+  bool _isGif = false;
+  GifInfo? _gifInfo;
 
   static const List<double> _speedSteps = [0.25, 0.5, 1.0, 1.5, 2.0, 5.0, 10.0];
 
+  Duration get _effectiveDuration {
+    if (_isGif) {
+      return _gifInfo?.duration ?? const Duration(seconds: 1);
+    }
+    return _controller?.value.duration ?? Duration.zero;
+  }
 
   String _formatSpeed(double speed) {
     return speed == speed.roundToDouble() ? "${speed.toInt()}x" : "${speed}x";
@@ -77,12 +86,59 @@ class _VideoCropPageState extends State<VideoCropPage> {
   @override
   void initState() {
     super.initState();
+    _isGif = widget.imagePath.toLowerCase().endsWith('.gif');
+    final isSupported = _isGif ? GifTranscoder.isGifFile(widget.imagePath) : isSupportedVideo(widget.imagePath);
+    if (!isSupported) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        showUnsupportedFormatDialog(context).then((_) {
+          if (mounted) Navigator.of(context).pop();
+        });
+      });
+      return;
+    }
+    if (_isGif) {
+      _initGif();
+    } else {
+      _initVideo();
+    }
+  }
+
+  Future<void> _initGif() async {
+    try {
+      final info = await GifTranscoder.inspectGifFile(widget.imagePath);
+      if (!mounted) return;
+      if (info == null) {
+        throw Exception("Could not decode GIF");
+      }
+      setState(() {
+        _gifInfo = info;
+        _ready = true;
+      });
+    } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) {
+            return ErrorDialog(
+              title: AppLocalizations.of(context)!.couldntLoadVideo,
+              message: e.toString(),
+            );
+          },
+        ).then((_) {
+          if (mounted) Navigator.of(context).pop();
+        });
+      }
+    }
+  }
+
+  void _initVideo() {
     _controller = VideoPlayerController.file(
       File(widget.imagePath),
-      viewType: VideoViewType.platformView,
+      viewType: VideoViewType.textureView,
       videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
     );
-    _controller.initialize().onError((e, st) {
+    _controller!.initialize().onError((e, st) {
       if (mounted) {
         showDialog(
           context: context,
@@ -103,43 +159,33 @@ class _VideoCropPageState extends State<VideoCropPage> {
         });
       }
     });
-    _controller.addListener(_videoListener);
-    _controller.setVolume(0);
+    _controller!.addListener(_videoListener);
+    _controller!.setVolume(0);
   }
 
   void _videoListener() {
-    if (_editing) return;
+    if (_editing || _controller == null) return;
     setState(() {});
-    if (_controller.value.duration > Duration.zero &&
-        _controller.value.position > _controller.value.duration * _range.end) {
-      _requestSeek(_controller.value.duration * _range.start);
+    if (_controller!.value.duration > Duration.zero &&
+        _controller!.value.position > _controller!.value.duration * _range.end) {
+      _requestSeek(_controller!.value.duration * _range.start);
     }
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_videoListener);
-    _controller.dispose();
+    _controller?.removeListener(_videoListener);
+    _controller?.dispose();
     service.dispose();
     super.dispose();
   }
 
-  double get _displayedAspectRatio {
-    if (!_controller.value.isInitialized || _controller.value.aspectRatio == 0) {
-      return 1.0;
-    }
-    final baseAspect = _controller.value.aspectRatio;
-    if (_rotationDegrees % 180 != 0) {
-      return 1.0 / baseAspect;
-    }
-    return baseAspect;
-  }
-
   void _requestSeek(Duration time) async {
+    if (_controller == null) return;
     _seekTarget = time;
     if (_canSeek) {
       _canSeek = false;
-      await _controller.seekTo(time);
+      await _controller!.seekTo(time);
       await Future.delayed(const Duration(milliseconds: 100));
       _canSeek = true;
       if (_seekTarget != time) {
@@ -149,7 +195,8 @@ class _VideoCropPageState extends State<VideoCropPage> {
   }
 
   void _play() {
-    _controller.play();
+    if (_controller == null) return;
+    _controller!.play();
     _btnOpacity = 1;
     setState(() {});
     Future.delayed(const Duration(seconds: 1)).then((_) {
@@ -161,37 +208,39 @@ class _VideoCropPageState extends State<VideoCropPage> {
   }
 
   void _togglePlayPause() {
-    if (_controller.value.isPlaying) {
-      _controller.pause();
+    if (_controller == null) return;
+    if (_controller!.value.isPlaying) {
+      _controller!.pause();
       setState(() {});
     } else {
       _play();
     }
   }
 
+  void _rotate(int degrees) {
+    setState(() {
+      _rotationDegrees = (_rotationDegrees + degrees + 360) % 360;
+      if (_aspectRatio != null) {
+        _aspectRatio = 1.0 / _aspectRatio!;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultActivity(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.trimVideo),
+        title: Text(_isGif ? AppLocalizations.of(context)!.cropGif : AppLocalizations.of(context)!.trimVideo),
         actions: [
           IconButton(
             tooltip: AppLocalizations.of(context)!.rotateLeft,
             icon: const Icon(Icons.rotate_left),
-            onPressed: () {
-              setState(() {
-                _rotationDegrees = (_rotationDegrees - 90 + 360) % 360;
-              });
-            },
+            onPressed: () => _rotate(-90),
           ),
           IconButton(
             tooltip: AppLocalizations.of(context)!.rotateRight,
             icon: const Icon(Icons.rotate_right),
-            onPressed: () {
-              setState(() {
-                _rotationDegrees = (_rotationDegrees + 90) % 360;
-              });
-            },
+            onPressed: () => _rotate(90),
           ),
         ],
       ),
@@ -206,48 +255,26 @@ class _VideoCropPageState extends State<VideoCropPage> {
                 clipBehavior: Clip.antiAlias,
                 decoration: const BoxDecoration(),
                 child: _ready
-                    ? Center(
-                        child: AspectRatio(
-                          aspectRatio: _displayedAspectRatio,
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              _videoRenderSize = constraints.biggest;
-                              return Stack(
-                                children: [
-                                  Positioned.fill(
-                                    child: RotatedBox(
-                                      quarterTurns: _rotationDegrees ~/ 90,
-                                      child: VideoPlayer(_controller),
-                                    ),
-                                  ),
-                                  Positioned.fill(
-                                    child: VideoCropOverlay(
-                                      aspectRatio: _aspectRatio,
-                                      onCropChanged: (rect) {
-                                        _cropRect = rect;
-                                      },
-                                      onTapVideo: _togglePlayPause,
-                                    ),
-                                  ),
-                                  Center(
-                                    child: IgnorePointer(
-                                      child: AnimatedOpacity(
-                                        opacity: _controller.value.isPlaying ? _btnOpacity : 1.0,
-                                        duration: const Duration(milliseconds: 300),
-                                        child: Icon(
-                                          _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                                          color: Colors.white,
-                                          shadows: const [Shadow(color: Colors.black, blurRadius: 32)],
-                                          size: 80,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
+                    ? VideoCropOverlay(
+                        key: ValueKey(_rotationDegrees),
+                        controller: _controller,
+                        customPreview: _isGif
+                            ? Image.file(
+                                File(widget.imagePath),
+                                fit: BoxFit.contain,
+                                gaplessPlayback: true,
+                              )
+                            : null,
+                        videoAspectRatio: _isGif && _gifInfo != null
+                            ? _gifInfo!.width / _gifInfo!.height
+                            : null,
+                        rotationDegrees: _rotationDegrees,
+                        aspectRatio: _aspectRatio,
+                        onCropChanged: (rect) {
+                          _cropRect = rect;
+                        },
+                        onTapVideo: _togglePlayPause,
+                        btnOpacity: _isGif ? 0.0 : (_controller?.value.isPlaying == true ? _btnOpacity : 1.0),
                       )
                     : const Center(child: CircularProgressIndicator()),
               ),
@@ -257,14 +284,14 @@ class _VideoCropPageState extends State<VideoCropPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 8),
-                  if (_ready && _controller.value.isInitialized && _controller.value.duration > Duration.zero) ...[
+                  if (_ready && _effectiveDuration > Duration.zero) ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            _formatDuration(_controller.value.duration * _range.start),
+                            _formatDuration(_effectiveDuration * _range.start),
                             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
@@ -277,7 +304,7 @@ class _VideoCropPageState extends State<VideoCropPage> {
                             ),
                             child: Text(
                               _formatClipDuration(
-                                _controller.value.duration * (_range.end - _range.start),
+                                _effectiveDuration * (_range.end - _range.start),
                                 _speed,
                               ),
                               style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -287,7 +314,7 @@ class _VideoCropPageState extends State<VideoCropPage> {
                             ),
                           ),
                           Text(
-                            _formatDuration(_controller.value.duration * _range.end),
+                            _formatDuration(_effectiveDuration * _range.end),
                             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
@@ -304,11 +331,11 @@ class _VideoCropPageState extends State<VideoCropPage> {
                         RangeSlider(
                           values: _range,
                           onChangeEnd: (_) async {
-                            if (_controller.value.isInitialized) {
-                              if (_seekTarget == _controller.value.duration * _range.end) {
-                                _requestSeek(_controller.value.duration * _range.end - const Duration(seconds: 1));
-                                if (_seekTarget < _controller.value.duration * _range.start) {
-                                  _seekTarget = _controller.value.duration * _range.start;
+                            if (_controller != null && _controller!.value.isInitialized) {
+                              if (_seekTarget == _controller!.value.duration * _range.end) {
+                                _requestSeek(_controller!.value.duration * _range.end - const Duration(seconds: 1));
+                                if (_seekTarget < _controller!.value.duration * _range.start) {
+                                  _seekTarget = _controller!.value.duration * _range.start;
                                 }
                               }
                               _play();
@@ -319,16 +346,23 @@ class _VideoCropPageState extends State<VideoCropPage> {
                             _editing = false;
                           },
                           onChangeStart: (_) {
-                            _controller.pause();
+                            if (_controller != null) {
+                              _controller!.pause();
+                            }
                             _editing = true;
                           },
                           onChanged: (values) {
-                            if (!_controller.value.isInitialized) return;
+                            if (_isGif) {
+                              _range = values;
+                              setState(() {});
+                              return;
+                            }
+                            if (_controller == null || !_controller!.value.isInitialized) return;
                             final Duration seekTarget;
                             if (_range.start != values.start) {
-                              seekTarget = _controller.value.duration * values.start;
+                              seekTarget = _controller!.value.duration * values.start;
                             } else if (_range.end != values.end) {
-                              seekTarget = _controller.value.duration * values.end;
+                              seekTarget = _controller!.value.duration * values.end;
                             } else {
                               return;
                             }
@@ -337,14 +371,14 @@ class _VideoCropPageState extends State<VideoCropPage> {
                             setState(() {});
                           },
                         ),
-                        if (!_editing && _ready && _controller.value.duration.inMilliseconds > 0)
+                        if (!_editing && !_isGif && _ready && (_controller?.value.duration.inMilliseconds ?? 0) > 0)
                           IgnorePointer(
                             child: Slider(
                               thumbColor: Theme.of(context).colorScheme.onSurface,
                               activeColor: Colors.transparent,
                               inactiveColor: Colors.transparent,
-                              value: (_controller.value.position.inMilliseconds /
-                                      _controller.value.duration.inMilliseconds)
+                              value: (_controller!.value.position.inMilliseconds /
+                                      _controller!.value.duration.inMilliseconds)
                                   .clamp(0.0, 1.0),
                               onChanged: (_) {},
                             ),
@@ -425,7 +459,7 @@ class _VideoCropPageState extends State<VideoCropPage> {
                               onPressed: () {
                                 setState(() {
                                   _speed = speed;
-                                  _controller.setPlaybackSpeed(_speed);
+                                  _controller?.setPlaybackSpeed(_speed);
                                   HapticFeedback.lightImpact();
                                 });
                               },
@@ -441,14 +475,16 @@ class _VideoCropPageState extends State<VideoCropPage> {
                     child: ProgressBarButton(
                       onPressed: _exporting ? null : () => doCrop(),
                       showProgress: _exporting,
-                      progressIndicator: StreamBuilder(
-                        stream: service.progressStream,
-                        builder: (context, asyncSnapshot) {
-                          return LinearProgressIndicator(
-                            value: asyncSnapshot.data?.progress,
-                          );
-                        },
-                      ),
+                      progressIndicator: _isGif
+                          ? null
+                          : StreamBuilder(
+                              stream: service.progressStream,
+                              builder: (context, asyncSnapshot) {
+                                return LinearProgressIndicator(
+                                  value: asyncSnapshot.data?.progress,
+                                );
+                              },
+                            ),
                       child: Text(AppLocalizations.of(context)!.done),
                     ),
                   ),
@@ -462,7 +498,7 @@ class _VideoCropPageState extends State<VideoCropPage> {
   }
 
   Future<void> doCrop() async {
-    if (_cropRect != null && (_cropRect!.width < 1.0 || _cropRect!.height < 1.0)) {
+    if (_cropRect != null && (_cropRect!.width < 0.01 || _cropRect!.height < 0.01)) {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -480,51 +516,56 @@ class _VideoCropPageState extends State<VideoCropPage> {
       _exporting = true;
     });
     try {
-      _controller.pause();
-      final output = "$mediaCacheDir/import_${uid()}.mp4";
+      _controller?.pause();
 
-      double cropLeft = 0.0;
-      double cropTop = 0.0;
-      double cropRight = 1.0;
-      double cropBottom = 1.0;
-
-      if (_cropRect != null && _videoRenderSize.width > 0 && _videoRenderSize.height > 0) {
-        cropLeft = (_cropRect!.left / _videoRenderSize.width).clamp(0.0, 1.0);
-        cropTop = (_cropRect!.top / _videoRenderSize.height).clamp(0.0, 1.0);
-        cropRight = (_cropRect!.right / _videoRenderSize.width).clamp(0.0, 1.0);
-        cropBottom = (_cropRect!.bottom / _videoRenderSize.height).clamp(0.0, 1.0);
-      }
-
-      await service.start(
-        inputFile: widget.imagePath,
-        outputFile: output,
-        start: _controller.value.duration * _range.start,
-        end: _controller.value.duration * _range.end,
-        speed: _speed,
-        cropLeft: cropLeft,
-        cropTop: cropTop,
-        cropRight: cropRight,
-        cropBottom: cropBottom,
-        rotation: _rotationDegrees,
-        stretch: _stretch,
-      );
-      await for (final s in service.progressStream) {
-        if (s.status == Status.SUCCESS) {
-          break;
-        } else if (s.status == Status.FAILED) {
-          print("Transcoding failed!");
-          if (mounted) {
-            showDialog(
-                context: context,
-                builder: (context) {
-                  return ErrorDialog(
-                      title: AppLocalizations.of(context)!.trimFailed,
-                      message: AppLocalizations.of(context)!.trimFailedMsg);
-                });
+      final String output;
+      if (_isGif) {
+        final webpBytes = await GifTranscoder.transcodeToWebP(
+          gifPath: widget.imagePath,
+          cropRect: _cropRect,
+          rotationDegrees: _rotationDegrees,
+          stretch: _stretch,
+          speed: _speed,
+          startFraction: _range.start,
+          endFraction: _range.end,
+        );
+        output = "$mediaCacheDir/import_${uid()}.webp";
+        await File(output).writeAsBytes(webpBytes);
+      } else {
+        output = "$mediaCacheDir/import_${uid()}.mp4";
+        final crop = _cropRect ?? const Rect.fromLTRB(0, 0, 1, 1);
+        await service.start(
+          inputFile: widget.imagePath,
+          outputFile: output,
+          start: _controller!.value.duration * _range.start,
+          end: _controller!.value.duration * _range.end,
+          speed: _speed,
+          cropLeft: crop.left,
+          cropTop: crop.top,
+          cropRight: crop.right,
+          cropBottom: crop.bottom,
+          rotation: _rotationDegrees,
+          stretch: _stretch,
+        );
+        await for (final s in service.progressStream) {
+          if (s.status == Status.SUCCESS) {
+            break;
+          } else if (s.status == Status.FAILED) {
+            print("Transcoding failed!");
+            if (mounted) {
+              showDialog(
+                  context: context,
+                  builder: (context) {
+                    return ErrorDialog(
+                        title: AppLocalizations.of(context)!.trimFailed,
+                        message: AppLocalizations.of(context)!.trimFailedMsg);
+                  });
+            }
+            throw Exception();
           }
-          throw Exception();
         }
       }
+
       if (!mounted) return;
       final result = await Navigator.of(context).pushNamed(
         "/edit",
@@ -538,6 +579,18 @@ class _VideoCropPageState extends State<VideoCropPage> {
       );
       if (widget.returnResult && mounted && result != null) {
         Navigator.of(context).pop(result);
+      }
+    } catch (e) {
+      if (_isGif && mounted) {
+        showDialog(
+          context: context,
+          builder: (context) {
+            return ErrorDialog(
+              title: AppLocalizations.of(context)!.trimFailed,
+              message: e.toString(),
+            );
+          },
+        );
       }
     } finally {
       if (mounted) {
