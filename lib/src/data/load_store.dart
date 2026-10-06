@@ -130,10 +130,13 @@ Future<void> importPack(File f) async {
   //TODO show progress
   Stopwatch sw = Stopwatch()..start();
   Directory importDir = Directory(mediaCacheDir);
-  Directory unzipDir = Directory("${importDir.path}${uid()}/");
+  Directory unzipDir = Directory("${importDir.path}/${uid()}/");
   await unzipDir.create(recursive: true);
   await ZipFile.extractToDirectory(zipFile: f, destinationDir: unzipDir);
   debugPrint("Unzip t=${sw.elapsedMilliseconds}ms");
+  final unzipPath = unzipDir.path.endsWith("/") || unzipDir.path.endsWith(r"\")
+      ? unzipDir.path
+      : "${unzipDir.path}/";
 
   List<StickerPack> packsToAdd = [];
 
@@ -141,8 +144,8 @@ Future<void> importPack(File f) async {
     case "wastickers":
       final dirContents = unzipDir.listSync();
       final pack = StickerPack(
-        (await File("${unzipDir.path}title.txt").readAsString()).replaceAll("\n", ""),
-        (await File("${unzipDir.path}author.txt").readAsString()).replaceAll("\n", ""),
+        (await File("${unzipPath}title.txt").readAsString()).replaceAll("\n", ""),
+        (await File("${unzipPath}author.txt").readAsString()).replaceAll("\n", ""),
         uid(),
         dirContents
             .map((entry) => entry.path)
@@ -168,7 +171,9 @@ Future<void> importPack(File f) async {
                 .map(
                   (sticker) => Sticker(
                     "${dir.path}/${sticker["image_file"]}",
-                    (sticker["emojis"] as List).isEmpty ? ["❤"] : sticker["emojis"],
+                    (sticker["emojis"] as List).isEmpty
+                        ? ["❤"]
+                        : (sticker["emojis"] as List).map((e) => e.toString()).toList(),
                     null,
                   ),
                 )
@@ -185,16 +190,16 @@ Future<void> importPack(File f) async {
       break;
     default:
       //TODO support stickify's backup file format
-      File jsonFile = File("${unzipDir.path}pack.json");
+      File jsonFile = File("${unzipPath}pack.json");
       final pack = StickerPack.fromJson(jsonDecode(await jsonFile.readAsString()));
       for (var sticker in pack.stickers) {
-        sticker.source = unzipDir.path + sticker.source;
+        sticker.source = unzipPath + sticker.source;
         if (sticker.editorData != null) {
-          sticker.editorData = unzipDir.path + sticker.editorData!;
+          sticker.editorData = unzipPath + sticker.editorData!;
         }
       }
       if (pack.trayIcon != null) {
-        pack.trayIcon = unzipDir.path + pack.trayIcon!;
+        pack.trayIcon = unzipPath + pack.trayIcon!;
       }
       packsToAdd.add(pack);
   }
@@ -213,7 +218,28 @@ Future<void> importPack(File f) async {
         final edFile = File(pack.stickers[i].editorData!);
         if (await edFile.exists()) {
           final targetJson = "$packsDir/${pack.id}/$i.json";
-          await edFile.copy(targetJson);
+          try {
+            final data = jsonDecode(await edFile.readAsString());
+            if (data is Map<String, dynamic> && data["background"] is String) {
+              final bgRel = data["background"] as String;
+              data["background"] = "$packsDir/${pack.id}/$bgRel";
+              if (data["layers"] is List) {
+                for (var layer in data["layers"]) {
+                  if (layer is Map && layer["source"] is String) {
+                    final src = layer["source"] as String;
+                    if (!src.startsWith("/") && !src.contains(r":\")) {
+                      layer["source"] = "$packsDir/${pack.id}/$src";
+                    }
+                  }
+                }
+              }
+              await File(targetJson).writeAsString(jsonEncode(data));
+            } else {
+              await edFile.copy(targetJson);
+            }
+          } catch (_) {
+            await edFile.copy(targetJson);
+          }
           pack.stickers[i].editorData = targetJson;
           final edDir = Directory(edFile.path.replaceAll(RegExp(r"\.json$"), ""));
           if (await edDir.exists()) {
@@ -232,11 +258,12 @@ Future<void> importPack(File f) async {
     packs.add(pack);
   }
 
-  // Clean up - even if the same files are imported again, they are copied again so there's no point in caching them
-  // There is no await here since we don't need to wait
-  // until the deletion of the temporary folder is complete to move on
-  unzipDir.delete(recursive: true);
-  f.parent.delete(recursive: true);
+  // Clean up unzipped temporary folder
+  try {
+    await unzipDir.delete(recursive: true);
+  } catch (e) {
+    debugPrint("Failed to delete unzipDir: $e");
+  }
 
   savePacks(packs);
 }
