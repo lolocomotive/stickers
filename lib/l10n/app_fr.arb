@@ -140,5 +140,13 @@
   "fontsManagerDetails": "Ajouter/supprimer des polices de l'application",
   "clearCache": "Vider le cache",
   "thisWillRestart": "Ceci redémarrera l'application",
-  "speed": "Vitesse"
+  "speed": "Vitesse",
+  "selectedCount": "{count} sélectionné(s)",
+  "deleteSelectedPacks": "Supprimer {count} packs de stickers ?",
+  "deleteSelectedStickers": "Supprimer {count} stickers ?",
+  "selectAll": "Tout sélectionner",
+  "deselectAll": "Tout désélectionner",
+  "reorderStickers": "Réorganiser les stickers",
+  "exportSelected": "Exporter la sélection",
+  "exportComplete": "Exportation terminée"
 }

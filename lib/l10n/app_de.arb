@@ -140,5 +140,13 @@
     "fontsManagerDetails": "Schriftarten zur App hinzufügen oder entfernen",
     "clearCache": "Cache leeren",
     "thisWillRestart": "Die App wird dabei neu gestartet",
-    "speed": "Geschwindigkeit"
+    "speed": "Geschwindigkeit",
+    "selectedCount": "{count} ausgewählt",
+    "deleteSelectedPacks": "{count} Sticker-Packs löschen?",
+    "deleteSelectedStickers": "{count} Sticker löschen?",
+    "selectAll": "Alle auswählen",
+    "deselectAll": "Auswahl aufheben",
+    "reorderStickers": "Sticker neu anordnen",
+    "exportSelected": "Ausgewählte exportieren",
+    "exportComplete": "Export abgeschlossen"
 }

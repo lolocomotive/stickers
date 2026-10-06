@@ -23,8 +23,7 @@ import 'package:stickers/generated/intl/app_localizations.dart';
 /// All screens have some thing in common.
 /// Having a widget with all the common parts makes it easier to modify later.
 class DefaultActivity extends StatelessWidget {
-  const DefaultActivity(
-      {super.key, required this.child, this.appBar, this.fab, this.resizeToAvoidBottomInset});
+  const DefaultActivity({super.key, required this.child, this.appBar, this.fab, this.resizeToAvoidBottomInset});
 
   final Widget child;
   final bool? resizeToAvoidBottomInset;
@@ -56,6 +55,8 @@ class DefaultSliverActivity extends StatelessWidget {
   final Color? titleBackground;
   final Color? titleColor;
   final Widget? fab;
+  final GlobalKey<NestedScrollViewState>? nestedScrollViewKey;
+  final bool? pinned;
 
   const DefaultSliverActivity({
     required this.child,
@@ -67,11 +68,14 @@ class DefaultSliverActivity extends StatelessWidget {
     this.titleColor,
     this.titleWidget,
     this.fab,
+    this.nestedScrollViewKey,
+    this.pinned,
   });
 
   @override
   Widget build(BuildContext context) {
-    Widget t = titleWidget ??
+    Widget t =
+        titleWidget ??
         Text(
           title ?? AppLocalizations.of(context)!.noTitle,
           style: TextStyle(color: titleColor),
@@ -79,6 +83,7 @@ class DefaultSliverActivity extends StatelessWidget {
     return DefaultActivity(
       fab: fab,
       child: NestedScrollView(
+        key: nestedScrollViewKey,
         floatHeaderSlivers: true,
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
@@ -87,13 +92,28 @@ class DefaultSliverActivity extends StatelessWidget {
               leading: leading,
               title: t,
               floating: true,
+              pinned: pinned ?? false,
               forceElevated: innerBoxIsScrolled,
               actions: actions,
-            )
+            ),
           ];
         },
         body: Scrollbar(child: child),
       ),
     );
   }
+}
+
+/// Scrolls the outer scroll view of a [DefaultSliverActivity] back to the top so its app bar is fully shown.
+void revealAppBar(GlobalKey<NestedScrollViewState> nestedScrollViewKey) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final outer = nestedScrollViewKey.currentState?.outerController;
+    if (outer != null && outer.hasClients && outer.offset > 0) {
+      outer.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    }
+  });
 }

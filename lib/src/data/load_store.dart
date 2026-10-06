@@ -19,38 +19,107 @@ Future<void> savePacks(List<StickerPack> packs) async {
   await output.writeAsString(jsonEncode(packs.map((pack) => pack.toJson()).toList()));
 }
 
-Future<void> exportPack(StickerPack pack) async {
-  Stopwatch sw = Stopwatch()..start();
-  Directory exportDir = Directory(exportCacheDir);
+Future<File> createPackZip(StickerPack pack, Directory exportDir) async {
   Directory packDir = Directory("${exportDir.path}/${uid()}/");
   await packDir.create(recursive: true);
   File jsonFile = File("${packDir.path}/pack.json");
   Map<String, dynamic> exportData = pack.toJson();
   //TODO Don't hardcode extensions
   for (var i = 0; i < pack.stickers.length; i++) {
-    await File(pack.stickers[i].source).copy("${packDir.path}$i.webp");
+    final stickerFile = File(pack.stickers[i].source);
+    if (await stickerFile.exists()) {
+      await stickerFile.copy("${packDir.path}$i.webp");
+    } else if (pack.stickers[i].editorData != null) {
+      final fallback = File("${pack.stickers[i].editorData!.replaceAll(RegExp(r"\.json$"), "")}/background.webp");
+      if (await fallback.exists()) {
+        await fallback.copy("${packDir.path}$i.webp");
+      }
+    }
     exportData["stickers"][i]["source"] = "$i.webp";
     if (exportData["stickers"][i]["editorData"] != null) {
-      exportData["stickers"][i]["editorData"] = "$i.json";
-      final data = jsonDecode(await File(pack.stickers[i].editorData!).readAsString());
-      data["background"] = "$i/background.webp";
-      await File("${packDir.path}$i.json").writeAsString(jsonEncode(data));
-      await Directory(pack.stickers[i].editorData!.replaceAll(RegExp(".json\$"), "")).copy("${packDir.path}$i");
+      final edFile = File(pack.stickers[i].editorData!);
+      if (await edFile.exists()) {
+        exportData["stickers"][i]["editorData"] = "$i.json";
+        final data = jsonDecode(await edFile.readAsString());
+        data["background"] = "$i/background.webp";
+        await File("${packDir.path}$i.json").writeAsString(jsonEncode(data));
+        final edDir = Directory(pack.stickers[i].editorData!.replaceAll(RegExp(r"\.json$"), ""));
+        if (await edDir.exists()) {
+          await edDir.copy("${packDir.path}$i");
+        }
+      }
     }
   }
   if (pack.trayIcon != null) {
-    await File(pack.trayIcon!).copy("${packDir.path}tray.png");
-    exportData["trayIcon"] = "tray.png";
+    final trayFile = File(pack.trayIcon!);
+    if (await trayFile.exists()) {
+      await trayFile.copy("${packDir.path}tray.png");
+      exportData["trayIcon"] = "tray.png";
+    }
   }
-  debugPrint("Copy t=${sw.elapsedMilliseconds}ms");
   await jsonFile.writeAsString(jsonEncode(exportData));
-  debugPrint("Json written  t=${sw.elapsedMilliseconds}ms");
 
-  File zipFile = File("${exportDir.path}/${pack.title.replaceAll(RegExp("[^ \\-_!&a-zA-Z0-9]"), "_")}.zip");
+  final sanitizedTitle = pack.title.replaceAll(RegExp(r"[^ \-_!&a-zA-Z0-9]"), "_");
+  File zipFile = File("${exportDir.path}/$sanitizedTitle.zip");
+  if (await zipFile.exists()) {
+    zipFile = File("${exportDir.path}/${sanitizedTitle}_${uid().substring(0, 4)}.zip");
+  }
   await ZipFile.createFromDirectory(sourceDir: packDir, zipFile: zipFile);
+  await packDir.delete(recursive: true);
+  return zipFile;
+}
 
-  debugPrint("Exported to: ${zipFile.path} t=${sw.elapsedMilliseconds}ms");
-  SharePlus.instance.share(ShareParams(files: [XFile(zipFile.path)]));
+Future<bool> exportPack(StickerPack pack) async {
+  return await exportPacks([pack]);
+}
+
+Future<bool> exportPacks(List<StickerPack> packsToExport) async {
+  if (packsToExport.isEmpty) return false;
+  Stopwatch sw = Stopwatch()..start();
+  Directory exportDir = Directory(exportCacheDir);
+  await exportDir.create(recursive: true);
+
+  List<XFile> files = [];
+  for (final pack in packsToExport) {
+    File zip = await createPackZip(pack, exportDir);
+    files.add(XFile(zip.path));
+  }
+
+  debugPrint("Exported ${files.length} packs t=${sw.elapsedMilliseconds}ms");
+  await SharePlus.instance.share(ShareParams(files: files));
+  return true;
+}
+
+Future<void> deleteStickerFiles(Sticker sticker) async {
+  try {
+    final file = File(sticker.source);
+    if (await file.exists()) {
+      await file.delete();
+    }
+    if (sticker.editorData != null) {
+      final editorFile = File(sticker.editorData!);
+      if (await editorFile.exists()) {
+        await editorFile.delete();
+      }
+      final editorDir = Directory(sticker.editorData!.replaceAll(RegExp(r"\.json$"), ""));
+      if (await editorDir.exists()) {
+        await editorDir.delete(recursive: true);
+      }
+    }
+  } catch (e) {
+    debugPrint("Failed to delete sticker files: $e");
+  }
+}
+
+Future<void> deletePackDirectory(StickerPack pack) async {
+  try {
+    final dir = Directory("$packsDir/${pack.id}");
+    if (await dir.exists()) {
+      await dir.delete(recursive: true);
+    }
+  } catch (e) {
+    debugPrint("Failed to delete pack directory: $e");
+  }
 }
 
 Future<void> importPack(File f) async {
@@ -236,13 +305,29 @@ Future<void> addToPack(
     if (editorData != null) {
       await Directory("$packsDir/${pack.id}/$filename/").create(recursive: true);
       final backgroundPath = "$packsDir/${pack.id}/$filename/background.${editorData.background.split(".").last}";
-      await File(editorData.background).rename(backgroundPath);
+      final bgFile = File(editorData.background);
+      if (await bgFile.exists()) {
+        await bgFile.copy(backgroundPath);
+        if (editorData.background.contains(mediaCacheDir)) {
+          try {
+            await bgFile.delete();
+          } catch (_) {}
+        }
+      }
       editorData.background = backgroundPath;
 
       for (int i = 0; i < editorData.layers.length; i++) {
         if (editorData.layers[i] is ImageLayer) {
           final ImageLayer layer = editorData.layers[i] as ImageLayer;
-          await File(layer.source).rename("$packsDir/${pack.id}/$filename/$i.webp");
+          final layerFile = File(layer.source);
+          if (await layerFile.exists()) {
+            await layerFile.copy("$packsDir/${pack.id}/$filename/$i.webp");
+            if (layer.source.contains(mediaCacheDir)) {
+              try {
+                await layerFile.delete();
+              } catch (_) {}
+            }
+          }
           layer.source = "$packsDir/${pack.id}/$filename/$i.webp";
         }
       }
@@ -253,11 +338,7 @@ Future<void> addToPack(
     stickerFile = File("$packsDir/${pack.id}/$filename.webp");
     await stickerFile.writeAsBytes(data);
     if (replace) {
-      await File(pack.stickers[index].source).delete();
-      if (pack.stickers[index].editorData != null) {
-        await File(pack.stickers[index].editorData!).delete();
-        await Directory(pack.stickers[index].editorData!.replaceAll(RegExp(".json\$"), "")).delete(recursive: true);
-      }
+      await deleteStickerFiles(pack.stickers[index]);
       pack.stickers[index].source = stickerFile.path;
       pack.stickers[index].editorData = editorDataFile?.path;
     } else {

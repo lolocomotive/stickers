@@ -181,5 +181,34 @@
   "fontsManagerDetails": "Add/remove fonts of the app",
   "clearCache": "Clear cache",
   "thisWillRestart": "This will restart the app",
-  "speed": "Speed"
+  "speed": "Speed",
+  "selectedCount": "{count} selected",
+  "@selectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteSelectedPacks": "Delete {count} sticker packs?",
+  "@deleteSelectedPacks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteSelectedStickers": "Delete {count} stickers?",
+  "@deleteSelectedStickers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectAll": "Select all",
+  "deselectAll": "Deselect all",
+  "reorderStickers": "Reorder stickers",
+  "exportSelected": "Export selected",
+  "exportComplete": "Export complete"
 }

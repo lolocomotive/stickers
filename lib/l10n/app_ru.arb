@@ -143,5 +143,13 @@
   "fontsManagerDetails": "Управление шрифтами",
   "clearCache": "Очистить кэш",
   "thisWillRestart": "Приложение перезапустится",
-  "speed": "Скорость"
+  "speed": "Скорость",
+  "selectedCount": "Выбрано: {count}",
+  "deleteSelectedPacks": "Удалить {count} наборов стикеров?",
+  "deleteSelectedStickers": "Удалить {count} стикеров?",
+  "selectAll": "Выбрать все",
+  "deselectAll": "Снять выбор",
+  "reorderStickers": "Изменить порядок стикеров",
+  "exportSelected": "Экспортировать выбранные",
+  "exportComplete": "Экспорт завершён"
 }
