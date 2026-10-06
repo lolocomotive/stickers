@@ -13,81 +13,42 @@ class CropAspectRatioSelector extends StatelessWidget {
   final double? aspectRatio;
   final ValueChanged<double?> onChanged;
 
+  static const _ratios = [
+    (value: 16 / 9, icon: Icons.crop_16_9, label: "16:9", portrait: false),
+    (value: 3 / 2, icon: Icons.crop_3_2, label: "3:2", portrait: false),
+    (value: 1.0, icon: Icons.crop_din, label: "1:1", portrait: false),
+    (value: 2 / 3, icon: Icons.crop_3_2, label: "2:3", portrait: true),
+    (value: 9 / 16, icon: Icons.crop_16_9, label: "9:16", portrait: true),
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final selected = aspectRatio == null
+        ? null
+        : _ratios.map((r) => r.value).where((r) => (r - aspectRatio!).abs() < 0.01).firstOrNull;
     return SegmentedButton<double>(
       showSelectedIcon: false,
       emptySelectionAllowed: true,
       multiSelectionEnabled: false,
       segments: [
-        ButtonSegment(
-          value: 16 / 9,
-          icon: Column(
-            children: const [
-              Icon(Icons.crop_16_9),
-              Text(
-                "16:9",
-                style: TextStyle(fontSize: 10),
-              ),
-            ],
+        for (final ratio in _ratios)
+          ButtonSegment(
+            value: ratio.value,
+            icon: Column(
+              children: [
+                Transform.rotate(
+                  angle: ratio.portrait ? pi / 2 : 0,
+                  child: Icon(ratio.icon),
+                ),
+                Text(
+                  ratio.label,
+                  style: const TextStyle(fontSize: 10),
+                ),
+              ],
+            ),
           ),
-        ),
-        ButtonSegment(
-          value: 3 / 2,
-          icon: Column(
-            children: const [
-              Icon(Icons.crop_3_2),
-              Text(
-                "3:2",
-                style: TextStyle(fontSize: 10),
-              ),
-            ],
-          ),
-        ),
-        ButtonSegment(
-          value: 1,
-          icon: Column(
-            children: const [
-              Icon(Icons.crop_din),
-              Text(
-                "1:1",
-                style: TextStyle(fontSize: 10),
-              ),
-            ],
-          ),
-        ),
-        ButtonSegment(
-          value: 2 / 3,
-          icon: Column(
-            children: [
-              Transform.rotate(
-                angle: pi / 2,
-                child: const Icon(Icons.crop_3_2),
-              ),
-              const Text(
-                "2:3",
-                style: TextStyle(fontSize: 10),
-              ),
-            ],
-          ),
-        ),
-        ButtonSegment(
-          value: 9 / 16,
-          icon: Column(
-            children: [
-              Transform.rotate(
-                angle: pi / 2,
-                child: const Icon(Icons.crop_16_9),
-              ),
-              const Text(
-                "9:16",
-                style: TextStyle(fontSize: 10),
-              ),
-            ],
-          ),
-        ),
       ],
-      selected: {aspectRatio == null ? 0 : aspectRatio!},
+      selected: {?selected},
       onSelectionChanged: (v) {
         HapticFeedback.lightImpact();
         onChanged(v.firstOrNull);
