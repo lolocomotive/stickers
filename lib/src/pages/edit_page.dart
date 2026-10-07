@@ -715,6 +715,18 @@ class _EditPageState extends State<EditPage> {
       final result = await GifTranscoder.transcodeWebpWithOverlay(
         webpPath: _source.path,
         overlayBytes: await out.readAsBytes(),
+        onProgress: (attempt, attempts, progress) {
+          if (!mounted) return;
+          final l10n = AppLocalizations.of(context)!;
+          setState(() {
+            _message = attempt == 0
+                ? l10n.firstAttempt
+                : attempt == attempts - 1
+                    ? l10n.thirdAttempt
+                    : l10n.secondAttempt;
+            _exportProgress = progress;
+          });
+        },
       );
       if (result.lengthInBytes / 1024 > 500) {
         if (!context.mounted) throw Exception();
