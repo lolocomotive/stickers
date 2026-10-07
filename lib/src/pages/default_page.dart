@@ -104,16 +104,26 @@ class DefaultSliverActivity extends StatelessWidget {
   }
 }
 
-/// Scrolls the outer scroll view of a [DefaultSliverActivity] back to the top so its app bar is fully shown.
+/// Floats the app bar of a [DefaultSliverActivity] back into view without scrolling its content.
+///
+/// The outer controller's jumpTo/animateTo go through the NestedScrollView coordinator, which also scrolls the inner
+/// view to the top. A pointer scroll instead goes to the floating header first and leaves the inner view untouched.
 void revealAppBar(GlobalKey<NestedScrollViewState> nestedScrollViewKey) {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     final outer = nestedScrollViewKey.currentState?.outerController;
-    if (outer != null && outer.hasClients && outer.offset > 0) {
-      outer.animateTo(
-        0.0,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
+    if (outer == null || !outer.hasClients || outer.offset <= 0) return;
+    final double start = outer.offset;
+    const duration = Duration(milliseconds: 200);
+    Duration? begin;
+    void step(Duration timestamp) {
+      if (!outer.hasClients) return;
+      begin ??= timestamp;
+      final double t = ((timestamp - begin!).inMicroseconds / duration.inMicroseconds).clamp(0.0, 1.0);
+      final double delta = start * (1 - Curves.easeOut.transform(t)) - outer.offset;
+      if (delta < 0) outer.position.pointerScroll(delta);
+      if (t < 1) WidgetsBinding.instance.scheduleFrameCallback(step);
     }
+
+    WidgetsBinding.instance.scheduleFrameCallback(step);
   });
 }

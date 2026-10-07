@@ -9,6 +9,7 @@ import 'package:stickers/src/dialogs/delete_confirm_dialog.dart';
 import 'package:stickers/src/dialogs/edit_pack_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/sticker_pack_page.dart';
+import 'package:stickers/src/widgets/drag_select.dart';
 import 'package:stickers/src/widgets/sticker_thumbnail.dart';
 
 class StickerPackPreviewCard extends StatefulWidget {
@@ -41,11 +42,6 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
       Theme.of(context).colorScheme.primary,
       2,
     );
-    final Color selectedSurface = ElevationOverlay.applySurfaceTint(
-      Theme.of(context).colorScheme.primaryContainer,
-      Theme.of(context).colorScheme.primary,
-      4,
-    );
 
     final String? trayPath =
         widget.pack.trayIcon ?? (widget.pack.stickers.isNotEmpty ? widget.pack.stickers.first.source : null);
@@ -56,22 +52,14 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: OpenContainer(
           tappable: false,
-          closedColor: widget.isSelected ? selectedSurface : surface,
+          closedColor: surface,
           openColor: Theme.of(context).colorScheme.surface,
-          middleColor: widget.isSelected ? selectedSurface : surface,
+          middleColor: surface,
           closedShape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
           closedBuilder: (context, action) => Container(
-            foregroundDecoration: widget.isSelected
-                ? BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 2.5,
-                    ),
-                  )
-                : null,
+            foregroundDecoration: widget.isSelected ? selectionDecoration(context, radius: 20) : null,
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
               onTap: () {

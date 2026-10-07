@@ -316,7 +316,7 @@ class StickerPackPageState extends State<StickerPackPage> {
                               ),
                             ],
                           ),
-                          foregroundDecoration: isSelected ? highlightBorder : null,
+                          foregroundDecoration: isSelected ? selectionDecoration(context, radius: 24) : null,
                           clipBehavior: Clip.antiAlias,
                           child: Stack(
                             fit: StackFit.expand,
@@ -324,10 +324,6 @@ class StickerPackPageState extends State<StickerPackPage> {
                               StickerThumbnail(
                                 file: File(sticker.source),
                               ),
-                              if (isSelected)
-                                Container(
-                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                                ),
                               if (_isReorderMode) ...[
                                 Positioned(
                                   top: 6,

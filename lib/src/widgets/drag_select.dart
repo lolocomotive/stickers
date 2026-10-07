@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart';
 
 /// Lets the user select a range of [DragSelectItem]s by long-pressing one and dragging.
 ///
@@ -140,6 +140,16 @@ class _DragSelectRegionState extends State<DragSelectRegion> {
       child: widget.child,
     );
   }
+}
+
+/// The highlight drawn over selected items, shared so every selectable list looks the same.
+BoxDecoration selectionDecoration(BuildContext context, {required double radius}) {
+  final Color primary = Theme.of(context).colorScheme.primary;
+  return BoxDecoration(
+    color: primary.withValues(alpha: 0.2),
+    borderRadius: BorderRadius.circular(radius),
+    border: Border.all(color: primary, width: 3),
+  );
 }
 
 /// Marks [child] as the item at [index] for an enclosing [DragSelectRegion].
