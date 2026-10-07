@@ -16,6 +16,7 @@ import 'package:stickers/src/video/gif_transcoder.dart';
 import 'package:stickers/src/widgets/crop_aspect_ratio_selector.dart';
 import 'package:stickers/src/widgets/progress_bar_button.dart';
 import 'package:stickers/src/widgets/video_crop_overlay.dart';
+import 'package:stickers/src/widgets/video_trim_bar.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoCropPage extends StatefulWidget {
@@ -325,65 +326,61 @@ class _VideoCropPageState extends State<VideoCropPage> {
                     const SizedBox(height: 2),
                   ],
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                    child: Stack(
-                      children: [
-                        RangeSlider(
-                          values: _range,
-                          onChangeEnd: (_) async {
-                            if (_controller != null && _controller!.value.isInitialized) {
-                              if (_seekTarget == _controller!.value.duration * _range.end) {
-                                _requestSeek(_controller!.value.duration * _range.end - const Duration(seconds: 1));
-                                if (_seekTarget < _controller!.value.duration * _range.start) {
-                                  _seekTarget = _controller!.value.duration * _range.start;
-                                }
-                              }
-                              _play();
-                              setState(() {});
-                              await Future.delayed(const Duration(milliseconds: 200));
-                              setState(() {});
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: VideoTrimBar(
+                      range: _range,
+                      showPlayhead: !_isGif && _ready && (_controller?.value.duration.inMilliseconds ?? 0) > 0,
+                      playbackPosition: (_ready &&
+                              _controller != null &&
+                              _controller!.value.duration > Duration.zero)
+                          ? (_controller!.value.position.inMilliseconds /
+                                  _controller!.value.duration.inMilliseconds)
+                              .clamp(0.0, 1.0)
+                          : null,
+                      onChangeStart: (_) {
+                        _controller?.pause();
+                        _editing = true;
+                      },
+                      onChangeEnd: (_) async {
+                        if (_controller != null && _controller!.value.isInitialized) {
+                          if (_seekTarget >= _controller!.value.duration * _range.end) {
+                            _requestSeek(_controller!.value.duration * _range.end - const Duration(seconds: 1));
+                            if (_seekTarget < _controller!.value.duration * _range.start) {
+                              _seekTarget = _controller!.value.duration * _range.start;
                             }
-                            _editing = false;
-                          },
-                          onChangeStart: (_) {
-                            if (_controller != null) {
-                              _controller!.pause();
-                            }
-                            _editing = true;
-                          },
-                          onChanged: (values) {
-                            if (_isGif) {
-                              _range = values;
-                              setState(() {});
-                              return;
-                            }
-                            if (_controller == null || !_controller!.value.isInitialized) return;
-                            final Duration seekTarget;
-                            if (_range.start != values.start) {
-                              seekTarget = _controller!.value.duration * values.start;
-                            } else if (_range.end != values.end) {
-                              seekTarget = _controller!.value.duration * values.end;
-                            } else {
-                              return;
-                            }
-                            _requestSeek(seekTarget);
-                            _range = values;
-                            setState(() {});
-                          },
-                        ),
-                        if (!_editing && !_isGif && _ready && (_controller?.value.duration.inMilliseconds ?? 0) > 0)
-                          IgnorePointer(
-                            child: Slider(
-                              thumbColor: Theme.of(context).colorScheme.onSurface,
-                              activeColor: Colors.transparent,
-                              inactiveColor: Colors.transparent,
-                              value: (_controller!.value.position.inMilliseconds /
-                                      _controller!.value.duration.inMilliseconds)
-                                  .clamp(0.0, 1.0),
-                              onChanged: (_) {},
-                            ),
-                          ),
-                      ],
+                          }
+                          _play();
+                          setState(() {});
+                          await Future.delayed(const Duration(milliseconds: 200));
+                          setState(() {});
+                        }
+                        _editing = false;
+                      },
+                      onChanged: (values) {
+                        if (_isGif) {
+                          _range = values;
+                          setState(() {});
+                          return;
+                        }
+                        if (_controller == null || !_controller!.value.isInitialized) return;
+                        final Duration seekTarget;
+                        if (_range.start != values.start) {
+                          seekTarget = _controller!.value.duration * values.start;
+                        } else if (_range.end != values.end) {
+                          seekTarget = _controller!.value.duration * values.end;
+                        } else {
+                          seekTarget = _controller!.value.duration * values.start;
+                        }
+                        _requestSeek(seekTarget);
+                        _range = values;
+                        setState(() {});
+                      },
+                      onSeek: (positionFraction) {
+                        if (_controller == null || !_controller!.value.isInitialized) return;
+                        final target = _controller!.value.duration * positionFraction;
+                        _requestSeek(target);
+                        setState(() {});
+                      },
                     ),
                   ),
                   const SizedBox(height: 8),
