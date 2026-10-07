@@ -11,6 +11,7 @@ import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/dialogs/export_pack_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/default_page.dart';
+import 'package:stickers/src/widgets/drag_select.dart';
 import 'package:stickers/src/widgets/sticker_pack_preview_card.dart';
 import 'package:stickers/src/util.dart';
 
@@ -48,6 +49,18 @@ class StickerPacksPageState extends State<StickerPacksPage> {
       } else {
         _selectedPacks.add(pack);
       }
+      if (wasEmpty && _selectedPacks.isNotEmpty) {
+        revealAppBar(_nestedKey);
+      }
+    });
+  }
+
+  void _setPackSelection(Set<int> indices) {
+    setState(() {
+      final wasEmpty = _selectedPacks.isEmpty;
+      _selectedPacks
+        ..clear()
+        ..addAll(indices.map((i) => packs[i]));
       if (wasEmpty && _selectedPacks.isNotEmpty) {
         revealAppBar(_nestedKey);
       }
@@ -231,19 +244,29 @@ class StickerPacksPageState extends State<StickerPacksPage> {
                   ],
                 ),
               )
-            : ListView.separated(
-                separatorBuilder: (context, index) => Container(),
-                itemBuilder: (context, index) => StickerPackPreviewCard(
-                  packs[index],
-                  () {
-                    setState(() {});
-                  },
-                  isSelectionMode: _isSelectionMode,
-                  isSelected: _selectedPacks.contains(packs[index]),
-                  onToggleSelect: () => _togglePackSelection(packs[index]),
-                  onLongPress: () => _togglePackSelection(packs[index]),
+            : DragSelectRegion(
+                selection: () => {
+                  for (int i = 0; i < packs.length; i++)
+                    if (_selectedPacks.contains(packs[i])) i,
+                },
+                onSelectionChanged: _setPackSelection,
+                child: ListView.separated(
+                  separatorBuilder: (context, index) => Container(),
+                  itemBuilder: (context, index) => DragSelectItem(
+                    index: index,
+                    child: StickerPackPreviewCard(
+                      packs[index],
+                      () {
+                        setState(() {});
+                      },
+                      isSelectionMode: _isSelectionMode,
+                      isSelected: _selectedPacks.contains(packs[index]),
+                      onToggleSelect: () => _togglePackSelection(packs[index]),
+                      onLongPress: () => DragSelectRegion.start(context, index),
+                    ),
+                  ),
+                  itemCount: packs.length,
                 ),
-                itemCount: packs.length,
               ),
       ),
     );

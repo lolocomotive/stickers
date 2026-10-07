@@ -18,6 +18,7 @@ import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/pages/multi_crop_page.dart';
 import 'package:stickers/src/util.dart';
+import 'package:stickers/src/widgets/drag_select.dart';
 import 'package:stickers/src/widgets/sticker_thumbnail.dart';
 
 class StickerPackPage extends StatefulWidget {
@@ -66,9 +67,21 @@ class StickerPackPageState extends State<StickerPackPage> {
     ).then((_) => setState(() {}));
   }
 
-  void _onStickerLongPress(int index) {
+  void _onStickerLongPress(BuildContext itemContext, int index) {
     if (_isReorderMode) return;
-    _toggleStickerSelection(index);
+    DragSelectRegion.start(itemContext, index);
+  }
+
+  void _setSelection(Set<int> selection) {
+    setState(() {
+      final wasEmpty = _selectedIndices.isEmpty;
+      _selectedIndices
+        ..clear()
+        ..addAll(selection);
+      if (wasEmpty && _selectedIndices.isNotEmpty) {
+        revealAppBar(_nestedKey);
+      }
+    });
   }
 
   void _moveSticker(int fromIndex, int toIndex) {
@@ -243,161 +256,170 @@ class StickerPackPageState extends State<StickerPackPage> {
                       ],
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: GridView.builder(
-                    itemCount: (_isSelectionMode || _isReorderMode)
-                        ? widget.pack.stickers.length
-                        : widget.pack.stickers.length + 1,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: colCount(MediaQuery.of(context).size.width),
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                    ),
-                    itemBuilder: (context, index) {
-                      if (index == widget.pack.stickers.length) {
-                        bool disabled = _importing || widget.pack.stickers.length >= 30;
-                        return Container(
+                  child: DragSelectRegion(
+                    selection: () => _selectedIndices,
+                    onSelectionChanged: _setSelection,
+                    child: GridView.builder(
+                      itemCount: (_isSelectionMode || _isReorderMode)
+                          ? widget.pack.stickers.length
+                          : widget.pack.stickers.length + 1,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: colCount(MediaQuery.of(context).size.width),
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                      ),
+                      itemBuilder: (context, index) {
+                        if (index == widget.pack.stickers.length) {
+                          bool disabled = _importing || widget.pack.stickers.length >= 30;
+                          return Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: disabled ? Colors.grey : Theme.of(context).colorScheme.primary,
+                                width: 2,
+                              ),
+                            ),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(24),
+                              onTap: disabled ? null : _createSticker,
+                              child: Icon(
+                                Icons.add,
+                                size: 40,
+                                color: disabled ? Colors.grey : Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          );
+                        }
+
+                        final bool isSelected = _selectedIndices.contains(index);
+                        final sticker = widget.pack.stickers[index];
+                        final highlightBorder = BoxDecoration(
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 3.5,
+                          ),
+                        );
+
+                        Widget stickerContent = Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: disabled ? Colors.grey : Theme.of(context).colorScheme.primary,
-                              width: 2,
+                            color: Color.lerp(
+                              Theme.of(context).colorScheme.primary,
+                              Theme.of(context).colorScheme.surface,
+                              .7,
                             ),
-                          ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(24),
-                            onTap: disabled ? null : _createSticker,
-                            child: Icon(
-                              Icons.add,
-                              size: 40,
-                              color: disabled ? Colors.grey : Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        );
-                      }
-
-                      final bool isSelected = _selectedIndices.contains(index);
-                      final sticker = widget.pack.stickers[index];
-                      final highlightBorder = BoxDecoration(
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.primary,
-                          width: 3.5,
-                        ),
-                      );
-
-                      Widget stickerContent = Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(24),
-                          color: Color.lerp(
-                            Theme.of(context).colorScheme.primary,
-                            Theme.of(context).colorScheme.surface,
-                            .7,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              offset: const Offset(1, 1),
-                              blurRadius: 3,
-                              color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.black12,
-                            ),
-                          ],
-                        ),
-                        foregroundDecoration: isSelected ? highlightBorder : null,
-                        clipBehavior: Clip.antiAlias,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            StickerThumbnail(
-                              file: File(sticker.source),
-                            ),
-                            if (isSelected)
-                              Container(
-                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                              ),
-                            if (_isReorderMode) ...[
-                              Positioned(
-                                top: 6,
-                                right: 6,
-                                child: _reorderBadge(Icons.drag_indicator),
-                              ),
-                              Positioned(
-                                left: 4,
-                                right: 4,
-                                bottom: 4,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    if (index > 0)
-                                      InkWell(
-                                        onTap: () => _moveSticker(index, index - 1),
-                                        child: _reorderBadge(Icons.chevron_left),
-                                      )
-                                    else
-                                      const SizedBox(width: 26),
-                                    if (index < widget.pack.stickers.length - 1)
-                                      InkWell(
-                                        onTap: () => _moveSticker(index, index + 1),
-                                        child: _reorderBadge(Icons.chevron_right),
-                                      )
-                                    else
-                                      const SizedBox(width: 26),
-                                  ],
-                                ),
+                            boxShadow: [
+                              BoxShadow(
+                                offset: const Offset(1, 1),
+                                blurRadius: 3,
+                                color: Theme.of(context).brightness == Brightness.light
+                                    ? Colors.black26
+                                    : Colors.black12,
                               ),
                             ],
-                          ],
-                        ),
-                      );
-
-                      if (_isReorderMode) {
-                        return DragTarget<int>(
-                          onWillAcceptWithDetails: (details) => details.data != index,
-                          onAcceptWithDetails: (details) => _moveSticker(details.data, index),
-                          builder: (context, candidateData, rejectedData) {
-                            final bool isHovered = candidateData.isNotEmpty;
-                            return Draggable<int>(
-                              data: index,
-                              feedback: Material(
-                                color: Colors.transparent,
-                                child: Container(
-                                  width: 90,
-                                  height: 90,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(20),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                        offset: Offset(2, 4),
-                                        blurRadius: 10,
-                                        color: Colors.black45,
-                                      ),
+                          ),
+                          foregroundDecoration: isSelected ? highlightBorder : null,
+                          clipBehavior: Clip.antiAlias,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              StickerThumbnail(
+                                file: File(sticker.source),
+                              ),
+                              if (isSelected)
+                                Container(
+                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                                ),
+                              if (_isReorderMode) ...[
+                                Positioned(
+                                  top: 6,
+                                  right: 6,
+                                  child: _reorderBadge(Icons.drag_indicator),
+                                ),
+                                Positioned(
+                                  left: 4,
+                                  right: 4,
+                                  bottom: 4,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      if (index > 0)
+                                        InkWell(
+                                          onTap: () => _moveSticker(index, index - 1),
+                                          child: _reorderBadge(Icons.chevron_left),
+                                        )
+                                      else
+                                        const SizedBox(width: 26),
+                                      if (index < widget.pack.stickers.length - 1)
+                                        InkWell(
+                                          onTap: () => _moveSticker(index, index + 1),
+                                          child: _reorderBadge(Icons.chevron_right),
+                                        )
+                                      else
+                                        const SizedBox(width: 26),
                                     ],
                                   ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: StickerThumbnail(
-                                    file: File(sticker.source),
-                                    targetSize: 90,
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+
+                        if (_isReorderMode) {
+                          return DragTarget<int>(
+                            onWillAcceptWithDetails: (details) => details.data != index,
+                            onAcceptWithDetails: (details) => _moveSticker(details.data, index),
+                            builder: (context, candidateData, rejectedData) {
+                              final bool isHovered = candidateData.isNotEmpty;
+                              return Draggable<int>(
+                                data: index,
+                                feedback: Material(
+                                  color: Colors.transparent,
+                                  child: Container(
+                                    width: 90,
+                                    height: 90,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          offset: Offset(2, 4),
+                                          blurRadius: 10,
+                                          color: Colors.black45,
+                                        ),
+                                      ],
+                                    ),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: StickerThumbnail(
+                                      file: File(sticker.source),
+                                      targetSize: 90,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              childWhenDragging: Opacity(
-                                opacity: 0.25,
-                                child: stickerContent,
-                              ),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 150),
-                                foregroundDecoration: isHovered ? highlightBorder : null,
-                                child: stickerContent,
-                              ),
-                            );
-                          },
-                        );
-                      }
+                                childWhenDragging: Opacity(
+                                  opacity: 0.25,
+                                  child: stickerContent,
+                                ),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  foregroundDecoration: isHovered ? highlightBorder : null,
+                                  child: stickerContent,
+                                ),
+                              );
+                            },
+                          );
+                        }
 
-                      return GestureDetector(
-                        onTap: () => _onStickerTap(index),
-                        onLongPress: () => _onStickerLongPress(index),
-                        child: stickerContent,
-                      );
-                    },
+                        return DragSelectItem(
+                          index: index,
+                          child: GestureDetector(
+                            onTap: () => _onStickerTap(index),
+                            onLongPress: () => _onStickerLongPress(context, index),
+                            child: stickerContent,
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
