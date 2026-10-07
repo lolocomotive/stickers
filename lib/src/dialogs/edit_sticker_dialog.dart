@@ -164,9 +164,11 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
       builder: (context) => const ExportStickerDialog(),
     );
     if (format == null || !mounted) return;
-    await exportWithFeedback(
+    await exportStickersWithProgress(
       context,
-      () => exportStickers([widget.pack.stickers[widget.index]], format: format, packTitle: widget.pack.title),
+      [widget.pack.stickers[widget.index]],
+      format,
+      packTitle: widget.pack.title,
     );
   }
 

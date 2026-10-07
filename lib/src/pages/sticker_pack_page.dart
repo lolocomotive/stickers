@@ -149,10 +149,7 @@ class StickerPackPageState extends State<StickerPackPage> {
     );
     if (format == null || !mounted) return;
     final selectedStickers = _selectedIndices.map((i) => widget.pack.stickers[i]).toList();
-    await exportWithFeedback(
-      context,
-      () => exportStickers(selectedStickers, format: format, packTitle: widget.pack.title),
-    );
+    await exportStickersWithProgress(context, selectedStickers, format, packTitle: widget.pack.title);
   }
 
   @override

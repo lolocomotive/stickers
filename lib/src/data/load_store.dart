@@ -1,8 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:isolate';
-
-import 'package:image/image.dart' as img;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +7,7 @@ import 'package:flutter_archive/flutter_archive.dart';
 import 'package:image_editor/image_editor.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:stickers/src/data/sticker.dart';
+import 'package:stickers/src/data/sticker_encoding.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
@@ -17,6 +15,8 @@ import 'package:stickers/src/util.dart';
 import 'package:stickers/src/widgets/image_layer.dart';
 
 import 'editor_data.dart';
+
+export 'sticker_encoding.dart' show StickerFormat;
 
 Future<void> savePacks(List<StickerPack> packs) async {
   File output = File("$packsDir/packs.json");
@@ -247,50 +247,17 @@ Future<bool> exportPacks(List<StickerPack> packsToExport, {bool includeEditData 
   return true;
 }
 
-enum StickerFormat {
-  png('png', 'PNG'),
-  webp('webp', 'WebP'),
-  jpeg('jpg', 'JPEG'),
-  gif('gif', 'GIF');
-
-  final String extension;
-  final String label;
-
-  const StickerFormat(this.extension, this.label);
-}
-
-Future<Uint8List> _convertImageBytes(Uint8List sourceBytes, StickerFormat format) async {
-  return await Isolate.run(() {
-    if (format == StickerFormat.webp &&
-        sourceBytes.length >= 12 &&
-        String.fromCharCodes(sourceBytes.sublist(0, 4)) == 'RIFF' &&
-        String.fromCharCodes(sourceBytes.sublist(8, 12)) == 'WEBP') {
-      return sourceBytes;
-    }
-    final image = img.decodeImage(sourceBytes);
-    if (image == null) throw Exception("Failed to decode image");
-    switch (format) {
-      case StickerFormat.webp:
-        return Uint8List.fromList(img.encodeWebP(image));
-      case StickerFormat.png:
-        return Uint8List.fromList(img.encodePng(image));
-      case StickerFormat.jpeg:
-        final whiteCanvas = img.Image(width: image.width, height: image.height, numChannels: 3);
-        img.fill(whiteCanvas, color: img.ColorRgb8(255, 255, 255));
-        img.compositeImage(whiteCanvas, image);
-        return Uint8List.fromList(img.encodeJpg(whiteCanvas, quality: 90));
-      case StickerFormat.gif:
-        return Uint8List.fromList(img.encodeGif(image));
-    }
-  });
-}
-
-Future<bool> exportStickers(
+/// Converts [stickers] to [format] in a new export directory and returns the
+/// files, skipping stickers whose file is missing.
+///
+/// [onProgress] receives the overall progress (0 to 1) and the 1-based index
+/// of the sticker being converted.
+Future<List<XFile>> convertStickers(
   List<Sticker> stickers, {
   required StickerFormat format,
   String? packTitle,
+  void Function(double progress, int current)? onProgress,
 }) async {
-  if (stickers.isEmpty) return false;
   final Directory exportDir = Directory("$exportCacheDir/${uid()}");
   await exportDir.create(recursive: true);
 
@@ -301,11 +268,14 @@ Future<bool> exportStickers(
 
   for (int i = 0; i < stickers.length; i++) {
     final sticker = stickers[i];
-    final sourceFile = File(sticker.source);
-    if (!await sourceFile.exists()) continue;
+    onProgress?.call(i / stickers.length, i + 1);
+    if (!await File(sticker.source).exists()) continue;
 
-    final sourceBytes = await sourceFile.readAsBytes();
-    final convertedBytes = await _convertImageBytes(sourceBytes, format);
+    final convertedBytes = await convertSticker(
+      sticker.source,
+      format,
+      onProgress: (progress) => onProgress?.call((i + progress) / stickers.length, i + 1),
+    );
 
     final fileName = stickers.length == 1
         ? "${cleanTitle}_sticker.${format.extension}"
@@ -315,10 +285,7 @@ Future<bool> exportStickers(
     await targetFile.writeAsBytes(convertedBytes);
     files.add(XFile(targetFile.path));
   }
-
-  if (files.isEmpty) return false;
-  await SharePlus.instance.share(ShareParams(files: files));
-  return true;
+  return files;
 }
 
 Future<void> deleteStickerFiles(Sticker sticker) async {

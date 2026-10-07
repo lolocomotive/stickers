@@ -4,7 +4,10 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
+import 'package:stickers/src/data/load_store.dart';
+import 'package:stickers/src/data/sticker.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/globals.dart';
@@ -127,6 +130,74 @@ Future<void> exportWithFeedback(BuildContext context, Future<bool> Function() ex
       ),
     );
   }
+}
+
+/// Converts [stickers] to [format] behind a progress dialog, then opens the share sheet.
+Future<void> exportStickersWithProgress(
+  BuildContext context,
+  List<Sticker> stickers,
+  StickerFormat format, {
+  String? packTitle,
+}) async {
+  final progress = ValueNotifier<(double, int)>((0, 1));
+  final navigator = Navigator.of(context, rootNavigator: true);
+  showDialog(
+    context: context,
+    useRootNavigator: true,
+    barrierDismissible: false,
+    builder: (context) => PopScope(
+      canPop: false,
+      child: AlertDialog(
+        title: Text(AppLocalizations.of(context)!.exporting),
+        content: ValueListenableBuilder(
+          valueListenable: progress,
+          builder: (context, value, _) {
+            final (fraction, current) = value;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                LinearProgressIndicator(value: fraction),
+                if (stickers.length > 1) ...[
+                  const SizedBox(height: 12),
+                  Text("$current/${stickers.length}", textAlign: TextAlign.center),
+                ],
+              ],
+            );
+          },
+        ),
+      ),
+    ),
+  );
+
+  final List<XFile> files;
+  try {
+    files = await convertStickers(
+      stickers,
+      format: format,
+      packTitle: packTitle,
+      onProgress: (fraction, current) => progress.value = (fraction, current),
+    );
+  } catch (e, st) {
+    debugPrint("Sticker export failed: $e");
+    debugPrintStack(stackTrace: st);
+    navigator.pop();
+    if (!context.mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) => ErrorDialog(
+        title: AppLocalizations.of(context)!.couldntExportSticker,
+        message: e.toString(),
+      ),
+    );
+    return;
+  }
+  navigator.pop();
+  if (files.isEmpty || !context.mounted) return;
+  await exportWithFeedback(context, () async {
+    await SharePlus.instance.share(ShareParams(files: files));
+    return true;
+  });
 }
 
 int colCount(double width) {
