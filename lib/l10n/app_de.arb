@@ -159,5 +159,10 @@
     "gifFileSubtitle": "Wähle eine GIF-Datei (.gif)",
     "selectGif": "GIF auswählen",
     "clearDrawings": "Zeichnungen löschen",
-    "clear": "Löschen"
+    "clear": "Löschen",
+    "exportSticker": "Sticker exportieren",
+    "pngDescription": "Hohe Qualität, transparenter Hintergrund",
+    "webpDescription": "Geringe Dateigröße, transparenter Hintergrund",
+    "jpegDescription": "Universelles Format, weißer Hintergrund",
+    "gifDescription": "Universelles Format, unterstützt Animationen"
 }

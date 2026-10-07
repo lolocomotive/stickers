@@ -12,6 +12,7 @@ import 'package:stickers/src/dialogs/edit_pack_dialog.dart';
 import 'package:stickers/src/dialogs/edit_sticker_dialog.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/dialogs/export_pack_dialog.dart';
+import 'package:stickers/src/dialogs/export_sticker_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
@@ -127,6 +128,20 @@ class StickerPackPageState extends State<StickerPackPage> {
     await exportWithFeedback(context, () => exportPack(widget.pack, includeEditData: includeEditData));
   }
 
+  Future<void> _exportSelectedStickers() async {
+    if (_selectedIndices.isEmpty) return;
+    final format = await showDialog<StickerFormat>(
+      context: context,
+      builder: (context) => ExportStickerDialog(count: _selectedIndices.length),
+    );
+    if (format == null || !mounted) return;
+    final selectedStickers = _selectedIndices.map((i) => widget.pack.stickers[i]).toList();
+    await exportWithFeedback(
+      context,
+      () => exportStickers(selectedStickers, format: format, packTitle: widget.pack.title),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool allSelected = widget.pack.stickers.isNotEmpty && _selectedIndices.length == widget.pack.stickers.length;
@@ -176,6 +191,11 @@ class StickerPackPageState extends State<StickerPackPage> {
                               }
                             });
                           },
+                        ),
+                        IconButton(
+                          tooltip: AppLocalizations.of(context)!.exportSelected,
+                          icon: const Icon(Icons.share),
+                          onPressed: _exportSelectedStickers,
                         ),
                         IconButton(
                           tooltip: AppLocalizations.of(context)!.delete,
@@ -616,4 +636,3 @@ enum _AnimatedInputMethod {
   video,
   gif,
 }
-

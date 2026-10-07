@@ -162,5 +162,10 @@
   "gifFileSubtitle": "Выбрать GIF-файл (.gif)",
   "selectGif": "Выбрать GIF",
   "clearDrawings": "Очистить рисунки",
-  "clear": "Очистить"
+  "clear": "Очистить",
+  "exportSticker": "Экспортировать стикер",
+  "pngDescription": "Высокое качество, прозрачный фон",
+  "webpDescription": "Малый размер, прозрачный фон",
+  "jpegDescription": "Универсальный формат, белый фон",
+  "gifDescription": "Универсальный формат, поддерживает анимацию"
 }

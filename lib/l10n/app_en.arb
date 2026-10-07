@@ -221,5 +221,10 @@
   "gifFileSubtitle": "Select a GIF file (.gif)",
   "selectGif": "Select GIF",
   "clearDrawings": "Clear drawings",
-  "clear": "Clear"
+  "clear": "Clear",
+  "exportSticker": "Export sticker",
+  "pngDescription": "High quality, transparent background",
+  "webpDescription": "Lightweight, transparent background",
+  "jpegDescription": "Universal format, white background",
+  "gifDescription": "Universal format, supports animation"
 }

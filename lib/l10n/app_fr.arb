@@ -159,5 +159,10 @@
   "gifFileSubtitle": "Sélectionner un fichier GIF (.gif)",
   "selectGif": "Sélectionner un GIF",
   "clearDrawings": "Effacer les dessins",
-  "clear": "Effacer"
+  "clear": "Effacer",
+  "exportSticker": "Exporter le sticker",
+  "pngDescription": "Haute qualité, arrière-plan transparent",
+  "webpDescription": "Léger, arrière-plan transparent",
+  "jpegDescription": "Format universel, arrière-plan blanc",
+  "gifDescription": "Format universel, prend en charge les animations"
 }

@@ -3,8 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
+import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/dialogs/export_sticker_dialog.dart';
 import 'package:stickers/src/pages/crop_page.dart';
+import 'package:stickers/src/util.dart';
 
 class EditStickerDialog extends StatefulWidget {
   final StickerPack pack;
@@ -37,9 +40,20 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
-              child: Text(
-                AppLocalizations.of(context)!.editSticker,
-                style: Theme.of(context).textTheme.headlineMedium,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      AppLocalizations.of(context)!.editSticker,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: AppLocalizations.of(context)!.exportSticker,
+                    icon: const Icon(Icons.share),
+                    onPressed: _exportSticker,
+                  ),
+                ],
               ),
             ),
             Container(
@@ -141,6 +155,18 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _exportSticker() async {
+    final format = await showDialog<StickerFormat>(
+      context: context,
+      builder: (context) => const ExportStickerDialog(),
+    );
+    if (format == null || !mounted) return;
+    await exportWithFeedback(
+      context,
+      () => exportStickers([widget.pack.stickers[widget.index]], format: format, packTitle: widget.pack.title),
     );
   }
 

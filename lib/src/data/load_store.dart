@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
+
+import 'package:image/image.dart' as img;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -94,6 +97,80 @@ Future<bool> exportPacks(List<StickerPack> packsToExport, {bool includeEditData 
   return true;
 }
 
+enum StickerFormat {
+  png('png', 'PNG'),
+  webp('webp', 'WebP'),
+  jpeg('jpg', 'JPEG'),
+  gif('gif', 'GIF');
+
+  final String extension;
+  final String label;
+
+  const StickerFormat(this.extension, this.label);
+}
+
+Future<Uint8List> _convertImageBytes(Uint8List sourceBytes, StickerFormat format) async {
+  return await Isolate.run(() {
+    if (format == StickerFormat.webp &&
+        sourceBytes.length >= 12 &&
+        String.fromCharCodes(sourceBytes.sublist(0, 4)) == 'RIFF' &&
+        String.fromCharCodes(sourceBytes.sublist(8, 12)) == 'WEBP') {
+      return sourceBytes;
+    }
+    final image = img.decodeImage(sourceBytes);
+    if (image == null) throw Exception("Failed to decode image");
+    switch (format) {
+      case StickerFormat.webp:
+        return Uint8List.fromList(img.encodeWebP(image));
+      case StickerFormat.png:
+        return Uint8List.fromList(img.encodePng(image));
+      case StickerFormat.jpeg:
+        final whiteCanvas = img.Image(width: image.width, height: image.height, numChannels: 3);
+        img.fill(whiteCanvas, color: img.ColorRgb8(255, 255, 255));
+        img.compositeImage(whiteCanvas, image);
+        return Uint8List.fromList(img.encodeJpg(whiteCanvas, quality: 90));
+      case StickerFormat.gif:
+        return Uint8List.fromList(img.encodeGif(image));
+    }
+  });
+}
+
+Future<bool> exportStickers(
+  List<Sticker> stickers, {
+  required StickerFormat format,
+  String? packTitle,
+}) async {
+  if (stickers.isEmpty) return false;
+  final Directory exportDir = Directory("$exportCacheDir/${uid()}");
+  await exportDir.create(recursive: true);
+
+  final List<XFile> files = [];
+  final cleanTitle = (packTitle != null && packTitle.isNotEmpty)
+      ? packTitle.replaceAll(RegExp(r"[^ \-_!&a-zA-Z0-9]"), "_")
+      : "sticker";
+
+  for (int i = 0; i < stickers.length; i++) {
+    final sticker = stickers[i];
+    final sourceFile = File(sticker.source);
+    if (!await sourceFile.exists()) continue;
+
+    final sourceBytes = await sourceFile.readAsBytes();
+    final convertedBytes = await _convertImageBytes(sourceBytes, format);
+
+    final fileName = stickers.length == 1
+        ? "${cleanTitle}_sticker.${format.extension}"
+        : "${cleanTitle}_sticker_${i + 1}.${format.extension}";
+
+    final targetFile = File("${exportDir.path}/$fileName");
+    await targetFile.writeAsBytes(convertedBytes);
+    files.add(XFile(targetFile.path));
+  }
+
+  if (files.isEmpty) return false;
+  await SharePlus.instance.share(ShareParams(files: files));
+  return true;
+}
+
 Future<void> deleteStickerFiles(Sticker sticker) async {
   try {
     final file = File(sticker.source);
@@ -134,9 +211,6 @@ Future<void> importPack(File f) async {
   await unzipDir.create(recursive: true);
   await ZipFile.extractToDirectory(zipFile: f, destinationDir: unzipDir);
   debugPrint("Unzip t=${sw.elapsedMilliseconds}ms");
-  final unzipPath = unzipDir.path.endsWith("/") || unzipDir.path.endsWith(r"\")
-      ? unzipDir.path
-      : "${unzipDir.path}/";
 
   List<StickerPack> packsToAdd = [];
 
@@ -144,8 +218,8 @@ Future<void> importPack(File f) async {
     case "wastickers":
       final dirContents = unzipDir.listSync();
       final pack = StickerPack(
-        (await File("${unzipPath}title.txt").readAsString()).replaceAll("\n", ""),
-        (await File("${unzipPath}author.txt").readAsString()).replaceAll("\n", ""),
+        (await File("${unzipDir.path}title.txt").readAsString()).replaceAll("\n", ""),
+        (await File("${unzipDir.path}author.txt").readAsString()).replaceAll("\n", ""),
         uid(),
         dirContents
             .map((entry) => entry.path)
@@ -190,16 +264,16 @@ Future<void> importPack(File f) async {
       break;
     default:
       //TODO support stickify's backup file format
-      File jsonFile = File("${unzipPath}pack.json");
+      File jsonFile = File("${unzipDir.path}pack.json");
       final pack = StickerPack.fromJson(jsonDecode(await jsonFile.readAsString()));
       for (var sticker in pack.stickers) {
-        sticker.source = unzipPath + sticker.source;
+        sticker.source = unzipDir.path + sticker.source;
         if (sticker.editorData != null) {
-          sticker.editorData = unzipPath + sticker.editorData!;
+          sticker.editorData = unzipDir.path + sticker.editorData!;
         }
       }
       if (pack.trayIcon != null) {
-        pack.trayIcon = unzipPath + pack.trayIcon!;
+        pack.trayIcon = unzipDir.path + pack.trayIcon!;
       }
       packsToAdd.add(pack);
   }
