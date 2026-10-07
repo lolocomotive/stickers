@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/settings/settings.dart';
 import 'package:stickers/src/video/gif_transcoder.dart';
 import 'package:stickers/src/dialogs/delete_confirm_dialog.dart';
 import 'package:stickers/src/dialogs/edit_pack_dialog.dart';
@@ -508,56 +509,62 @@ class StickerPackPageState extends State<StickerPackPage> {
     );
   }
 
+  Future<VideoInputMethod?> _askVideoInputMethod() {
+    return showModalBottomSheet<VideoInputMethod>(
+      context: context,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Text(
+                  AppLocalizations.of(context)!.addAnimatedSticker,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.video_library),
+                title: Text(AppLocalizations.of(context)!.videoGallery),
+                subtitle: Text(AppLocalizations.of(context)!.videoGallerySubtitle),
+                onTap: () => Navigator.of(context).pop(VideoInputMethod.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.folder_open),
+                title: Text(AppLocalizations.of(context)!.videoFile),
+                subtitle: Text(AppLocalizations.of(context)!.videoFileSubtitle),
+                onTap: () => Navigator.of(context).pop(VideoInputMethod.filePicker),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _createSticker() async {
     if (_importing || widget.pack.stickers.length >= 30) return;
     setState(() => _importing = true);
     try {
       final ImagePicker picker = ImagePicker();
       if (widget.pack.animated) {
-        final method = await showModalBottomSheet<_AnimatedInputMethod>(
-          context: context,
-          showDragHandle: true,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          builder: (BuildContext context) {
-            return SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    child: Text(
-                      AppLocalizations.of(context)!.addAnimatedSticker,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.video_library),
-                    title: Text(AppLocalizations.of(context)!.videoGallery),
-                    subtitle: Text(AppLocalizations.of(context)!.videoGallerySubtitle),
-                    onTap: () => Navigator.of(context).pop(_AnimatedInputMethod.video),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.gif_box),
-                    title: Text(AppLocalizations.of(context)!.gifFile),
-                    subtitle: Text(AppLocalizations.of(context)!.gifFileSubtitle),
-                    onTap: () => Navigator.of(context).pop(_AnimatedInputMethod.gif),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            );
-          },
-        );
+        final method = settings.videoInputMethod.value == VideoInputMethod.ask
+            ? await _askVideoInputMethod()
+            : settings.videoInputMethod.value;
 
         if (method == null || !mounted) return;
-        final selectGifTitle = AppLocalizations.of(context)!.selectGif;
+        final selectVideoTitle = AppLocalizations.of(context)!.selectVideo;
 
         final String selectedPath;
         final bool isValid;
-        if (method == _AnimatedInputMethod.video) {
+        if (method == VideoInputMethod.gallery) {
           final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
           if (video == null) return;
           selectedPath = video.path;
@@ -565,13 +572,13 @@ class StickerPackPageState extends State<StickerPackPage> {
         } else {
           final FilePickerResult? result = await FilePicker.pickFiles(
             type: FileType.custom,
-            allowedExtensions: const ['gif'],
-            dialogTitle: selectGifTitle,
+            allowedExtensions: ['gif', ...supportedVideoExtensions],
+            dialogTitle: selectVideoTitle,
           );
           final path = result?.files.singleOrNull?.path;
           if (path == null) return;
           selectedPath = path;
-          isValid = GifTranscoder.isGifFile(selectedPath);
+          isValid = isSupportedVideo(selectedPath) || GifTranscoder.isGifFile(selectedPath);
         }
 
         if (!mounted) return;
@@ -645,9 +652,4 @@ class StickerPackPageState extends State<StickerPackPage> {
       if (mounted) setState(() => _importing = false);
     }
   }
-}
-
-enum _AnimatedInputMethod {
-  video,
-  gif,
 }

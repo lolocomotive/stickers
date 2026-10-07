@@ -30,6 +30,7 @@ class SettingsPage extends StatelessWidget {
         settings.locale,
         settings.defaultStretch,
         settings.defaultAspectRatio,
+        settings.videoInputMethod,
         settings.quickMode,
         settings.defaultTitle,
         settings.defaultAuthor,
@@ -89,6 +90,16 @@ class SettingsPage extends StatelessWidget {
             items: {
               null: AppLocalizations.of(context)!.freeAspectRatio,
               for (final ratio in CropAspectRatioSelector.ratios) ratio.value: ratio.label,
+            },
+          ),
+          _DropdownTile(
+            icon: Icons.video_library,
+            title: AppLocalizations.of(context)!.videoInputMethod,
+            setting: settings.videoInputMethod,
+            items: {
+              VideoInputMethod.ask: AppLocalizations.of(context)!.askEveryTime,
+              VideoInputMethod.gallery: AppLocalizations.of(context)!.gallery,
+              VideoInputMethod.filePicker: AppLocalizations.of(context)!.filePicker,
             },
           ),
           ListTile(

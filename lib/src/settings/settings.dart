@@ -19,6 +19,8 @@ class Setting<T> extends ValueNotifier<T> {
   }
 }
 
+enum VideoInputMethod { ask, gallery, filePicker }
+
 /// All user settings, backed by SharedPreferences.
 ///
 /// To add a setting, declare one more field below.
@@ -46,6 +48,9 @@ class Settings {
   /// Initial state of the crop pages. A null aspect ratio means free cropping.
   late final defaultStretch = _bool("defaultStretch", false);
   late final defaultAspectRatio = _nullableDouble("defaultAspectRatio");
+
+  /// Where videos for animated stickers are picked from.
+  late final videoInputMethod = _enum("videoInputMethod", VideoInputMethod.values, VideoInputMethod.ask);
 
   static const supportedLocales = ["en", "fr", "de", "ru", "pt"];
 
