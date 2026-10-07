@@ -13,7 +13,7 @@ class CropAspectRatioSelector extends StatelessWidget {
   final double? aspectRatio;
   final ValueChanged<double?> onChanged;
 
-  static const _ratios = [
+  static const ratios = [
     (value: 16 / 9, icon: Icons.crop_16_9, label: "16:9", portrait: false),
     (value: 3 / 2, icon: Icons.crop_3_2, label: "3:2", portrait: false),
     (value: 1.0, icon: Icons.crop_din, label: "1:1", portrait: false),
@@ -25,13 +25,13 @@ class CropAspectRatioSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final selected = aspectRatio == null
         ? null
-        : _ratios.map((r) => r.value).where((r) => (r - aspectRatio!).abs() < 0.01).firstOrNull;
+        : ratios.map((r) => r.value).where((r) => (r - aspectRatio!).abs() < 0.01).firstOrNull;
     return SegmentedButton<double>(
       showSelectedIcon: false,
       emptySelectionAllowed: true,
       multiSelectionEnabled: false,
       segments: [
-        for (final ratio in _ratios)
+        for (final ratio in ratios)
           ButtonSegment(
             value: ratio.value,
             icon: Column(

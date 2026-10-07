@@ -40,6 +40,10 @@ class Settings {
   late final exportIncludeEditData = _bool("exportIncludeEditData", true);
   late final exportStickerFormat = _enum("exportStickerFormat", StickerFormat.values, StickerFormat.png);
 
+  /// Initial state of the crop pages. A null aspect ratio means free cropping.
+  late final defaultStretch = _bool("defaultStretch", false);
+  late final defaultAspectRatio = _nullableDouble("defaultAspectRatio");
+
   static const supportedLocales = ["en", "fr", "de", "ru", "pt"];
 
   static String _systemLocale() =>
@@ -50,6 +54,9 @@ class Settings {
 
   Setting<String> _string(String key, String fallback) =>
       Setting(_prefs.getString(key) ?? fallback, (v) => _prefs.setString(key, v));
+
+  Setting<double?> _nullableDouble(String key) =>
+      Setting(_prefs.getDouble(key), (v) => v == null ? _prefs.remove(key) : _prefs.setDouble(key, v));
 
   Setting<E> _enum<E extends Enum>(String key, List<E> values, E fallback) =>
       Setting(values.asNameMap()[_prefs.getString(key)] ?? fallback, (v) => _prefs.setString(key, v.name));

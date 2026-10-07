@@ -7,6 +7,7 @@ import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
+import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/widgets/crop_aspect_ratio_selector.dart';
 import 'package:stickers/src/util.dart';
@@ -72,8 +73,8 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  double? _aspectRatio;
-  bool _stretch = false;
+  double? _aspectRatio = settings.defaultAspectRatio.value;
+  bool _stretch = settings.defaultStretch.value;
 
   @override
   Widget build(BuildContext context) {

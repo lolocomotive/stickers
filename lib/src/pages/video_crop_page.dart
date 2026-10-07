@@ -50,8 +50,8 @@ class _VideoCropPageState extends State<VideoCropPage> {
   RangeValues _range = const RangeValues(0, 1);
   Duration _seekTarget = Duration.zero;
 
-  double? _aspectRatio;
-  bool _stretch = false;
+  double? _aspectRatio = settings.defaultAspectRatio.value;
+  bool _stretch = settings.defaultStretch.value;
   double _speed = 1.0;
   int _rotationDegrees = 0;
   Rect? _cropRect;

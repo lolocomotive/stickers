@@ -6,6 +6,7 @@ import 'package:restart_app/restart_app.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/dialogs/edit_quickmode_defaults_dialog.dart';
 import 'package:stickers/src/globals.dart';
+import 'package:stickers/src/widgets/crop_aspect_ratio_selector.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'settings.dart';
@@ -25,6 +26,8 @@ class SettingsPage extends StatelessWidget {
       listenable: Listenable.merge([
         settings.themeMode,
         settings.locale,
+        settings.defaultStretch,
+        settings.defaultAspectRatio,
         settings.quickMode,
         settings.defaultTitle,
         settings.defaultAuthor,
@@ -60,6 +63,24 @@ class SettingsPage extends StatelessWidget {
               "de": "Deutsch",
               "ru": "Русский",
               "pt": "Português",
+            },
+          ),
+          _DropdownTile(
+            icon: Icons.fit_screen,
+            title: AppLocalizations.of(context)!.defaultFitMode,
+            setting: settings.defaultStretch,
+            items: {
+              false: AppLocalizations.of(context)!.fit,
+              true: AppLocalizations.of(context)!.stretch,
+            },
+          ),
+          _DropdownTile(
+            icon: Icons.aspect_ratio,
+            title: AppLocalizations.of(context)!.defaultAspectRatio,
+            setting: settings.defaultAspectRatio,
+            items: {
+              null: AppLocalizations.of(context)!.freeAspectRatio,
+              for (final ratio in CropAspectRatioSelector.ratios) ratio.value: ratio.label,
             },
           ),
           ListTile(
@@ -179,6 +200,7 @@ class _DropdownTile<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final values = items.keys.toList();
     return ListTile(
       leading: Icon(icon),
       title: Row(
@@ -192,23 +214,23 @@ class _DropdownTile<T> extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 color: ElevationOverlay.applySurfaceTint(colors.surface, colors.primary, 2),
               ),
-              child: DropdownButton<T>(
+              child: DropdownButton<int>(
                 borderRadius: BorderRadius.circular(16),
                 dropdownColor: ElevationOverlay.applySurfaceTint(colors.surface, colors.primary, 4),
                 underline: Container(),
-                value: setting.value,
+                value: values.indexOf(setting.value),
                 items: [
-                  for (final item in items.entries)
+                  for (final (i, label) in items.values.indexed)
                     DropdownMenuItem(
-                      value: item.key,
+                      value: i,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Text(item.value),
+                        child: Text(label),
                       ),
                     ),
                 ],
-                onChanged: (value) {
-                  if (value != null) setting.value = value;
+                onChanged: (i) {
+                  if (i != null) setting.value = values[i];
                 },
               ),
             ),
