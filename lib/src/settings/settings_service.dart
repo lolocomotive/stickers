@@ -43,6 +43,8 @@ class SettingsService {
   String _getLocale() {
     if (Platform.localeName.startsWith("de")) return "de";
     if (Platform.localeName.startsWith("fr")) return "fr";
+    if (Platform.localeName.startsWith("ru")) return "ru";
+    if (Platform.localeName.startsWith("pt")) return "pt";
     return "en";
   }
 

@@ -108,6 +108,7 @@ class StickersAppState extends State<StickersApp> {
             Locale('de', ''),
             Locale('fr', ''),
             Locale('ru', ''),
+            Locale('pt', ''),
           ],
           locale: _locale,
 
