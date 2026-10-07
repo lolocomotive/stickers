@@ -453,7 +453,7 @@ class _EditPageState extends State<EditPage> {
                         : () async {
                             await addSticker(context, replace: true);
                           },
-                    child: Text("Replace"),
+                    child: Text(AppLocalizations.of(context)!.replace),
                   ),
                 if (widget.editorData != null)
                   SizedBox(

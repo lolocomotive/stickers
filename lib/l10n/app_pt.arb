@@ -131,6 +131,7 @@
   "couldntLoadMedia": "Não foi possível carregar a mídia",
   "couldntLoadVideo": "Não foi possível carregar o vídeo",
   "trimVideo": "Cortar vídeo",
+  "replace": "Substituir",
   "rotateLeft": "Girar para a esquerda",
   "rotateRight": "Girar para a direita",
   "fit": "Ajustar",

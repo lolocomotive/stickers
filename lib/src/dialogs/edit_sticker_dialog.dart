@@ -96,7 +96,7 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                               );
                             }
                           },
-                          child: Text("Edit"),
+                          child: Text(AppLocalizations.of(context)!.edit),
                         ),
                       ),
                     ),

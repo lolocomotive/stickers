@@ -186,8 +186,16 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
                           });
                         },
                         segments: [
-                          ButtonSegment(value: false, icon: Icon(Icons.fit_screen), label: Text("Fit")),
-                          ButtonSegment(value: true, icon: Icon(Icons.fullscreen), label: Text("Stretch")),
+                          ButtonSegment(
+                            value: false,
+                            icon: Icon(Icons.fit_screen),
+                            label: Text(AppLocalizations.of(context)!.fit),
+                          ),
+                          ButtonSegment(
+                            value: true,
+                            icon: Icon(Icons.fullscreen),
+                            label: Text(AppLocalizations.of(context)!.stretch),
+                          ),
                         ],
                         selected: {_stretch},
                       ),

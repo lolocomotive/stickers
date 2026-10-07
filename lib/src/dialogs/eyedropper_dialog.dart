@@ -185,7 +185,7 @@ class _EyedropperDialogState extends State<EyedropperDialog> {
             if (asyncSnapshot.hasError) {
               return Column(
                 children: [
-                  Text("Error"),
+                  Text(AppLocalizations.of(context)!.error),
                   Text(asyncSnapshot.error!.toString()),
                 ],
               );

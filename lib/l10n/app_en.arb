@@ -172,6 +172,7 @@
   "couldntLoadMedia": "Couldn't load media",
   "couldntLoadVideo": "Couldn't load video",
   "trimVideo": "Trim video",
+  "replace": "Replace",
   "cropGif": "Crop GIF",
   "rotateLeft": "Rotate left",
   "rotateRight": "Rotate right",

@@ -131,6 +131,7 @@
     "couldntLoadMedia": "Medium konnte nicht geladen werden",
     "couldntLoadVideo":  "Video konnte nicht geladen werden",
     "trimVideo": "Video zuschneiden",
+    "replace": "Ersetzen",
     "cropGif": "GIF zuschneiden",
     "rotateLeft": "Nach links drehen",
     "rotateRight": "Nach rechts drehen",

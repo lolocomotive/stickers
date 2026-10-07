@@ -131,6 +131,7 @@
   "couldntLoadMedia": "Impossible de charger le média",
   "couldntLoadVideo": "Impossible de charger la vidéo",
   "trimVideo": "Couper la vidéo",
+  "replace": "Remplacer",
   "cropGif": "Recadrer le GIF",
   "rotateLeft": "Pivoter à gauche",
   "rotateRight": "Pivoter à droite",

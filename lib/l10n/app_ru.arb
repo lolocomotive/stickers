@@ -134,6 +134,7 @@
   "couldntLoadMedia": "Ошибка загрузки медиа",
   "couldntLoadVideo": "Ошибка загрузки видео",
   "trimVideo": "Обрезать видео",
+  "replace": "Заменить",
   "cropGif": "Обрезать GIF",
   "rotateLeft": "Повернуть влево",
   "rotateRight": "Повернуть вправо",
