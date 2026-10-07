@@ -11,6 +11,7 @@ import 'package:image_editor/image_editor.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:stickers/src/data/sticker.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/util.dart';
 import 'package:stickers/src/widgets/image_layer.dart';
@@ -22,58 +23,207 @@ Future<void> savePacks(List<StickerPack> packs) async {
   await output.writeAsString(jsonEncode(packs.map((pack) => pack.toJson()).toList()));
 }
 
+/// Name of a file, without the directories, for paths from any platform.
+String _baseName(String path) => path.split(RegExp(r"[/\\]")).last;
+
+/// Extension of a file name, or an empty string.
+String _extension(String path) {
+  final name = _baseName(path);
+  final dot = name.lastIndexOf(".");
+  return dot <= 0 ? "" : name.substring(dot + 1);
+}
+
+/// Directory next to an editor data file holding its background and assets.
+String _editorAssetsPath(String editorDataPath) => editorDataPath.replaceAll(RegExp(r"\.json$"), "");
+
+/// Finds a file referenced by editor data.
+///
+/// Paths are tried as absolute when [absoluteAllowed] (data from this device),
+/// then relative to [root] (data from an archive), then by name in
+/// [assetsDir]. When nothing matches, a file in [assetsDir] whose name starts
+/// with [fallbackPrefix] is used, which recovers backgrounds saved by older
+/// exports under the wrong extension.
+Future<File?> _findEditorFile(
+  Object? stored, {
+  required Directory assetsDir,
+  String? root,
+  bool absoluteAllowed = false,
+  String? fallbackPrefix,
+}) async {
+  if (stored is String && stored.isNotEmpty) {
+    final isAbsolute = stored.startsWith("/") || stored.contains(":\\") || stored.contains(":/");
+    final candidates = [
+      if (isAbsolute && absoluteAllowed) File(stored),
+      if (!isAbsolute && root != null) File("$root/$stored"),
+      File("${assetsDir.path}/${_baseName(stored)}"),
+    ];
+    for (final candidate in candidates) {
+      if (await candidate.exists()) return candidate;
+    }
+  }
+  if (fallbackPrefix != null && await assetsDir.exists()) {
+    await for (final entry in assetsDir.list()) {
+      if (entry is File && _baseName(entry.path).startsWith(fallbackPrefix)) return entry;
+    }
+  }
+  return null;
+}
+
+/// Copies the editor data of a sticker into [targetBase].json and its files
+/// into the [targetBase] directory, rewriting the paths it contains with
+/// [pathFor].
+///
+/// Returns the rewritten data, or null when the data or its background can't
+/// be found or parsed. The sticker is then kept without editor data, and can
+/// still be edited using its image as background.
+Future<Map<String, dynamic>?> _copyEditorData(
+  String editorDataPath,
+  String targetBase, {
+  required String Function(String fileName) pathFor,
+  String? root,
+  bool absoluteAllowed = false,
+}) async {
+  final targetDir = Directory(targetBase);
+  try {
+    final data = jsonDecode(await File(editorDataPath).readAsString());
+    if (data is! Map<String, dynamic> || data["layers"] is! List) return null;
+    // Validates the layers, which would otherwise only fail when opening the editor.
+    EditorData.fromJson(data, GlobalKey());
+
+    final assetsDir = Directory(_editorAssetsPath(editorDataPath));
+    final background = await _findEditorFile(
+      data["background"],
+      assetsDir: assetsDir,
+      root: root,
+      absoluteAllowed: absoluteAllowed,
+      fallbackPrefix: "background.",
+    );
+    if (background == null) {
+      debugPrint("Background of $editorDataPath not found, dropping editor data");
+      return null;
+    }
+
+    await targetDir.create(recursive: true);
+    final backgroundName = "background.${_extension(background.path)}";
+    await background.copy("${targetDir.path}/$backgroundName");
+    data["background"] = pathFor(backgroundName);
+
+    final layers = data["layers"] as List;
+    for (var i = 0; i < layers.length; i++) {
+      final layer = layers[i];
+      if (layer is! Map || layer["source"] is! String) continue;
+      final source = await _findEditorFile(
+        layer["source"],
+        assetsDir: assetsDir,
+        root: root,
+        absoluteAllowed: absoluteAllowed,
+      );
+      if (source == null) throw FileSystemException("Layer file not found", "${layer["source"]}");
+      final name = "$i.${_extension(source.path)}";
+      await source.copy("${targetDir.path}/$name");
+      layer["source"] = pathFor(name);
+    }
+
+    await File("$targetBase.json").writeAsString(jsonEncode(data));
+    return data;
+  } catch (e) {
+    debugPrint("Couldn't copy editor data $editorDataPath: $e");
+    try {
+      if (await targetDir.exists()) await targetDir.delete(recursive: true);
+    } catch (_) {}
+    return null;
+  }
+}
+
+/// Font families used by the text layers of editor data.
+Iterable<String> _fontsUsed(Map<String, dynamic> editorData) => (editorData["layers"] as List)
+    .whereType<Map>()
+    .where((layer) => layer["type"] == "text" && layer["fontName"] is String)
+    .map((layer) => layer["fontName"] as String);
+
 Future<File> createPackZip(StickerPack pack, Directory exportDir, {bool includeEditData = true}) async {
   Directory packDir = Directory("${exportDir.path}/${uid()}/");
   await packDir.create(recursive: true);
-  File jsonFile = File("${packDir.path}/pack.json");
-  Map<String, dynamic> exportData = pack.toJson();
-  //TODO Don't hardcode extensions
-  for (var i = 0; i < pack.stickers.length; i++) {
-    final stickerFile = File(pack.stickers[i].source);
-    if (await stickerFile.exists()) {
+  try {
+    Map<String, dynamic> exportData = pack.toJson();
+    final exportedStickers = <Map<String, dynamic>>[];
+    final fonts = <String>{};
+    for (final sticker in pack.stickers) {
+      final stickerFile = File(sticker.source);
+      if (!await stickerFile.exists()) {
+        debugPrint("Skipping missing sticker ${sticker.source}");
+        continue;
+      }
+      final i = exportedStickers.length;
       await stickerFile.copy("${packDir.path}$i.webp");
-    } else if (pack.stickers[i].editorData != null) {
-      final fallback = File("${pack.stickers[i].editorData!.replaceAll(RegExp(r"\.json$"), "")}/background.webp");
-      if (await fallback.exists()) {
-        await fallback.copy("${packDir.path}$i.webp");
-      }
-    }
-    exportData["stickers"][i]["source"] = "$i.webp";
-    if (includeEditData && exportData["stickers"][i]["editorData"] != null) {
-      final edFile = File(pack.stickers[i].editorData!);
-      if (await edFile.exists()) {
-        exportData["stickers"][i]["editorData"] = "$i.json";
-        final data = jsonDecode(await edFile.readAsString());
-        data["background"] = "$i/background.webp";
-        await File("${packDir.path}$i.json").writeAsString(jsonEncode(data));
-        final edDir = Directory(pack.stickers[i].editorData!.replaceAll(RegExp(r"\.json$"), ""));
-        if (await edDir.exists()) {
-          await edDir.copy("${packDir.path}$i");
+      final stickerJson = sticker.toJson()
+        ..["source"] = "$i.webp"
+        ..["editorData"] = null;
+      if (includeEditData && sticker.editorData != null) {
+        final data = await _copyEditorData(
+          sticker.editorData!,
+          "${packDir.path}$i",
+          pathFor: (name) => "$i/$name",
+          absoluteAllowed: true,
+        );
+        if (data != null) {
+          stickerJson["editorData"] = "$i.json";
+          fonts.addAll(_fontsUsed(data));
         }
-      } else {
-        exportData["stickers"][i]["editorData"] = null;
       }
-    } else {
-      exportData["stickers"][i]["editorData"] = null;
+      exportedStickers.add(stickerJson);
     }
-  }
-  if (pack.trayIcon != null) {
-    final trayFile = File(pack.trayIcon!);
-    if (await trayFile.exists()) {
-      await trayFile.copy("${packDir.path}tray.png");
-      exportData["trayIcon"] = "tray.png";
-    }
-  }
-  await jsonFile.writeAsString(jsonEncode(exportData));
+    exportData["stickers"] = exportedStickers;
+    exportData["fonts"] = await _exportFonts(fonts, packDir);
 
-  final sanitizedTitle = pack.title.replaceAll(RegExp(r"[^ \-_!&a-zA-Z0-9]"), "_");
-  File zipFile = File("${exportDir.path}/$sanitizedTitle.zip");
-  if (await zipFile.exists()) {
-    zipFile = File("${exportDir.path}/${sanitizedTitle}_${uid().substring(0, 4)}.zip");
+    exportData["trayIcon"] = null;
+    if (pack.trayIcon != null) {
+      final trayFile = File(pack.trayIcon!);
+      if (await trayFile.exists()) {
+        await trayFile.copy("${packDir.path}tray.png");
+        exportData["trayIcon"] = "tray.png";
+      }
+    }
+    await File("${packDir.path}pack.json").writeAsString(jsonEncode(exportData));
+
+    final sanitizedTitle = pack.title.replaceAll(RegExp(r"[^ \-_!&a-zA-Z0-9]"), "_");
+    File zipFile = File("${exportDir.path}/$sanitizedTitle.zip");
+    if (await zipFile.exists()) {
+      zipFile = File("${exportDir.path}/${sanitizedTitle}_${uid().substring(0, 4)}.zip");
+    }
+    await ZipFile.createFromDirectory(sourceDir: packDir, zipFile: zipFile);
+    return zipFile;
+  } finally {
+    await packDir.delete(recursive: true);
   }
-  await ZipFile.createFromDirectory(sourceDir: packDir, zipFile: zipFile);
-  await packDir.delete(recursive: true);
-  return zipFile;
+}
+
+/// Copies the downloaded and custom fonts among [families] into the archive,
+/// so text layers keep their font on devices that don't have it. Bundled fonts
+/// ship with the app and are skipped.
+Future<List<Map<String, dynamic>>> _exportFonts(Set<String> families, Directory packDir) async {
+  final exported = <Map<String, dynamic>>[];
+  for (final family in families) {
+    try {
+      final entry = FontsRegistry.get(family);
+      if (entry == null || entry.type == FontType.bundled || entry.fontFile == null) continue;
+      final fontFile = File(entry.fontFile!);
+      if (!await fontFile.exists()) continue;
+      final name = "fonts/${exported.length}.${_extension(fontFile.path)}";
+      await Directory("${packDir.path}fonts").create();
+      await fontFile.copy("${packDir.path}$name");
+      exported.add({
+        "family": family,
+        "file": name,
+        "type": entry.type.name,
+        "sizeMultiplier": entry.sizeMultiplier,
+        "display": entry.display,
+      });
+    } catch (e) {
+      debugPrint("Couldn't export font $family: $e");
+    }
+  }
+  return exported;
 }
 
 Future<bool> exportPack(StickerPack pack, {bool includeEditData = true}) async {
@@ -203,143 +353,177 @@ Future<void> deletePackDirectory(StickerPack pack) async {
   }
 }
 
+/// Makes [id] unique among the packs and the pack directories, which may
+/// remain from a pack whose deletion failed.
+String _uniquePackId(String id) {
+  while (packs.any((p) => p.id == id) || Directory("$packsDir/$id").existsSync()) {
+    id = "${id}_";
+  }
+  return id;
+}
+
 Future<void> importPack(File f) async {
   //TODO show progress
   Stopwatch sw = Stopwatch()..start();
   Directory importDir = Directory(mediaCacheDir);
   Directory unzipDir = Directory("${importDir.path}/${uid()}/");
   await unzipDir.create(recursive: true);
-  await ZipFile.extractToDirectory(zipFile: f, destinationDir: unzipDir);
-  debugPrint("Unzip t=${sw.elapsedMilliseconds}ms");
-
-  List<StickerPack> packsToAdd = [];
-
-  switch (f.path.split(".").last.toLowerCase()) {
-    case "wastickers":
-      final dirContents = unzipDir.listSync();
-      final pack = StickerPack(
-        (await File("${unzipDir.path}title.txt").readAsString()).replaceAll("\n", ""),
-        (await File("${unzipDir.path}author.txt").readAsString()).replaceAll("\n", ""),
-        uid(),
-        dirContents
-            .map((entry) => entry.path)
-            .where((path) => path.toLowerCase().endsWith(".webp"))
-            .map((path) => Sticker(path, ["❤"], null))
-            .toList(),
-        "1000",
-        false, // It's not possible to directly export animated packs from that app.
-        trayIcon: dirContents.where((entry) => entry.path.toLowerCase().endsWith(".png")).firstOrNull?.path,
-      );
-      packsToAdd.add(pack);
-      break;
-    case "stickify":
-      final dirs = unzipDir.listSync().whereType<Directory>();
-      for (final dir in dirs) {
-        final json = jsonDecode(File("${dir.path}/contents.json").readAsStringSync());
-        for (final packJson in json["sticker_packs"]) {
-          final pack = StickerPack(
-            packJson["name"],
-            packJson["publisher"],
-            packJson["identifier"],
-            (packJson["stickers"] as List)
-                .map(
-                  (sticker) => Sticker(
-                    "${dir.path}/${sticker["image_file"]}",
-                    (sticker["emojis"] as List).isEmpty
-                        ? ["❤"]
-                        : (sticker["emojis"] as List).map((e) => e.toString()).toList(),
-                    null,
-                  ),
-                )
-                .toList(),
-            packJson["image_data_version"],
-            packJson["animated_sticker_pack"],
-            publisherWebsite: packJson["publisher_website"],
-            licenseAgreementWebsite: packJson["license_agreement_website"],
-            privacyPolicyWebsite: packJson["privacy_policy_website"],
-          );
-          packsToAdd.add(pack);
-        }
-      }
-      break;
-    default:
-      //TODO support stickify's backup file format
-      File jsonFile = File("${unzipDir.path}pack.json");
-      final pack = StickerPack.fromJson(jsonDecode(await jsonFile.readAsString()));
-      for (var sticker in pack.stickers) {
-        sticker.source = unzipDir.path + sticker.source;
-        if (sticker.editorData != null) {
-          sticker.editorData = unzipDir.path + sticker.editorData!;
-        }
-      }
-      if (pack.trayIcon != null) {
-        pack.trayIcon = unzipDir.path + pack.trayIcon!;
-      }
-      packsToAdd.add(pack);
-  }
-  debugPrint("Parse t=${sw.elapsedMilliseconds}ms");
-
-  for (final pack in packsToAdd) {
-    while (packs.where((p) => p.id == pack.id).isNotEmpty) {
-      pack.id = "${pack.id}_";
-    }
-    await Directory("$packsDir/${pack.id}").create(recursive: true);
-
-    for (var i = 0; i < pack.stickers.length; i++) {
-      await File(pack.stickers[i].source).copy("$packsDir/${pack.id}/$i.webp");
-      pack.stickers[i].source = File("$packsDir/${pack.id}/$i.webp").path;
-      if (pack.stickers[i].editorData != null) {
-        final edFile = File(pack.stickers[i].editorData!);
-        if (await edFile.exists()) {
-          final targetJson = "$packsDir/${pack.id}/$i.json";
-          try {
-            final data = jsonDecode(await edFile.readAsString());
-            if (data is Map<String, dynamic> && data["background"] is String) {
-              final bgRel = data["background"] as String;
-              data["background"] = "$packsDir/${pack.id}/$bgRel";
-              if (data["layers"] is List) {
-                for (var layer in data["layers"]) {
-                  if (layer is Map && layer["source"] is String) {
-                    final src = layer["source"] as String;
-                    if (!src.startsWith("/") && !src.contains(r":\")) {
-                      layer["source"] = "$packsDir/${pack.id}/$src";
-                    }
-                  }
-                }
-              }
-              await File(targetJson).writeAsString(jsonEncode(data));
-            } else {
-              await edFile.copy(targetJson);
-            }
-          } catch (_) {
-            await edFile.copy(targetJson);
-          }
-          pack.stickers[i].editorData = targetJson;
-          final edDir = Directory(edFile.path.replaceAll(RegExp(r"\.json$"), ""));
-          if (await edDir.exists()) {
-            await edDir.copy("$packsDir/${pack.id}/$i");
-          }
-        } else {
-          pack.stickers[i].editorData = null;
-        }
-      }
-    }
-    if (pack.trayIcon != null) {
-      await File("${pack.trayIcon}").copy("$packsDir/${pack.id}/tray.webp");
-      pack.trayIcon = File("$packsDir/${pack.id}/tray.webp").path;
-    }
-    debugPrint("[${pack.id}] Copy t=${sw.elapsedMilliseconds}ms");
-    packs.add(pack);
-  }
-
-  // Clean up unzipped temporary folder
   try {
-    await unzipDir.delete(recursive: true);
-  } catch (e) {
-    debugPrint("Failed to delete unzipDir: $e");
-  }
+    await ZipFile.extractToDirectory(zipFile: f, destinationDir: unzipDir);
+    debugPrint("Unzip t=${sw.elapsedMilliseconds}ms");
 
-  savePacks(packs);
+    List<StickerPack> packsToAdd = [];
+    // Directory that relative editor data paths start from.
+    String? root;
+
+    switch (f.path.split(".").last.toLowerCase()) {
+      case "wastickers":
+        final dirContents = unzipDir.listSync();
+        final pack = StickerPack(
+          (await File("${unzipDir.path}title.txt").readAsString()).replaceAll("\n", ""),
+          (await File("${unzipDir.path}author.txt").readAsString()).replaceAll("\n", ""),
+          uid(),
+          dirContents
+              .map((entry) => entry.path)
+              .where((path) => path.toLowerCase().endsWith(".webp"))
+              .map((path) => Sticker(path, ["❤"], null))
+              .toList(),
+          "1000",
+          false, // It's not possible to directly export animated packs from that app.
+          trayIcon: dirContents.where((entry) => entry.path.toLowerCase().endsWith(".png")).firstOrNull?.path,
+        );
+        packsToAdd.add(pack);
+        break;
+      case "stickify":
+        final dirs = unzipDir.listSync().whereType<Directory>();
+        for (final dir in dirs) {
+          final json = jsonDecode(File("${dir.path}/contents.json").readAsStringSync());
+          for (final packJson in json["sticker_packs"]) {
+            final pack = StickerPack(
+              packJson["name"],
+              packJson["publisher"],
+              packJson["identifier"],
+              (packJson["stickers"] as List)
+                  .map(
+                    (sticker) => Sticker(
+                      "${dir.path}/${sticker["image_file"]}",
+                      (sticker["emojis"] as List).isEmpty
+                          ? ["❤"]
+                          : (sticker["emojis"] as List).map((e) => e.toString()).toList(),
+                      null,
+                    ),
+                  )
+                  .toList(),
+              "${packJson["image_data_version"]}",
+              packJson["animated_sticker_pack"] ?? false,
+              publisherWebsite: packJson["publisher_website"],
+              licenseAgreementWebsite: packJson["license_agreement_website"],
+              privacyPolicyWebsite: packJson["privacy_policy_website"],
+              trayIcon: packJson["tray_image_file"] is String ? "${dir.path}/${packJson["tray_image_file"]}" : null,
+            );
+            packsToAdd.add(pack);
+          }
+        }
+        break;
+      default:
+        //TODO support stickify's backup file format
+        root = unzipDir.path.replaceAll(RegExp(r"/$"), "");
+        final json = jsonDecode(await File("${unzipDir.path}pack.json").readAsString());
+        await _importFonts(json["fonts"], root);
+        final pack = StickerPack.fromJson(json);
+        for (var sticker in pack.stickers) {
+          sticker.source = unzipDir.path + sticker.source;
+          if (sticker.editorData != null) {
+            sticker.editorData = unzipDir.path + sticker.editorData!;
+          }
+        }
+        if (pack.trayIcon != null) {
+          pack.trayIcon = unzipDir.path + pack.trayIcon!;
+        }
+        packsToAdd.add(pack);
+    }
+    debugPrint("Parse t=${sw.elapsedMilliseconds}ms");
+
+    for (final pack in packsToAdd) {
+      await _addImportedPack(pack, root: root);
+      debugPrint("[${pack.id}] Copy t=${sw.elapsedMilliseconds}ms");
+    }
+    await savePacks(packs);
+  } finally {
+    // Clean up unzipped temporary folder
+    try {
+      await unzipDir.delete(recursive: true);
+    } catch (e) {
+      debugPrint("Failed to delete unzipDir: $e");
+    }
+  }
+}
+
+/// Copies the files of an extracted [pack] into its own directory and adds it
+/// to [packs]. Nothing is kept if this fails.
+///
+/// Stickers whose image is missing are skipped. Editor data that can't be
+/// restored is dropped, and the sticker stays editable from its image.
+Future<void> _addImportedPack(StickerPack pack, {String? root}) async {
+  pack.id = _uniquePackId(pack.id);
+  // StickerPack.onEdit increments the version, so it must be an integer.
+  if (int.tryParse(pack.imageDataVersion) == null) pack.imageDataVersion = "1";
+  final packDir = Directory("$packsDir/${pack.id}");
+  await packDir.create(recursive: true);
+  try {
+    final imported = <Sticker>[];
+    for (final sticker in pack.stickers) {
+      final source = File(sticker.source);
+      if (!await source.exists()) {
+        debugPrint("Skipping missing sticker ${sticker.source}");
+        continue;
+      }
+      // Same naming as addToPack, so later stickers never collide.
+      final name = "${imported.length}_${uid()}";
+      final target = await source.copy("${packDir.path}/$name.webp");
+      String? editorData;
+      if (sticker.editorData != null) {
+        final data = await _copyEditorData(
+          sticker.editorData!,
+          "${packDir.path}/$name",
+          pathFor: (file) => "${packDir.path}/$name/$file",
+          root: root,
+        );
+        if (data != null) editorData = "${packDir.path}/$name.json";
+      }
+      imported.add(Sticker(target.path, sticker.emojis.isEmpty ? ["❤"] : sticker.emojis, editorData));
+    }
+    if (imported.isEmpty) throw Exception("The pack contains no stickers");
+    pack.stickers = imported;
+
+    final tray = pack.trayIcon == null ? null : File(pack.trayIcon!);
+    pack.trayIcon = tray != null && await tray.exists() ? (await tray.copy("${packDir.path}/tray.webp")).path : null;
+  } catch (_) {
+    await packDir.delete(recursive: true);
+    rethrow;
+  }
+  packs.add(pack);
+}
+
+/// Installs the fonts bundled with an exported pack.
+Future<void> _importFonts(Object? fonts, String root) async {
+  if (fonts is! List) return;
+  for (final font in fonts.whereType<Map>()) {
+    final family = font["family"];
+    final file = font["file"];
+    if (family is! String || file is! String) continue;
+    try {
+      await installFont(
+        File("$root/$file"),
+        family,
+        type: FontType.values.asNameMap()[font["type"]] ?? FontType.custom,
+        sizeMultiplier: (font["sizeMultiplier"] as num?)?.toDouble() ?? 1,
+        display: font["display"] as String?,
+      );
+    } catch (e) {
+      debugPrint("Couldn't import font $family: $e");
+    }
+  }
 }
 
 Future<List<StickerPack>> getPacks() async {
@@ -473,7 +657,13 @@ Future<void> addToPack(
   await savePacks(packs);
   // Clear media cache after adding a sticker
   print("Clearing media cache");
-  Directory(mediaCacheDir).list().listen((entry) => entry.delete());
+  await for (final entry in Directory(mediaCacheDir).list()) {
+    try {
+      await entry.delete(recursive: true);
+    } catch (e) {
+      debugPrint("Failed to clear ${entry.path}: $e");
+    }
+  }
 }
 
 Future<File> saveTemp(Uint8List data) async {

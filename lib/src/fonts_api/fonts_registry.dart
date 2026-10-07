@@ -42,6 +42,35 @@ Future<String?> registerFont(FontsRegistryEntry entry) async {
   return fontFile.path;
 }
 
+/// Installs the font file [source] as [family] to the registry, the engine and the
+/// image editor plugin, unless the font is already installed.
+Future<void> installFont(
+  File source,
+  String family, {
+  FontType type = FontType.custom,
+  double sizeMultiplier = 1,
+  String? display,
+}) async {
+  final existing = FontsRegistry.get(family);
+  if (existing != null &&
+      (existing.type == FontType.bundled || (existing.fontFile != null && await File(existing.fontFile!).exists()))) {
+    return;
+  }
+  await Directory(googleFontsDir).create(recursive: true);
+  final dest = await source.copy("$googleFontsDir/${family.replaceAll(RegExp(r"[^ \-_a-zA-Z0-9]"), "_")}.ttf");
+  final loader = FontLoader(family);
+  loader.addFont(dest.readAsBytes().then((bytes) => ByteData.view(bytes.buffer)));
+  await loader.load();
+  // Keeps the preview file of a font that was only browsed.
+  final entry = existing ?? FontsRegistryEntry(family, type, display: display);
+  entry
+    ..fontFile = dest.path
+    ..sizeMultiplier = sizeMultiplier
+    ..isLoaded = true;
+  FontsRegistry.put(family, entry);
+  await registerFont(entry);
+}
+
 /// This registers the bundled fonts to the Image editor plugin - not the flutter engine.
 Future<void> loadFonts(List<FontsRegistryEntry> fonts) async {
   debugPrint("Registering fonts...");
