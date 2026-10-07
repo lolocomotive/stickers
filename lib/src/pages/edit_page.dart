@@ -409,7 +409,7 @@ class _EditPageState extends State<EditPage> {
                     ),
                   ),
                   SizedBox(
-                    width: 12,
+                    width: 8,
                   ),
                   Expanded(
                     child: FilledButton.tonalIcon(
@@ -423,6 +423,19 @@ class _EditPageState extends State<EditPage> {
                             },
                       label: Text(AppLocalizations.of(context)!.redo),
                       icon: Icon(Icons.redo),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 8,
+                  ),
+                  Expanded(
+                    child: Tooltip(
+                      message: AppLocalizations.of(context)!.clearDrawings,
+                      child: FilledButton.tonalIcon(
+                        onPressed: _hasDrawings ? _clearDrawings : null,
+                        label: Text(AppLocalizations.of(context)!.clear),
+                        icon: Icon(Icons.delete),
+                      ),
                     ),
                   ),
                 ]),
@@ -804,6 +817,15 @@ class _EditPageState extends State<EditPage> {
     setState(() {
       _brushColor = c;
     });
+  }
+
+  bool get _hasDrawings =>
+      _layers.whereType<DrawLayer>().any((layer) => layer.painter.strokes.isNotEmpty);
+
+  void _clearDrawings() {
+    _layers.removeWhere((layer) => layer is DrawLayer);
+    _undo.clear();
+    setState(() {});
   }
 
   Map<String, dynamic> toJson() {

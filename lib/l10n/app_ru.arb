@@ -160,5 +160,7 @@
   "videoGallerySubtitle": "Выбрать видео из галереи",
   "gifFile": "GIF (Файлы)",
   "gifFileSubtitle": "Выбрать GIF-файл (.gif)",
-  "selectGif": "Выбрать GIF"
+  "selectGif": "Выбрать GIF",
+  "clearDrawings": "Очистить рисунки",
+  "clear": "Очистить"
 }

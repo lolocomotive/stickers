@@ -219,5 +219,7 @@
   "videoGallerySubtitle": "Select a video from your gallery",
   "gifFile": "GIF (File picker)",
   "gifFileSubtitle": "Select a GIF file (.gif)",
-  "selectGif": "Select GIF"
+  "selectGif": "Select GIF",
+  "clearDrawings": "Clear drawings",
+  "clear": "Clear"
 }

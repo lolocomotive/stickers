@@ -157,5 +157,7 @@
     "videoGallerySubtitle": "Wähle ein Video aus deiner Galerie",
     "gifFile": "GIF (Dateiauswahl)",
     "gifFileSubtitle": "Wähle eine GIF-Datei (.gif)",
-    "selectGif": "GIF auswählen"
+    "selectGif": "GIF auswählen",
+    "clearDrawings": "Zeichnungen löschen",
+    "clear": "Löschen"
 }

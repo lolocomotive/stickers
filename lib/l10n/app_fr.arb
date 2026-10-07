@@ -114,7 +114,7 @@
   "exportWebpFailedMsg": "Réessayez, ou utilisez un autre sticker. Si le problème persiste, signalez-le sur GitHub.",
   "stickerTooLarge": "Sticker trop gros",
   "stickerTooLargeMsg": "Même avec des paramètres de qualité très bas, l'autocollant dépasse toujours la taille maximale requise de 512 Ko. Veuillez utiliser une vidéo plus courte.",
-    "fontsManager": "Gestionnaire de polices",
+  "fontsManager": "Gestionnaire de polices",
   "addMore": "Ajouter plus",
   "displayName": "Nom d'affichage",
   "privacyNotice": "Avis de confidentialité",
@@ -157,5 +157,7 @@
   "videoGallerySubtitle": "Sélectionner une vidéo dans la galerie",
   "gifFile": "GIF (Explorateur de fichiers)",
   "gifFileSubtitle": "Sélectionner un fichier GIF (.gif)",
-  "selectGif": "Sélectionner un GIF"
+  "selectGif": "Sélectionner un GIF",
+  "clearDrawings": "Effacer les dessins",
+  "clear": "Effacer"
 }
