@@ -508,7 +508,32 @@ Future<Uint8List> cropSticker(
   int index,
   double rotation, [
   bool stretch = false,
-]) async {
+]) {
+  return _cropSticker(
+    cropRect,
+    rotation,
+    stretch,
+    (option) => ImageEditor.editImage(image: rawImageData, imageEditorOption: option),
+  );
+}
+
+/// Like [cropSticker], but lets the native side read the image from [path]
+/// instead of copying the whole file through Dart.
+Future<Uint8List> cropStickerFile(Rect cropRect, String path, double rotation, [bool stretch = false]) {
+  return _cropSticker(
+    cropRect,
+    rotation,
+    stretch,
+    (option) => ImageEditor.editFileImage(file: File(path), imageEditorOption: option),
+  );
+}
+
+Future<Uint8List> _cropSticker(
+  Rect cropRect,
+  double rotation,
+  bool stretch,
+  Future<Uint8List?> Function(ImageEditorOption option) edit,
+) async {
   // Apply crop then scale then put on 512x512 transparent image in center
 
   final crop = ImageEditorOption();
@@ -533,7 +558,7 @@ Future<Uint8List> cropSticker(
     ),
   );
   crop.outputFormat = const OutputFormat.png(); // Ensure the format supports transparency
-  final intermediate = (await ImageEditor.editImage(image: rawImageData, imageEditorOption: crop))!;
+  final intermediate = (await edit(crop))!;
 
   final option = ImageMergeOption(
     canvasSize: const Size.square(512),

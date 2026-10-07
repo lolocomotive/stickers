@@ -35,6 +35,8 @@ class MultiCropPage extends StatefulWidget {
   State<MultiCropPage> createState() => _MultiCropPageState();
 }
 
+const _preparationWorkers = 3;
+
 class _MultiCropPageState extends State<MultiCropPage> {
   late final List<_Selection> _selections = widget.paths.map(_Selection.new).toList();
   bool _saving = false;
@@ -72,21 +74,30 @@ class _MultiCropPageState extends State<MultiCropPage> {
       _prepared = 0;
     });
     try {
-      final prepared = <Uint8List>[];
+      final prepared = List<Uint8List?>.filled(_selections.length, null);
       var failed = false;
-      for (final selection in _selections) {
-        try {
-          prepared.add(selection.crop ?? await prepareUncroppedSticker(selection.path, widget.pack));
-          selection.error = null;
-        } catch (error) {
-          selection.error = error.toString();
-          failed = true;
+      var next = 0;
+      // The image editor runs each call on its own native thread, so a few
+      // workers prepare images in parallel. Kept small because every worker
+      // holds a full-resolution bitmap natively.
+      Future<void> worker() async {
+        while (next < _selections.length && mounted) {
+          final index = next++;
+          final selection = _selections[index];
+          try {
+            prepared[index] = selection.crop ?? await prepareUncroppedSticker(selection.path);
+            selection.error = null;
+          } catch (error) {
+            selection.error = error.toString();
+            failed = true;
+          }
+          if (mounted) setState(() => _prepared++);
         }
-        if (!mounted) return;
-        setState(() => _prepared++);
       }
-      if (failed) return;
-      await saveStickerBatch(widget.pack, prepared);
+
+      await Future.wait(List.generate(_preparationWorkers, (_) => worker()));
+      if (!mounted || failed) return;
+      await saveStickerBatch(widget.pack, prepared.cast<Uint8List>());
       if (!mounted) return;
       // Re-enable popping before leaving the saving screen.
       setState(() => _saving = false);

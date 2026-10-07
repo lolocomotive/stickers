@@ -9,25 +9,19 @@ import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/globals.dart';
 
 /// Converts the whole image to a sticker without trimming its content.
-Future<Uint8List> prepareUncroppedSticker(String path, StickerPack pack) async {
-  final bytes = await File(path).readAsBytes();
-  final codec = await instantiateImageCodec(bytes);
+Future<Uint8List> prepareUncroppedSticker(String path) async {
+  // The descriptor reads the dimensions from the header without decoding pixels.
+  final buffer = await ImmutableBuffer.fromFilePath(path);
+  final ImageDescriptor descriptor;
   try {
-    final frame = await codec.getNextFrame();
-    try {
-      return await cropSticker(
-        Rect.fromLTWH(0, 0, frame.image.width.toDouble(), frame.image.height.toDouble()),
-        bytes,
-        pack,
-        0,
-        0,
-      );
-    } finally {
-      frame.image.dispose();
-    }
+    descriptor = await ImageDescriptor.encoded(buffer);
   } finally {
-    codec.dispose();
+    buffer.dispose();
   }
+  final width = descriptor.width;
+  final height = descriptor.height;
+  descriptor.dispose();
+  return cropStickerFile(Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()), path, 0);
 }
 
 /// Writes the entire batch before publishing it to the pack. A failure rolls
@@ -43,11 +37,11 @@ Future<void> saveStickerBatch(StickerPack pack, List<Uint8List> images) async {
   final added = <Sticker>[];
   final previousVersion = pack.imageDataVersion;
   try {
-    for (var i = 0; i < images.length; i++) {
-      final file = File('${batchDirectory.path}/$i.webp');
-      await file.writeAsBytes(images[i], flush: true);
-      added.add(Sticker(file.path, ['❤'], null));
-    }
+    final files = await Future.wait([
+      for (var i = 0; i < images.length; i++)
+        File('${batchDirectory.path}/$i.webp').writeAsBytes(images[i], flush: true),
+    ]);
+    added.addAll(files.map((file) => Sticker(file.path, ['❤'], null)));
     // Recheck after asynchronous file writes in case the pack changed.
     if (pack.stickers.length + added.length > 30) {
       throw StateError('The sticker pack is full.');
