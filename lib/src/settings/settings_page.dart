@@ -43,7 +43,7 @@ class SettingsPage extends StatelessWidget {
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.settings),
       ),
-      body: Column(
+      body: ListView(
         children: [
           _DropdownTile(
             icon: Icons.invert_colors,
