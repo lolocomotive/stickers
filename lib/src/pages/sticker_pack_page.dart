@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
-import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/video/gif_transcoder.dart';
@@ -18,6 +17,7 @@ import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/pages/multi_crop_page.dart';
 import 'package:stickers/src/util.dart';
+import 'package:stickers/src/widgets/sticker_thumbnail.dart';
 
 class StickerPackPage extends StatefulWidget {
   final StickerPack pack;
@@ -286,12 +286,8 @@ class StickerPackPageState extends State<StickerPackPage> {
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            CustomPaint(
-                              painter: CheckerPainter(context),
-                              child: Image.file(
-                                File(sticker.source),
-                                fit: BoxFit.contain,
-                              ),
+                            StickerThumbnail(
+                              file: File(sticker.source),
                             ),
                             if (isSelected)
                               Container(
@@ -345,22 +341,20 @@ class StickerPackPageState extends State<StickerPackPage> {
                                 child: Container(
                                   width: 90,
                                   height: 90,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: const [
-                                        BoxShadow(
-                                          offset: Offset(2, 4),
-                                          blurRadius: 10,
-                                          color: Colors.black45,
-                                        ),
-                                      ],
-                                    ),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: CustomPaint(
-                                      painter: CheckerPainter(context),
-                                      child: Image.file(File(sticker.source)),
-                                    ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        offset: Offset(2, 4),
+                                        blurRadius: 10,
+                                        color: Colors.black45,
+                                      ),
+                                    ],
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: StickerThumbnail(
+                                    file: File(sticker.source),
+                                    targetSize: 90,
                                   ),
                                 ),
                               ),

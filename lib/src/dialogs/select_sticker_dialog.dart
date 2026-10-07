@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
-import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/sticker.dart';
 import 'package:stickers/src/globals.dart';
+import 'package:stickers/src/widgets/sticker_thumbnail.dart';
 
 class SelectStickerDialog extends StatelessWidget {
   const SelectStickerDialog({super.key, required this.callback});
@@ -41,17 +41,14 @@ class SelectStickerDialog extends StatelessWidget {
                   ],
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: CustomPaint(
-                  painter: CheckerPainter(context),
-                  child: InkWell(
-                    onTap: () {
-                      callback(stickers[index]);
-                      Navigator.of(context).pop();
-                    },
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.file(
-                      File(stickers[index].source),
-                    ),
+                child: InkWell(
+                  onTap: () {
+                    callback(stickers[index]);
+                    Navigator.of(context).pop();
+                  },
+                  borderRadius: BorderRadius.circular(10),
+                  child: StickerThumbnail(
+                    file: File(stickers[index].source),
                   ),
                 ),
               );
