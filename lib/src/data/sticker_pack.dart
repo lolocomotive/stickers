@@ -80,7 +80,7 @@ class StickerPack {
       json["author"],
       json["id"],
       (json["stickers"] as List).map((sticker) => Sticker.fromJson(sticker)).toList(),
-      json["imageDataVersion"],
+      "${json["imageDataVersion"] ?? 1}",
       json["animated"] ?? false,
       trayIcon: json["trayIcon"],
       publisherWebsite: json["publisherWebsite"],

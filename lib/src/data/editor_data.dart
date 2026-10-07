@@ -17,7 +17,7 @@ class EditorData {
   factory EditorData.fromJson(Map<String, dynamic> map, GlobalKey rbKey) {
     return EditorData(
       background: map['background'] as String,
-      layers: map['layers'].map<EditorLayer>((layer) => EditorLayer.fromJson(layer, rbKey)).toList(),
+      layers: (map['layers'] as List? ?? []).map((layer) => EditorLayer.fromJson(layer, rbKey)).toList(),
     );
   }
 }

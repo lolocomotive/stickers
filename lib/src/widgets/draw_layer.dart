@@ -7,7 +7,7 @@ class DrawLayer extends StatelessWidget implements EditorLayer {
 
   static DrawLayer fromJson(Map<String, dynamic> json) {
     final layer = DrawLayer();
-    layer.painter.strokes = json["strokes"].map<Stroke>((stroke) => Stroke.fromJson(stroke)).toList();
+    layer.painter.strokes = (json["strokes"] as List).map((stroke) => Stroke.fromJson(stroke)).toList();
     return layer;
   }
 
@@ -65,10 +65,12 @@ class Stroke {
 
   static Stroke fromJson(Map<String, dynamic> json) {
     Stroke s = Stroke(
-      Color(json["color"]),
-      json["width"],
+      Color(json["color"] as int),
+      (json["width"] as num).toDouble(),
     );
-    s.points = json["points"].map<Offset>((p) => Offset(p["x"], p["y"])).toList();
+    s.points = (json["points"] as List)
+        .map((p) => Offset((p["x"] as num).toDouble(), (p["y"] as num).toDouble()))
+        .toList();
     return s;
   }
 

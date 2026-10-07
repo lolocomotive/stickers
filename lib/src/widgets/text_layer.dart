@@ -50,13 +50,13 @@ class TextLayer extends StatefulWidget implements EditorLayer {
 
   static TextLayer fromJson(Map<String, dynamic> json, GlobalKey rbKey) {
     final text = EditorText(
-      text: json["text"],
-      transform: Matrix4.fromList(json["transform"].map<double>((e) => e as double).toList()),
-      fontSize: json["fontSize"],
-      textColor: Color(json["textColor"]),
-      fontName: json["fontName"],
-      outlineColor: Color(json["outlineColor"]),
-      outlineWidth: json["outlineWidth"],
+      text: json["text"] as String,
+      transform: Matrix4.fromList((json["transform"] as List).map((e) => (e as num).toDouble()).toList()),
+      fontSize: (json["fontSize"] as num).toDouble(),
+      textColor: Color(json["textColor"] as int),
+      fontName: json["fontName"] as String? ?? "",
+      outlineColor: Color(json["outlineColor"] as int? ?? 0),
+      outlineWidth: (json["outlineWidth"] as num? ?? 0).toDouble(),
     );
 
     final layer = TextLayer(text, rbKey: rbKey);
