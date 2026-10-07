@@ -27,7 +27,7 @@ class _FontsManagerPageState extends State<FontsManagerPage> {
         child: ReorderableListView.builder(
           footer: ListTile(
             onTap: () async {
-              final answer = settingsController.googleFonts ||
+              final answer = settings.googleFonts.value ||
                   await showDialog(
                     context: context,
                     builder: (_) => GoogleFontsConfirmationDialog(),
@@ -184,7 +184,7 @@ class GoogleFontsConfirmationDialog extends StatelessWidget {
         ElevatedButton(
           onPressed: () {
             Navigator.of(context).pop(true);
-            settingsController.updateGoogleFonts(true);
+            settings.googleFonts.value = true;
           },
           child: Text(AppLocalizations.of(context)!.continue_),
         ),

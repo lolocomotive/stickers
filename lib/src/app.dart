@@ -17,38 +17,21 @@ import 'package:stickers/src/pages/sticker_packs_page.dart';
 import 'package:stickers/src/pages/video_crop_page.dart';
 import 'package:stickers/src/util.dart';
 
-import 'settings/settings_controller.dart';
 import 'settings/settings_page.dart';
 
 /// The Widget that configures your application.
 class StickersApp extends StatefulWidget {
-  static StickersAppState? of(BuildContext context) => context.findAncestorStateOfType<StickersAppState>();
-
-  const StickersApp({
-    super.key,
-    required this.settingsController,
-  });
-
-  final SettingsController settingsController;
+  const StickersApp({super.key});
 
   @override
   State<StickersApp> createState() => StickersAppState();
 }
 
 class StickersAppState extends State<StickersApp> {
-  late Locale _locale;
-
   @override
   void initState() {
     super.initState();
-    _locale = Locale.fromSubtags(languageCode: widget.settingsController.locale);
     initPlatformState();
-  }
-
-  void setLocale(Locale value) {
-    setState(() {
-      _locale = value;
-    });
   }
 
   SharedMedia? media;
@@ -80,12 +63,9 @@ class StickersAppState extends State<StickersApp> {
 
   @override
   Widget build(BuildContext context) {
-    // Glue the SettingsController to the MaterialApp.
-    //
-    // The ListenableBuilder Widget listens to the SettingsController for changes.
-    // Whenever the user updates their settings, the MaterialApp is rebuilt.
+    // Rebuild the MaterialApp whenever the theme or language changes.
     return ListenableBuilder(
-      listenable: widget.settingsController,
+      listenable: Listenable.merge([settings.themeMode, settings.locale]),
       builder: (BuildContext context, Widget? child) {
         return MaterialApp(
           // Providing a restorationScopeId allows the Navigator built by the
@@ -110,7 +90,7 @@ class StickersAppState extends State<StickersApp> {
             Locale('ru', ''),
             Locale('pt', ''),
           ],
-          locale: _locale,
+          locale: Locale(settings.locale.value),
 
           // Use AppLocalizations to configure the correct application title
           // depending on the user's locale.
@@ -121,12 +101,12 @@ class StickersAppState extends State<StickersApp> {
 
           // Define a light and dark color theme. Then, read the user's
           // preferred ThemeMode (light, dark, or system default) from the
-          // SettingsController to display the correct theme.
+          // settings to display the correct theme.
           // ignore: deprecated_member_use
           theme: ThemeData(sliderTheme: const SliderThemeData(year2023: false)),
           // ignore: deprecated_member_use
           darkTheme: ThemeData.dark().copyWith(sliderTheme: const SliderThemeData(year2023: false)),
-          themeMode: widget.settingsController.themeMode,
+          themeMode: settings.themeMode.value,
           navigatorKey: navigatorKey,
 
           // Define a function to handle named routes in order to support
@@ -144,7 +124,7 @@ class StickersAppState extends State<StickersApp> {
                   case FontsManagerPage.routeName:
                     return FontsManagerPage();
                   case SettingsPage.routeName:
-                    return SettingsPage(controller: widget.settingsController);
+                    return const SettingsPage();
                   case VideoCropPage.routeName:
                     final args = routeSettings.arguments as EditArguments;
                     return VideoCropPage(
@@ -230,8 +210,8 @@ class StickersAppState extends State<StickersApp> {
       return;
     }
     this.media = media;
-    if (widget.settingsController.quickMode) {
-      _quickAdd(media, widget.settingsController.defaultTitle, widget.settingsController.defaultAuthor);
+    if (settings.quickMode.value) {
+      _quickAdd(media, settings.defaultTitle.value, settings.defaultAuthor.value);
       this.media = null;
     }
   }

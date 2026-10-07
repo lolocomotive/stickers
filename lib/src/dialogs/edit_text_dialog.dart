@@ -166,7 +166,7 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
               if (i == FontsRegistry.fontCount) {
                 return TextButton(
                     onPressed: () async {
-                      final answer = settingsController.googleFonts ||
+                      final answer = settings.googleFonts.value ||
                           await showDialog(
                             context: context,
                             builder: (_) => GoogleFontsConfirmationDialog(),

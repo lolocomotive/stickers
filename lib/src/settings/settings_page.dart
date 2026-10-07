@@ -4,167 +4,75 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
-import 'package:stickers/src/app.dart';
 import 'package:stickers/src/dialogs/edit_quickmode_defaults_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'settings_controller.dart';
+import 'settings.dart';
 
 /// Displays the various settings that can be customized by the user.
 ///
-/// When a user changes a setting, the SettingsController is updated and
-/// Widgets that listen to the SettingsController are rebuilt.
+/// When a user changes a setting, the corresponding [Setting] is updated and
+/// this page is rebuilt.
 class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key, required this.controller});
+  const SettingsPage({super.key});
 
   static const routeName = "/settings";
 
-  final SettingsController controller;
-
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        settings.themeMode,
+        settings.locale,
+        settings.quickMode,
+        settings.defaultTitle,
+        settings.defaultAuthor,
+      ]),
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.settings),
       ),
       body: Column(
         children: [
-          ListTile(
-            leading: const Icon(Icons.invert_colors),
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(AppLocalizations.of(context)!.theme),
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.only(left: 16, right: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: ElevationOverlay.applySurfaceTint(
-                        Theme.of(context).colorScheme.surface,
-                        Theme.of(context).colorScheme.primary,
-                        2,
-                      ),
-                    ),
-                    child: DropdownButton<ThemeMode>(
-                      borderRadius: BorderRadius.circular(16),
-                      dropdownColor: ElevationOverlay.applySurfaceTint(
-                        Theme.of(context).colorScheme.surface,
-                        Theme.of(context).colorScheme.primary,
-                        4,
-                      ),
-                      underline: Container(),
-                      value: controller.themeMode,
-                      items: [
-                        DropdownMenuItem(
-                            value: ThemeMode.system,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              child: Text(AppLocalizations.of(context)!.system),
-                            )),
-                        DropdownMenuItem(
-                            value: ThemeMode.light,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              child: Text(AppLocalizations.of(context)!.light),
-                            )),
-                        DropdownMenuItem(
-                            value: ThemeMode.dark,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              child: Text(AppLocalizations.of(context)!.dark),
-                            )),
-                      ],
-                      onChanged: controller.updateThemeMode,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.language),
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(AppLocalizations.of(context)!.language),
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.only(left: 16, right: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: ElevationOverlay.applySurfaceTint(
-                        Theme.of(context).colorScheme.surface,
-                        Theme.of(context).colorScheme.primary,
-                        2,
-                      ),
-                    ),
-                    child: DropdownButton<String>(
-                      borderRadius: BorderRadius.circular(16),
-                      dropdownColor: ElevationOverlay.applySurfaceTint(
-                        Theme.of(context).colorScheme.surface,
-                        Theme.of(context).colorScheme.primary,
-                        4,
-                      ),
-                      underline: Container(),
-                      value: controller.locale,
-                      items: [
-                        DropdownMenuItem(
-                            value: "en",
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              child: Text("English"),
-                            )),
-                        DropdownMenuItem(
-                            value: "fr",
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              child: Text("Français"),
-                            )),
-                        DropdownMenuItem(
-                            value: "de",
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              child: Text("Deutsch"),
-                            )),
-                        DropdownMenuItem(
-                            value: "ru",
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              child: Text("Русский"),
-                            )),
-                        DropdownMenuItem(
-                            value: "pt",
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              child: Text("Português"),
-                            )),
-                      ],
-                      onChanged: (value) {
-                        if (value == null) return;
-                        StickersApp.of(context)!.setLocale(Locale.fromSubtags(languageCode: value));
-                        controller.updateLocale(value);
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            onTap: () {
-              controller.updateQuickMode(!controller.quickMode);
+          _DropdownTile(
+            icon: Icons.invert_colors,
+            title: AppLocalizations.of(context)!.theme,
+            setting: settings.themeMode,
+            items: {
+              ThemeMode.system: AppLocalizations.of(context)!.system,
+              ThemeMode.light: AppLocalizations.of(context)!.light,
+              ThemeMode.dark: AppLocalizations.of(context)!.dark,
             },
+          ),
+          _DropdownTile(
+            icon: Icons.language,
+            title: AppLocalizations.of(context)!.language,
+            setting: settings.locale,
+            items: const {
+              "en": "English",
+              "fr": "Français",
+              "de": "Deutsch",
+              "ru": "Русский",
+              "pt": "Português",
+            },
+          ),
+          ListTile(
+            onTap: () => settings.quickMode.value = !settings.quickMode.value,
             title: Text(AppLocalizations.of(context)!.quickMode),
             leading: const Icon(Icons.bolt),
             subtitle: Opacity(
               opacity: .7,
               child: Text(AppLocalizations.of(context)!.settings_quickmode_description),
             ),
-            trailing: Switch(value: controller.quickMode, onChanged: controller.updateQuickMode),
+            trailing: Switch(value: settings.quickMode.value, onChanged: (v) => settings.quickMode.value = v),
           ),
-          if (controller.quickMode)
+          if (settings.quickMode.value)
             ListTile(
               onTap: () => _showQuickModeDefaultsDialog(context),
               leading: Icon(Icons.account_circle),
@@ -173,8 +81,8 @@ class SettingsPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text("${AppLocalizations.of(context)!.title}: ${controller.defaultTitle}"),
-                      Text("${AppLocalizations.of(context)!.author}: ${controller.defaultAuthor}")
+                      Text("${AppLocalizations.of(context)!.title}: ${settings.defaultTitle.value}"),
+                      Text("${AppLocalizations.of(context)!.author}: ${settings.defaultAuthor.value}")
                     ],
                   )),
               title: Text(AppLocalizations.of(context)!.quickModeDefaults),
@@ -255,8 +163,57 @@ class SettingsPage extends StatelessWidget {
   void _showQuickModeDefaultsDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => EditQuickmodeDefaultsDialog(
-        settingsController: controller,
+      builder: (context) => EditQuickmodeDefaultsDialog(),
+    );
+  }
+}
+
+class _DropdownTile<T> extends StatelessWidget {
+  const _DropdownTile({required this.icon, required this.title, required this.setting, required this.items});
+
+  final IconData icon;
+  final String title;
+  final Setting<T> setting;
+  final Map<T, String> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return ListTile(
+      leading: Icon(icon),
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title),
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.only(left: 16, right: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: ElevationOverlay.applySurfaceTint(colors.surface, colors.primary, 2),
+              ),
+              child: DropdownButton<T>(
+                borderRadius: BorderRadius.circular(16),
+                dropdownColor: ElevationOverlay.applySurfaceTint(colors.surface, colors.primary, 4),
+                underline: Container(),
+                value: setting.value,
+                items: [
+                  for (final item in items.entries)
+                    DropdownMenuItem(
+                      value: item.key,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(item.value),
+                      ),
+                    ),
+                ],
+                onChanged: (value) {
+                  if (value != null) setting.value = value;
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

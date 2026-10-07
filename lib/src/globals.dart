@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/pages/sticker_packs_page.dart';
-import 'package:stickers/src/settings/settings_controller.dart';
+import 'package:stickers/src/settings/settings.dart';
 
 const String localizationUnavailable = "Localization unavailable";
 const double defaultBorderRadius = 10;
@@ -16,7 +16,7 @@ late String googleFontsDir;
 
 late List<StickerPack> packs;
 final navigatorKey = GlobalKey<NavigatorState>();
-late SettingsController settingsController;
+late Settings settings;
 
 StickerPacksPageState? homeState;
 PackageInfo? info;

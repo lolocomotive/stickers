@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
-import 'package:stickers/src/settings/settings_controller.dart';
+import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/util.dart';
 
 class EditQuickmodeDefaultsDialog extends StatelessWidget {
-  EditQuickmodeDefaultsDialog({super.key, required this.settingsController});
+  EditQuickmodeDefaultsDialog({super.key});
 
-  final SettingsController settingsController;
   final _authorController = TextEditingController();
   final _titleController = TextEditingController();
   final _formkey = GlobalKey<FormState>();
   @override
   StatelessElement createElement() {
-    _authorController.text = settingsController.defaultAuthor;
-    _titleController.text = settingsController.defaultTitle;
+    _authorController.text = settings.defaultAuthor.value;
+    _titleController.text = settings.defaultTitle.value;
     return super.createElement();
   }
 
@@ -50,8 +49,8 @@ class EditQuickmodeDefaultsDialog extends StatelessWidget {
         ElevatedButton(
             onPressed: () {
               if (!_formkey.currentState!.validate()) return;
-              settingsController.updateDefaultTitle(_titleController.text);
-              settingsController.updateDefaultAuthor(_authorController.text);
+              settings.defaultTitle.value = _titleController.text;
+              settings.defaultAuthor.value = _authorController.text;
               Navigator.of(context).pop();
             },
             child: Text(AppLocalizations.of(context)!.confirm)),

@@ -10,8 +10,7 @@ import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
 
 import 'src/app.dart';
-import 'src/settings/settings_controller.dart';
-import 'src/settings/settings_service.dart';
+import 'src/settings/settings.dart';
 
 void main() async {
   Stopwatch sw = Stopwatch()..start();
@@ -29,13 +28,7 @@ void main() async {
     );
   });
 
-  final service = SettingsService();
-  tasks.add(
-    service.waitForInit().then((value) {
-      settingsController = SettingsController(service);
-      tasks.add(settingsController.loadSettings());
-    }),
-  );
+  tasks.add(Settings.load().then((value) => settings = value));
 
   tasks.add(getPacks().then((value) {
     packs = value;
@@ -46,17 +39,11 @@ void main() async {
   // We assume the user will not create text in stickers in the first 500ms when the app is started
   FontsRegistry.init();
 
-  // Calling this twice because the list is modified in between.
-  // Not an elegant solution
-  await Future.wait(tasks);
   await Future.wait(tasks);
 
   debugPrint("Startup: ${sw.elapsedMilliseconds}ms");
 
-  // Run the app and pass in the SettingsController. The app listens to the
-  // SettingsController for changes, then passes it further down to the
-  // SettingsView.
-  runApp(StickersApp(settingsController: settingsController));
+  runApp(const StickersApp());
 }
 
 /// Creates the directory structure for the app to function

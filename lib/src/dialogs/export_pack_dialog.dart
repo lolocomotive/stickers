@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
+import 'package:stickers/src/globals.dart';
 
 class ExportPackDialog extends StatefulWidget {
   final int packCount;
@@ -12,18 +12,7 @@ class ExportPackDialog extends StatefulWidget {
 }
 
 class _ExportPackDialogState extends State<ExportPackDialog> {
-  bool _includeEditData = true;
-
-  @override
-  void initState() {
-    super.initState();
-    SharedPreferences.getInstance().then((prefs) {
-      final saved = prefs.getBool("exportIncludeEditData");
-      if (saved != null && mounted) {
-        setState(() => _includeEditData = saved);
-      }
-    });
-  }
+  bool _includeEditData = settings.exportIncludeEditData.value;
 
   @override
   Widget build(BuildContext context) {
@@ -50,9 +39,7 @@ class _ExportPackDialogState extends State<ExportPackDialog> {
         ),
         FilledButton(
           onPressed: () {
-            SharedPreferences.getInstance().then((prefs) {
-              prefs.setBool("exportIncludeEditData", _includeEditData);
-            });
+            settings.exportIncludeEditData.value = _includeEditData;
             Navigator.of(context).pop(_includeEditData);
           },
           child: Text(AppLocalizations.of(context)!.export),

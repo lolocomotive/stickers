@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/load_store.dart';
+import 'package:stickers/src/globals.dart';
 
 class ExportStickerDialog extends StatefulWidget {
   final int count;
@@ -13,21 +13,7 @@ class ExportStickerDialog extends StatefulWidget {
 }
 
 class _ExportStickerDialogState extends State<ExportStickerDialog> {
-  StickerFormat _selectedFormat = StickerFormat.png;
-
-  @override
-  void initState() {
-    super.initState();
-    SharedPreferences.getInstance().then((prefs) {
-      final saved = prefs.getString("exportStickerFormat");
-      if (saved != null && mounted) {
-        final match = StickerFormat.values.where((f) => f.name == saved).firstOrNull;
-        if (match != null) {
-          setState(() => _selectedFormat = match);
-        }
-      }
-    });
-  }
+  StickerFormat _selectedFormat = settings.exportStickerFormat.value;
 
   String _getFormatDescription(BuildContext context, StickerFormat format) {
     switch (format) {
@@ -74,9 +60,7 @@ class _ExportStickerDialogState extends State<ExportStickerDialog> {
         ),
         FilledButton(
           onPressed: () {
-            SharedPreferences.getInstance().then((prefs) {
-              prefs.setString("exportStickerFormat", _selectedFormat.name);
-            });
+            settings.exportStickerFormat.value = _selectedFormat;
             Navigator.of(context).pop(_selectedFormat);
           },
           child: Text(AppLocalizations.of(context)!.export),
