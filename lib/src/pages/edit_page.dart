@@ -152,6 +152,9 @@ class _EditPageState extends State<EditPage> {
         if (didPop) {
           return;
         }
+        if (_exporting || _message != null) {
+          return;
+        }
         bool shouldPop = await showDialog<bool>(
               context: context,
               builder: (builderContext) => ConfirmLeaveDialog(),
@@ -159,7 +162,9 @@ class _EditPageState extends State<EditPage> {
             false;
         if (shouldPop && context.mounted) Navigator.of(context).pop();
       },
-      child: DefaultActivity(
+      child: Stack(
+        children: [
+          DefaultActivity(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: Text(AppLocalizations.of(context)!.editYourSticker),
@@ -370,41 +375,6 @@ class _EditPageState extends State<EditPage> {
                                     child: e,
                                   ),
                                 ),
-                                if (_message != null)
-                                  Positioned(
-                                    top: 0,
-                                    bottom: 0,
-                                    left: 0,
-                                    right: 0,
-                                    child: Container(
-                                      color: Theme.of(context).colorScheme.surface.withAlpha(200),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            AppLocalizations.of(context)!.exporting,
-                                            style: Theme.of(context).textTheme.displaySmall,
-                                          ),
-                                          SizedBox(
-                                            height: 12,
-                                          ),
-                                          SizedBox(
-                                            height: 64,
-                                            width: 64,
-                                            child: CircularProgressIndicator(
-                                              year2023: false,
-                                              value: _exportProgress,
-                                            ),
-                                          ),
-                                          Text(
-                                            _message ?? "",
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  )
                               ]),
                             ),
                           ),
@@ -571,7 +541,55 @@ class _EditPageState extends State<EditPage> {
           }),
         ),
       ),
-    );
+      if (_message != null) ...[
+        Positioned.fill(
+          child: ModalBarrier(
+            dismissible: false,
+            color: Theme.of(context).colorScheme.surface.withAlpha(200),
+          ),
+        ),
+        Positioned.fill(
+          child: IgnorePointer(
+            // Outside the Scaffold, so it needs its own Material for text styling
+            child: Material(
+              type: MaterialType.transparency,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      AppLocalizations.of(context)!.exporting,
+                      style: Theme.of(context).textTheme.displaySmall,
+                    ),
+                    const SizedBox(
+                      height: 12,
+                    ),
+                    SizedBox(
+                      height: 64,
+                      width: 64,
+                      child: CircularProgressIndicator(
+                        year2023: false,
+                        value: _exportProgress,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 12,
+                    ),
+                    Text(
+                      _message ?? "",
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ],
+  ),
+);
   }
 
   void _addText() {
@@ -653,6 +671,8 @@ class _EditPageState extends State<EditPage> {
       if (mounted) {
         setState(() {
           _exporting = false;
+          _message = null;
+          _exportProgress = null;
         });
       }
     }
