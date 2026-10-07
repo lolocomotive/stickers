@@ -31,6 +31,8 @@
     "system": "System",
     "light": "Hell",
     "dark": "Dunkel",
+    "accentColor": "Akzentfarbe",
+    "systemColors": "Systemfarben",
     "settings_quickmode_description": "Fügt geteilte Bilder direkt als Sticker zu WhatsApp hinzu ohne weitere Interaktion",
     "quickModeDefaults": "Schnell-Modus Konfigurieren",
     "edit": "Bearbeiten",

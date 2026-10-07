@@ -31,6 +31,8 @@
   "system": "Sistema",
   "light": "Claro",
   "dark": "Escuro",
+  "accentColor": "Cor de destaque",
+  "systemColors": "Cores do sistema",
   "settings_quickmode_description": "Adiciona imagens compartilhadas como figurinhas automaticamente, sem nenhuma interação",
   "quickModeDefaults": "Padrões do modo rápido",
   "edit": "Editar",

@@ -31,6 +31,8 @@
   "system": "Système",
   "light": "Clair",
   "dark": "Sombre",
+  "accentColor": "Couleur principale",
+  "systemColors": "Couleurs du système",
   "settings_quickmode_description": "Ajoute des images partagées à l'application automatiquement, sans interaction supplémentaire",
   "quickModeDefaults": "Configuration mode rapide",
   "edit": "Modifier",

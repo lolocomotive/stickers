@@ -34,6 +34,8 @@
   "system": "Системная",
   "light": "Светлая",
   "dark": "Тёмная",
+  "accentColor": "Акцентный цвет",
+  "systemColors": "Системные цвета",
   "settings_quickmode_description": "Авто-добавление изображений",
   "quickModeDefaults": "Стандартные настройки",
   "edit": "Изменить",

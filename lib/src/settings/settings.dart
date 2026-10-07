@@ -30,6 +30,9 @@ class Settings {
   final SharedPreferences _prefs;
 
   late final themeMode = _enum("themeMode", ThemeMode.values, ThemeMode.system);
+
+  /// Color the theme is generated from. Null means the system's dynamic colors.
+  late final accentColor = _nullableColor("accentColor");
   late final locale = _string("locale", _systemLocale());
   late final quickMode = _bool("quickMode", false);
   late final defaultTitle = _string("defaultTitle", "New sticker pack");
@@ -57,6 +60,14 @@ class Settings {
 
   Setting<double?> _nullableDouble(String key) =>
       Setting(_prefs.getDouble(key), (v) => v == null ? _prefs.remove(key) : _prefs.setDouble(key, v));
+
+  Setting<Color?> _nullableColor(String key) {
+    final stored = _prefs.getInt(key);
+    return Setting(
+      stored == null ? null : Color(stored),
+      (v) => v == null ? _prefs.remove(key) : _prefs.setInt(key, v.toARGB32()),
+    );
+  }
 
   Setting<E> _enum<E extends Enum>(String key, List<E> values, E fallback) =>
       Setting(values.asNameMap()[_prefs.getString(key)] ?? fallback, (v) => _prefs.setString(key, v.name));

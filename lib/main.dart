@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -43,7 +44,9 @@ void main() async {
 
   debugPrint("Startup: ${sw.elapsedMilliseconds}ms");
 
-  runApp(const StickersApp());
+  runApp(DynamicColorBuilder(
+    builder: (lightDynamic, darkDynamic) => StickersApp(lightDynamic: lightDynamic, darkDynamic: darkDynamic),
+  ));
 }
 
 /// Creates the directory structure for the app to function

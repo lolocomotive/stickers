@@ -72,6 +72,8 @@
   "system": "System",
   "light": "Light",
   "dark": "Dark",
+  "accentColor": "Accent color",
+  "systemColors": "System colors",
   "settings_quickmode_description": "Adds shared images as stickers automatically without any interaction",
   "quickModeDefaults": "Quick mode defaults",
   "edit": "Edit",

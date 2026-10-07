@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
+import 'package:stickers/src/dialogs/accent_color_dialog.dart';
 import 'package:stickers/src/dialogs/edit_quickmode_defaults_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/widgets/crop_aspect_ratio_selector.dart';
@@ -25,6 +26,7 @@ class SettingsPage extends StatelessWidget {
     return ListenableBuilder(
       listenable: Listenable.merge([
         settings.themeMode,
+        settings.accentColor,
         settings.locale,
         settings.defaultStretch,
         settings.defaultAspectRatio,
@@ -52,6 +54,12 @@ class SettingsPage extends StatelessWidget {
               ThemeMode.light: AppLocalizations.of(context)!.light,
               ThemeMode.dark: AppLocalizations.of(context)!.dark,
             },
+          ),
+          ListTile(
+            leading: const Icon(Icons.palette),
+            title: Text(AppLocalizations.of(context)!.accentColor),
+            trailing: CircleAvatar(radius: 16, backgroundColor: Theme.of(context).colorScheme.primary),
+            onTap: () => showDialog(context: context, builder: (_) => const AccentColorDialog()),
           ),
           _DropdownTile(
             icon: Icons.language,

@@ -21,7 +21,11 @@ import 'settings/settings_page.dart';
 
 /// The Widget that configures your application.
 class StickersApp extends StatefulWidget {
-  const StickersApp({super.key});
+  const StickersApp({super.key, this.lightDynamic, this.darkDynamic});
+
+  /// The system's dynamic color schemes, if the platform provides them.
+  final ColorScheme? lightDynamic;
+  final ColorScheme? darkDynamic;
 
   @override
   State<StickersApp> createState() => StickersAppState();
@@ -65,7 +69,7 @@ class StickersAppState extends State<StickersApp> {
   Widget build(BuildContext context) {
     // Rebuild the MaterialApp whenever the theme or language changes.
     return ListenableBuilder(
-      listenable: Listenable.merge([settings.themeMode, settings.locale]),
+      listenable: Listenable.merge([settings.themeMode, settings.locale, settings.accentColor]),
       builder: (BuildContext context, Widget? child) {
         return MaterialApp(
           // Providing a restorationScopeId allows the Navigator built by the
@@ -102,10 +106,8 @@ class StickersAppState extends State<StickersApp> {
           // Define a light and dark color theme. Then, read the user's
           // preferred ThemeMode (light, dark, or system default) from the
           // settings to display the correct theme.
-          // ignore: deprecated_member_use
-          theme: ThemeData(sliderTheme: const SliderThemeData(year2023: false)),
-          // ignore: deprecated_member_use
-          darkTheme: ThemeData.dark().copyWith(sliderTheme: const SliderThemeData(year2023: false)),
+          theme: _theme(Brightness.light, widget.lightDynamic),
+          darkTheme: _theme(Brightness.dark, widget.darkDynamic),
           themeMode: settings.themeMode.value,
           navigatorKey: navigatorKey,
 
@@ -164,6 +166,18 @@ class StickersAppState extends State<StickersApp> {
           },
         );
       },
+    );
+  }
+
+  /// Builds the theme from the user's accent color, falling back to the
+  /// system's dynamic colors, then to Flutter's default colors.
+  ThemeData _theme(Brightness brightness, ColorScheme? dynamicScheme) {
+    final accent = settings.accentColor.value;
+    return ThemeData(
+      brightness: brightness,
+      colorScheme: accent == null ? dynamicScheme : ColorScheme.fromSeed(seedColor: accent, brightness: brightness),
+      // ignore: deprecated_member_use
+      sliderTheme: const SliderThemeData(year2023: false),
     );
   }
 
