@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/load_store.dart';
+import 'package:stickers/src/data/storage.dart';
 import 'package:stickers/src/dialogs/create_pack_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/crop_page.dart';
@@ -20,6 +21,13 @@ class SelectPackPage extends StatefulWidget {
 }
 
 class _SelectPackPageState extends State<SelectPackPage> {
+  @override
+  void dispose() {
+    // The shared file has been made into a sticker, or the user gave up.
+    deleteTemporaryFile(widget.media.attachments?.firstOrNull?.path);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultSliverActivity(

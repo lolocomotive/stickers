@@ -560,10 +560,10 @@ class _VideoCropPageState extends State<VideoCropPage> {
     setState(() {
       _exporting = true;
     });
+    String? output;
     try {
       _controller?.pause();
 
-      final String output;
       if (_isGif) {
         final webpBytes = await GifTranscoder.transcodeToWebP(
           gifPath: widget.imagePath,
@@ -638,6 +638,12 @@ class _VideoCropPageState extends State<VideoCropPage> {
         );
       }
     } finally {
+      // The editor copies what it keeps. Also removes the output of a failed transcode.
+      if (output != null) {
+        try {
+          await File(output).delete();
+        } catch (_) {}
+      }
       if (mounted) {
         setState(() {
           _exporting = false;

@@ -646,10 +646,10 @@ class _EditPageState extends State<EditPage> {
         Navigator.of(context).pop(data);
         return;
       }
-      if (replace) {
-        await addToPack(widget.pack, widget.index, data, editorData, replace);
+      if (widget.index == trayIndex) {
+        await widget.pack.setTrayData(data);
       } else {
-        await addToPack(widget.pack, widget.pack.stickers.length, data, editorData);
+        await addToPack(widget.pack, data, editorData: editorData, replace: replace ? widget.index : null);
       }
       if (!context.mounted) return;
       Navigator.of(context).pop();
@@ -707,6 +707,18 @@ class _EditPageState extends State<EditPage> {
     final transparent = await rootBundle.load("assets/transparent.webp");
     final out =
         await ImageEditor.editImageAndGetFile(image: transparent.buffer.asUint8List(), imageEditorOption: option);
+    try {
+      if (!context.mounted) throw Exception();
+      return await _encodeAnimatedSticker(out, context);
+    } finally {
+      try {
+        await out.delete();
+      } catch (_) {}
+    }
+  }
+
+  /// Draws the layers rendered into [out] over the background.
+  Future<Uint8List> _encodeAnimatedSticker(File out, BuildContext context) async {
     if (_isWebpVideo) {
       if (context.mounted) {
         _message = AppLocalizations.of(context)!.firstAttempt;
@@ -805,6 +817,9 @@ class _EditPageState extends State<EditPage> {
         print("New configuration: q=$quality fps=$fps");
       }
     }
+    try {
+      await output.delete();
+    } catch (_) {}
     if (data!.lengthInBytes / 1024 > 500) {
       if (!context.mounted) throw Exception();
       Navigator.of(context).pop();

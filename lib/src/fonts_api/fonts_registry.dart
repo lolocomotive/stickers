@@ -4,10 +4,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_editor/image_editor.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:stickers/src/data/storage.dart';
 import 'package:stickers/src/globals.dart';
 
 enum FontType { bundled, custom, googleFont }
+
+/// Name of the file holding [family], without characters that aren't safe in file names.
+String fontFileName(String family) => "${family.replaceAll(RegExp(r"[^ \-_a-zA-Z0-9]"), "_")}.ttf";
 
 /// Register a single bundled font to the image editor plugin
 /// Returns the font file path.
@@ -56,8 +59,8 @@ Future<void> installFont(
       (existing.type == FontType.bundled || (existing.fontFile != null && await File(existing.fontFile!).exists()))) {
     return;
   }
-  await Directory(googleFontsDir).create(recursive: true);
-  final dest = await source.copy("$googleFontsDir/${family.replaceAll(RegExp(r"[^ \-_a-zA-Z0-9]"), "_")}.ttf");
+  await Directory(customFontsDir).create(recursive: true);
+  final dest = await source.copy("$customFontsDir/${fontFileName(family)}");
   final loader = FontLoader(family);
   loader.addFont(dest.readAsBytes().then((bytes) => ByteData.view(bytes.buffer)));
   await loader.load();
@@ -117,11 +120,12 @@ class FontsRegistryEntry {
   FontsRegistryEntry(this.family, this.type,
       {this.isLoaded = false, this.previewFile, this.fontFile, this.sizeMultiplier = 1, this.display});
 
+  /// Paths are stored relative to [dataDir].
   Map<String, dynamic> toJson() {
     return {
       'family': family,
-      'previewFile': previewFile,
-      'fontFile': fontFile,
+      'previewFile': previewFile == null ? null : relativePath(previewFile!, dataDir),
+      'fontFile': fontFile == null ? null : relativePath(fontFile!, dataDir),
       'type': type.toString(),
       'sizeMultiplier': sizeMultiplier,
       'display': display,
@@ -132,8 +136,8 @@ class FontsRegistryEntry {
     return FontsRegistryEntry(
       json['family'],
       FontType.values.firstWhere((element) => element.toString() == json['type']),
-      previewFile: json['previewFile'],
-      fontFile: json['fontFile'],
+      previewFile: json['previewFile'] == null ? null : resolvePath(json['previewFile'], dataDir),
+      fontFile: json['fontFile'] == null ? null : resolvePath(json['fontFile'], dataDir),
       sizeMultiplier: json['sizeMultiplier'],
       display: json['display'],
     );
@@ -174,7 +178,7 @@ class FontsRegistry {
     _init = true;
 
     try {
-      _config = File("${(await getApplicationDocumentsDirectory()).path}/fonts.json");
+      _config = File("$dataDir/fonts.json");
       try {
         if (await _config.exists()) {
           Stopwatch sw = Stopwatch()..start();
@@ -208,6 +212,7 @@ class FontsRegistry {
           }
 
           registerTasks.add(loadFonts(_orderedEntries));
+          registerTasks.add(_deleteUnusedPreviews());
           await Future.wait(registerTasks);
           debugPrint("[FontsRegistry] loaded ${_entries.length} fonts in ${sw.elapsedMilliseconds}ms");
           return;
@@ -230,6 +235,15 @@ class FontsRegistry {
       _init = false;
       rethrow;
     }
+  }
+
+  /// Deletes the previews in the cache that no entry uses.
+  static Future<void> _deleteUnusedPreviews() async {
+    final used = _entries.values.map((f) => f.previewFile).toSet();
+    await clearDirectory(
+      Directory(fontsCacheDir),
+      where: (entry) => entry.path.endsWith(".ttf") && !used.contains(entry.path),
+    );
   }
 
   static Future<void> _registerFontToEngine(FontsRegistryEntry f, bool preview) async {
@@ -274,7 +288,16 @@ class FontsRegistry {
     });
   }
 
-  static Future<void> save() async {
+  static Future<void> _pendingSave = Future.value();
+
+  /// Saves the registry. Saves are written one after the other.
+  static Future<void> save() {
+    final save = _pendingSave.then((_) => _save());
+    _pendingSave = save.catchError((Object e) => debugPrint("Couldn't save fonts registry: $e"));
+    return save;
+  }
+
+  static Future<void> _save() async {
     Stopwatch sw = Stopwatch()..start();
     List data = [];
 
@@ -283,24 +306,25 @@ class FontsRegistry {
 // so this should be sufficient to deduplicate the data. (except for sans-serif)
     data.addAll(_entries.values.where((f) => f.fontFile == null && f.family != "sans-serif").map((e) => e.toJson()));
 
-    await _config.create(recursive: true);
-    await _config.writeAsString(jsonEncode(data));
+    await writeAtomically(_config, jsonEncode(data));
     debugPrint("Saved Fonts registry to ${_config.path} in ${sw.elapsedMilliseconds}ms");
   }
 
-  // Delete a font from the registry
-  // Also removes associated TTF files
-  static void delete(String fontName) {
+  /// Deletes a font from the registry, and its TTF files.
+  /// Bundled fonts ship with the app and are copied again when added back.
+  static Future<void> delete(String fontName) async {
     final entry = _entries.remove(fontName);
     if (entry == null) return;
-    if (entry.fontFile != null) {
-      File(entry.fontFile!).delete();
-    }
-    if (entry.previewFile != null) {
-      File(entry.fontFile!).delete();
-    }
     _orderedEntries.remove(entry);
     enqueueSave();
+    for (final path in [entry.fontFile, entry.previewFile]) {
+      if (path == null) continue;
+      try {
+        await File(path).delete();
+      } on FileSystemException catch (e) {
+        debugPrint("Couldn't delete $path: $e");
+      }
+    }
   }
 
   /// Make sure to call put again when the font is downloaded

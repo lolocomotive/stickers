@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:stickers/src/data/storage.dart';
 import 'package:stickers/src/fonts_api/fonts_models.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
@@ -28,7 +28,9 @@ Future<GoogleFontsReply> getFonts({String? family, String? category}) async {
   }
 
   File fontsListCache = File("$fontsCacheDir/google_fonts.json");
-  if (await fontsListCache.exists()) {
+  // Refreshed weekly, so new fonts show up.
+  if (await fontsListCache.exists() &&
+      DateTime.now().difference(await fontsListCache.lastModified()) < const Duration(days: 7)) {
     try {
       return GoogleFontsReply.fromJson(jsonDecode(await fontsListCache.readAsString()));
     } on Exception catch (e, st) {
@@ -43,9 +45,13 @@ Future<GoogleFontsReply> getFonts({String? family, String? category}) async {
     if (category != null) "category": category,
   });
   final response = await get(uri);
-  await fontsListCache.create(recursive: true);
-  await fontsListCache.writeAsString(response.body);
-  return GoogleFontsReply.fromJson(jsonDecode(response.body));
+  if (response.statusCode != 200) {
+    throw HttpException("Couldn't get the font list: ${response.statusCode}", uri: uri);
+  }
+  final reply = GoogleFontsReply.fromJson(jsonDecode(response.body));
+  await fontsListCache.parent.create(recursive: true);
+  await writeAtomically(fontsListCache, response.body);
+  return reply;
 }
 
 double totalDownload = 0;
@@ -53,9 +59,9 @@ double totalDownload = 0;
 Future<void> downloadAndRegisterFont(WebFont font) async {
   final entry = FontsRegistry.get(font.family) ?? FontsRegistryEntry(font.family, FontType.googleFont);
   await Directory(googleFontsDir).create(recursive: true);
-  File dest = File("$googleFontsDir/${font.family}.ttf");
+  File dest = File("$googleFontsDir/${fontFileName(font.family)}");
   final result = await get(Uri.parse(font.files["regular"] ?? font.files[font.variants.first]!));
-  await dest.writeAsBytes(result.bodyBytes);
+  await dest.writeAsBytes(result.bodyBytes, flush: true);
   final loader = FontLoader(font.family);
   loader.addFont(Future.value(ByteData.view(result.bodyBytes.buffer)));
   await loader.load();
@@ -92,7 +98,7 @@ Future<void> downloadAndRegisterFontPreview(WebFont font) async {
 
   debugPrint("Downloaded preview font ${font.family}");
 
-  File dest = File("$fontsCacheDir/${font.family}.ttf");
+  File dest = File("$fontsCacheDir/${fontFileName(font.family)}");
   FontsRegistry.get(font.family)!.previewFile = dest.path;
   await dest.writeAsBytes(result.bodyBytes);
   final loader = FontLoader("${font.family}-PREVIEW");

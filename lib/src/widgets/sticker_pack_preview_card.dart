@@ -129,8 +129,7 @@ class _StickerPackPreviewCardState extends State<StickerPackPreviewCard> {
                                       if (value == true) {
                                         packs.remove(widget.pack);
                                         widget.deleteCallback();
-                                        deletePackDirectory(widget.pack);
-                                        savePacks(packs);
+                                        await deletePack(widget.pack);
                                       }
                                     },
                                   );

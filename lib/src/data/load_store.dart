@@ -9,53 +9,53 @@ import 'package:share_plus/share_plus.dart';
 import 'package:stickers/src/data/sticker.dart';
 import 'package:stickers/src/data/sticker_encoding.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/data/storage.dart';
 import 'package:stickers/src/fonts_api/fonts_registry.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/util.dart';
-import 'package:stickers/src/widgets/image_layer.dart';
+import 'package:whatsapp_stickers_plus/whatsapp_stickers.dart';
 
 import 'editor_data.dart';
 
 export 'sticker_encoding.dart' show StickerFormat;
 
-Future<void> savePacks(List<StickerPack> packs) async {
-  File output = File("$packsDir/packs.json");
-  await output.writeAsString(jsonEncode(packs.map((pack) => pack.toJson()).toList()));
+Future<void> _pendingSave = Future.value();
+
+/// Saves [packs] to packs.json.
+///
+/// The packs are serialized right away, and the saves are written one after
+/// the other, each replacing the file at once, so concurrent saves can't
+/// corrupt it and the last call always wins.
+Future<void> savePacks(List<StickerPack> packs) {
+  final json = jsonEncode(packs.map((pack) => pack.toJson()).toList());
+  final save = _pendingSave.then((_) => writeAtomically(File("$packsDir/packs.json"), json));
+  _pendingSave = save.catchError((Object e) => debugPrint("Couldn't save packs: $e"));
+  return save;
 }
 
-/// Name of a file, without the directories, for paths from any platform.
-String _baseName(String path) => path.split(RegExp(r"[/\\]")).last;
-
-/// Extension of a file name, or an empty string.
-String _extension(String path) {
-  final name = _baseName(path);
-  final dot = name.lastIndexOf(".");
-  return dot <= 0 ? "" : name.substring(dot + 1);
-}
-
-/// Directory next to an editor data file holding its background and assets.
+/// Directory next to an editor data file holding its background.
 String _editorAssetsPath(String editorDataPath) => editorDataPath.replaceAll(RegExp(r"\.json$"), "");
 
 /// Finds a file referenced by editor data.
 ///
-/// Paths are tried as absolute when [absoluteAllowed] (data from this device),
-/// then relative to [root] (data from an archive), then by name in
-/// [assetsDir]. When nothing matches, a file in [assetsDir] whose name starts
-/// with [fallbackPrefix] is used, which recovers backgrounds saved by older
-/// exports under the wrong extension.
+/// Relative paths are resolved against [root]. Absolute paths, stored by older
+/// versions, are only followed when [absoluteAllowed] (data from this device).
+/// Then the file is looked up by name in [assetsDir]. When nothing matches, a
+/// file in [assetsDir] whose name starts with [fallbackPrefix] is used, which
+/// recovers backgrounds saved by older exports under the wrong extension.
 Future<File?> _findEditorFile(
   Object? stored, {
   required Directory assetsDir,
-  String? root,
+  required String root,
   bool absoluteAllowed = false,
   String? fallbackPrefix,
 }) async {
   if (stored is String && stored.isNotEmpty) {
-    final isAbsolute = stored.startsWith("/") || stored.contains(":\\") || stored.contains(":/");
+    final isAbsolute = isAbsolutePath(stored);
     final candidates = [
-      if (isAbsolute && absoluteAllowed) File(stored),
-      if (!isAbsolute && root != null) File("$root/$stored"),
-      File("${assetsDir.path}/${_baseName(stored)}"),
+      if (isAbsolute && absoluteAllowed) File(resolvePath(stored, root)),
+      if (!isAbsolute) File("$root/$stored"),
+      File("${assetsDir.path}/${baseName(stored)}"),
     ];
     for (final candidate in candidates) {
       if (await candidate.exists()) return candidate;
@@ -63,15 +63,17 @@ Future<File?> _findEditorFile(
   }
   if (fallbackPrefix != null && await assetsDir.exists()) {
     await for (final entry in assetsDir.list()) {
-      if (entry is File && _baseName(entry.path).startsWith(fallbackPrefix)) return entry;
+      if (entry is File && baseName(entry.path).startsWith(fallbackPrefix)) return entry;
     }
   }
   return null;
 }
 
-/// Copies the editor data of a sticker into [targetBase].json and its files
-/// into the [targetBase] directory, rewriting the paths it contains with
-/// [pathFor].
+/// Copies the editor data of a sticker into [targetBase].json and its
+/// background into the [targetBase] directory, storing the background path
+/// returned by [pathFor].
+///
+/// Paths in the data are resolved against [root].
 ///
 /// Returns the rewritten data, or null when the data or its background can't
 /// be found or parsed. The sticker is then kept without editor data, and can
@@ -80,7 +82,7 @@ Future<Map<String, dynamic>?> _copyEditorData(
   String editorDataPath,
   String targetBase, {
   required String Function(String fileName) pathFor,
-  String? root,
+  required String root,
   bool absoluteAllowed = false,
 }) async {
   final targetDir = Directory(targetBase);
@@ -90,10 +92,9 @@ Future<Map<String, dynamic>?> _copyEditorData(
     // Validates the layers, which would otherwise only fail when opening the editor.
     EditorData.fromJson(data, GlobalKey());
 
-    final assetsDir = Directory(_editorAssetsPath(editorDataPath));
     final background = await _findEditorFile(
       data["background"],
-      assetsDir: assetsDir,
+      assetsDir: Directory(_editorAssetsPath(editorDataPath)),
       root: root,
       absoluteAllowed: absoluteAllowed,
       fallbackPrefix: "background.",
@@ -104,25 +105,9 @@ Future<Map<String, dynamic>?> _copyEditorData(
     }
 
     await targetDir.create(recursive: true);
-    final backgroundName = "background.${_extension(background.path)}";
+    final backgroundName = "background.${extensionOf(background.path)}";
     await background.copy("${targetDir.path}/$backgroundName");
     data["background"] = pathFor(backgroundName);
-
-    final layers = data["layers"] as List;
-    for (var i = 0; i < layers.length; i++) {
-      final layer = layers[i];
-      if (layer is! Map || layer["source"] is! String) continue;
-      final source = await _findEditorFile(
-        layer["source"],
-        assetsDir: assetsDir,
-        root: root,
-        absoluteAllowed: absoluteAllowed,
-      );
-      if (source == null) throw FileSystemException("Layer file not found", "${layer["source"]}");
-      final name = "$i.${_extension(source.path)}";
-      await source.copy("${targetDir.path}/$name");
-      layer["source"] = pathFor(name);
-    }
 
     await File("$targetBase.json").writeAsString(jsonEncode(data));
     return data;
@@ -141,6 +126,7 @@ Iterable<String> _fontsUsed(Map<String, dynamic> editorData) => (editorData["lay
     .where((layer) => layer["type"] == "text" && layer["fontName"] is String)
     .map((layer) => layer["fontName"] as String);
 
+/// Zips [pack] into [exportDir], which must not hold another zip of the same pack.
 Future<File> createPackZip(StickerPack pack, Directory exportDir, {bool includeEditData = true}) async {
   Directory packDir = Directory("${exportDir.path}/${uid()}/");
   await packDir.create(recursive: true);
@@ -164,6 +150,7 @@ Future<File> createPackZip(StickerPack pack, Directory exportDir, {bool includeE
           sticker.editorData!,
           "${packDir.path}$i",
           pathFor: (name) => "$i/$name",
+          root: packsDir,
           absoluteAllowed: true,
         );
         if (data != null) {
@@ -180,17 +167,15 @@ Future<File> createPackZip(StickerPack pack, Directory exportDir, {bool includeE
     if (pack.trayIcon != null) {
       final trayFile = File(pack.trayIcon!);
       if (await trayFile.exists()) {
-        await trayFile.copy("${packDir.path}tray.png");
-        exportData["trayIcon"] = "tray.png";
+        final trayName = "tray.${extensionOf(trayFile.path)}";
+        await trayFile.copy("${packDir.path}$trayName");
+        exportData["trayIcon"] = trayName;
       }
     }
     await File("${packDir.path}pack.json").writeAsString(jsonEncode(exportData));
 
     final sanitizedTitle = pack.title.replaceAll(RegExp(r"[^ \-_!&a-zA-Z0-9]"), "_");
-    File zipFile = File("${exportDir.path}/$sanitizedTitle.zip");
-    if (await zipFile.exists()) {
-      zipFile = File("${exportDir.path}/${sanitizedTitle}_${uid().substring(0, 4)}.zip");
-    }
+    final zipFile = File("${exportDir.path}/$sanitizedTitle.zip");
     await ZipFile.createFromDirectory(sourceDir: packDir, zipFile: zipFile);
     return zipFile;
   } finally {
@@ -209,7 +194,7 @@ Future<List<Map<String, dynamic>>> _exportFonts(Set<String> families, Directory 
       if (entry == null || entry.type == FontType.bundled || entry.fontFile == null) continue;
       final fontFile = File(entry.fontFile!);
       if (!await fontFile.exists()) continue;
-      final name = "fonts/${exported.length}.${_extension(fontFile.path)}";
+      final name = "fonts/${exported.length}.${extensionOf(fontFile.path)}";
       await Directory("${packDir.path}fonts").create();
       await fontFile.copy("${packDir.path}$name");
       exported.add({
@@ -233,34 +218,52 @@ Future<bool> exportPack(StickerPack pack, {bool includeEditData = true}) async {
 Future<bool> exportPacks(List<StickerPack> packsToExport, {bool includeEditData = true}) async {
   if (packsToExport.isEmpty) return false;
   Stopwatch sw = Stopwatch()..start();
-  Directory exportDir = Directory(exportCacheDir);
-  await exportDir.create(recursive: true);
+  return await withExportDirectory((exportDir) async {
+    List<XFile> files = [];
+    for (final (i, pack) in packsToExport.indexed) {
+      // Packs with the same title would get the same zip name.
+      final packDir = Directory("${exportDir.path}/$i");
+      await packDir.create();
+      File zip = await createPackZip(pack, packDir, includeEditData: includeEditData);
+      files.add(XFile(zip.path));
+    }
 
-  List<XFile> files = [];
-  for (final pack in packsToExport) {
-    File zip = await createPackZip(pack, exportDir, includeEditData: includeEditData);
-    files.add(XFile(zip.path));
-  }
-
-  debugPrint("Exported ${files.length} packs t=${sw.elapsedMilliseconds}ms");
-  await SharePlus.instance.share(ShareParams(files: files));
-  return true;
+    debugPrint("Exported ${files.length} packs t=${sw.elapsedMilliseconds}ms");
+    await SharePlus.instance.share(ShareParams(files: files));
+    return true;
+  });
 }
 
-/// Converts [stickers] to [format] in a new export directory and returns the
-/// files, skipping stickers whose file is missing.
+/// Runs [export] with a new directory in the export cache, deleted afterwards.
+///
+/// The share sheet copies the files it shares, so they can be deleted once
+/// it returns.
+Future<T> withExportDirectory<T>(Future<T> Function(Directory exportDir) export) async {
+  final exportDir = Directory("$exportCacheDir/${uid()}");
+  await exportDir.create(recursive: true);
+  try {
+    return await export(exportDir);
+  } finally {
+    try {
+      await exportDir.delete(recursive: true);
+    } catch (e) {
+      debugPrint("Couldn't delete ${exportDir.path}: $e");
+    }
+  }
+}
+
+/// Converts [stickers] to [format] into [exportDir] and returns the files,
+/// skipping stickers whose file is missing.
 ///
 /// [onProgress] receives the overall progress (0 to 1) and the 1-based index
 /// of the sticker being converted.
 Future<List<XFile>> convertStickers(
-  List<Sticker> stickers, {
+  List<Sticker> stickers,
+  Directory exportDir, {
   required StickerFormat format,
   String? packTitle,
   void Function(double progress, int current)? onProgress,
 }) async {
-  final Directory exportDir = Directory("$exportCacheDir/${uid()}");
-  await exportDir.create(recursive: true);
-
   final List<XFile> files = [];
   final cleanTitle = (packTitle != null && packTitle.isNotEmpty)
       ? packTitle.replaceAll(RegExp(r"[^ \-_!&a-zA-Z0-9]"), "_")
@@ -299,7 +302,7 @@ Future<void> deleteStickerFiles(Sticker sticker) async {
       if (await editorFile.exists()) {
         await editorFile.delete();
       }
-      final editorDir = Directory(sticker.editorData!.replaceAll(RegExp(r"\.json$"), ""));
+      final editorDir = Directory(_editorAssetsPath(sticker.editorData!));
       if (await editorDir.exists()) {
         await editorDir.delete(recursive: true);
       }
@@ -309,19 +312,32 @@ Future<void> deleteStickerFiles(Sticker sticker) async {
   }
 }
 
-Future<void> deletePackDirectory(StickerPack pack) async {
+/// Prefix of pack directories being deleted, which [cleanUpPacks] finishes
+/// deleting if the app stopped first.
+const _trashPrefix = ".trash_";
+
+/// Removes [pack] from [packs] and WhatsApp, saves the packs, then deletes its files.
+Future<void> deletePack(StickerPack pack) async {
+  packs.remove(pack);
+  await savePacks(packs);
   try {
-    final dir = Directory("$packsDir/${pack.id}");
+    final dir = Directory(pack.directory);
     if (await dir.exists()) {
-      await dir.delete(recursive: true);
+      // Renamed first, so a new pack can't get files of this one if deleting fails.
+      final trash = await dir.rename("$packsDir/$_trashPrefix${uid()}");
+      await trash.delete(recursive: true);
     }
   } catch (e) {
     debugPrint("Failed to delete pack directory: $e");
   }
+  try {
+    await WhatsappStickers.removeStickerPack(pack.id);
+  } catch (e) {
+    debugPrint("Couldn't remove ${pack.id} from WhatsApp: $e");
+  }
 }
 
-/// Makes [id] unique among the packs and the pack directories, which may
-/// remain from a pack whose deletion failed.
+/// Makes [id] unique among the packs and the pack directories.
 String _uniquePackId(String id) {
   while (packs.any((p) => p.id == id) || Directory("$packsDir/$id").existsSync()) {
     id = "${id}_";
@@ -332,8 +348,7 @@ String _uniquePackId(String id) {
 Future<void> importPack(File f) async {
   //TODO show progress
   Stopwatch sw = Stopwatch()..start();
-  Directory importDir = Directory(mediaCacheDir);
-  Directory unzipDir = Directory("${importDir.path}/${uid()}/");
+  Directory unzipDir = Directory("$mediaCacheDir/import_${uid()}/");
   await unzipDir.create(recursive: true);
   try {
     await ZipFile.extractToDirectory(zipFile: f, destinationDir: unzipDir);
@@ -341,7 +356,7 @@ Future<void> importPack(File f) async {
 
     List<StickerPack> packsToAdd = [];
     // Directory that relative editor data paths start from.
-    String? root;
+    final root = unzipDir.path.replaceAll(RegExp(r"/$"), "");
 
     switch (f.path.split(".").last.toLowerCase()) {
       case "wastickers":
@@ -394,28 +409,23 @@ Future<void> importPack(File f) async {
         break;
       default:
         //TODO support stickify's backup file format
-        root = unzipDir.path.replaceAll(RegExp(r"/$"), "");
-        final json = jsonDecode(await File("${unzipDir.path}pack.json").readAsString());
+        final json = jsonDecode(await File("$root/pack.json").readAsString());
         await _importFonts(json["fonts"], root);
-        final pack = StickerPack.fromJson(json);
-        for (var sticker in pack.stickers) {
-          sticker.source = unzipDir.path + sticker.source;
-          if (sticker.editorData != null) {
-            sticker.editorData = unzipDir.path + sticker.editorData!;
-          }
-        }
-        if (pack.trayIcon != null) {
-          pack.trayIcon = unzipDir.path + pack.trayIcon!;
-        }
-        packsToAdd.add(pack);
+        packsToAdd.add(StickerPack.fromJson(json, root: root));
     }
     debugPrint("Parse t=${sw.elapsedMilliseconds}ms");
 
-    for (final pack in packsToAdd) {
-      await _addImportedPack(pack, root: root);
-      debugPrint("[${pack.id}] Copy t=${sw.elapsedMilliseconds}ms");
+    var added = false;
+    try {
+      for (final pack in packsToAdd) {
+        await _addImportedPack(pack, root: root);
+        added = true;
+        debugPrint("[${pack.id}] Copy t=${sw.elapsedMilliseconds}ms");
+      }
+    } finally {
+      // Keeps the packs added before a failure.
+      if (added) await savePacks(packs);
     }
-    await savePacks(packs);
   } finally {
     // Clean up unzipped temporary folder
     try {
@@ -431,11 +441,11 @@ Future<void> importPack(File f) async {
 ///
 /// Stickers whose image is missing are skipped. Editor data that can't be
 /// restored is dropped, and the sticker stays editable from its image.
-Future<void> _addImportedPack(StickerPack pack, {String? root}) async {
+Future<void> _addImportedPack(StickerPack pack, {required String root}) async {
   pack.id = _uniquePackId(pack.id);
   // StickerPack.onEdit increments the version, so it must be an integer.
   if (int.tryParse(pack.imageDataVersion) == null) pack.imageDataVersion = "1";
-  final packDir = Directory("$packsDir/${pack.id}");
+  final packDir = Directory(pack.directory);
   await packDir.create(recursive: true);
   try {
     final imported = <Sticker>[];
@@ -453,7 +463,7 @@ Future<void> _addImportedPack(StickerPack pack, {String? root}) async {
         final data = await _copyEditorData(
           sticker.editorData!,
           "${packDir.path}/$name",
-          pathFor: (file) => "${packDir.path}/$name/$file",
+          pathFor: (file) => "${pack.id}/$name/$file",
           root: root,
         );
         if (data != null) editorData = "${packDir.path}/$name.json";
@@ -464,7 +474,9 @@ Future<void> _addImportedPack(StickerPack pack, {String? root}) async {
     pack.stickers = imported;
 
     final tray = pack.trayIcon == null ? null : File(pack.trayIcon!);
-    pack.trayIcon = tray != null && await tray.exists() ? (await tray.copy("${packDir.path}/tray.webp")).path : null;
+    pack.trayIcon = tray != null && await tray.exists()
+        ? (await tray.copy("${packDir.path}/tray.${extensionOf(tray.path)}")).path
+        : null;
   } catch (_) {
     await packDir.delete(recursive: true);
     rethrow;
@@ -493,12 +505,116 @@ Future<void> _importFonts(Object? fonts, String root) async {
   }
 }
 
+/// Whether packs.json was written by a version storing absolute paths.
+bool _hasAbsolutePaths = false;
+
 Future<List<StickerPack>> getPacks() async {
   File input = File("$packsDir/packs.json");
   if (await input.exists()) {
-    return (jsonDecode(await input.readAsString()) as List).map((json) => StickerPack.fromJson(json)).toList();
+    final List json = jsonDecode(await input.readAsString());
+    _hasAbsolutePaths = json.any((pack) =>
+        pack["trayIcon"] is String && isAbsolutePath(pack["trayIcon"]) ||
+        (pack["stickers"] as List).any((sticker) => isAbsolutePath(sticker["source"])));
+    return json.map((json) => StickerPack.fromJson(json)).toList();
   }
   return List.empty(growable: true);
+}
+
+/// Brings the pack files in line with [packs], after they are loaded:
+/// - Stores the paths written by older versions relative to [packsDir].
+/// - Finishes deleting packs, and deletes the files no pack uses.
+/// - Removes deleted packs from WhatsApp.
+///
+/// Must run before anything adds stickers, whose files would look unused.
+Future<void> cleanUpPacks() async {
+  try {
+    if (_hasAbsolutePaths) {
+      await savePacks(packs);
+      await _migrateEditorData();
+      _hasAbsolutePaths = false;
+    }
+    await for (final entry in Directory(packsDir).list()) {
+      if (entry is Directory && baseName(entry.path).startsWith(_trashPrefix)) {
+        await entry.delete(recursive: true);
+      }
+    }
+    for (final pack in packs) {
+      await _deleteUnusedFiles(pack);
+    }
+  } catch (e) {
+    debugPrint("Couldn't clean up packs: $e");
+  }
+  WhatsappStickers.retainStickerPacks(packs.map((pack) => pack.id)).catchError((Object e) {
+    debugPrint("Couldn't remove deleted packs from WhatsApp: $e");
+    return false;
+  });
+}
+
+/// Rewrites the absolute background paths of editor data relative to [packsDir].
+Future<void> _migrateEditorData() async {
+  for (final sticker in packs.expand((pack) => pack.stickers)) {
+    if (sticker.editorData == null) continue;
+    try {
+      final file = File(sticker.editorData!);
+      if (!await file.exists()) continue;
+      final data = jsonDecode(await file.readAsString());
+      final background = data["background"];
+      if (background is! String || !isAbsolutePath(background)) continue;
+      data["background"] = relativePath(resolvePath(background, packsDir), packsDir);
+      await writeAtomically(file, jsonEncode(data));
+    } catch (e) {
+      debugPrint("Couldn't migrate ${sticker.editorData}: $e");
+    }
+  }
+}
+
+String _normalize(String path) => path.replaceAll(RegExp(r"[/\\]+"), "/");
+
+/// Deletes the files in the directory of [pack] that it doesn't use, left
+/// behind by older versions or by failures.
+Future<void> _deleteUnusedFiles(StickerPack pack) async {
+  final dir = Directory(pack.directory);
+  if (!await dir.exists()) return;
+  final stickers = pack.stickers.map((sticker) => _normalize(sticker.source)).toSet();
+  final used = {
+    ...stickers,
+    for (final sticker in pack.stickers)
+      if (sticker.editorData != null) _normalize(sticker.editorData!),
+    if (pack.trayIcon != null) _normalize(pack.trayIcon!),
+    _normalize(pack.whatsappTrayPath),
+  };
+  final usedDirs = [
+    for (final sticker in pack.stickers)
+      if (sticker.editorData != null) "${_normalize(_editorAssetsPath(sticker.editorData!))}/",
+  ];
+
+  final dirs = <Directory>[];
+  final unused = <File>[];
+  final found = <String>{};
+  await for (final entry in dir.list(recursive: true, followLinks: false)) {
+    final path = _normalize(entry.path);
+    if (entry is Directory) {
+      dirs.add(entry);
+    } else if (stickers.contains(path)) {
+      found.add(path);
+    } else if (entry is File && !used.contains(path) && !usedDirs.any(path.startsWith)) {
+      unused.add(entry);
+    }
+  }
+  // A sticker that wasn't found means the paths don't match the files, which would delete them all.
+  if (found.length != stickers.length) {
+    debugPrint("[${pack.id}] Sticker files not found, not cleaning up");
+    return;
+  }
+  for (final file in unused) {
+    debugPrint("[${pack.id}] Deleting unused ${file.path}");
+    await file.delete();
+  }
+  // Deepest first, so directories holding only empty directories go too.
+  dirs.sort((a, b) => b.path.length.compareTo(a.path.length));
+  for (final d in dirs) {
+    if (await d.list().isEmpty) await d.delete();
+  }
 }
 
 Future<Uint8List> cropSticker(
@@ -577,85 +693,52 @@ Future<Uint8List> _cropSticker(
   return (await ImageMerger.mergeToMemory(option: option))!;
 }
 
-/// Adds a sticker to a sticker pack
-/// Copies the file to the required place
+/// Adds the sticker [data] to [pack], or replaces the sticker at index
+/// [replace], and saves the packs.
 ///
-/// If [index] is 30 it changes the tray icon.
-Future<void> addToPack(
-  StickerPack pack,
-  int index,
-  Uint8List data, [
-  EditorData? editorData,
-  bool replace = false,
-]) async {
-  Directory("$packsDir/${pack.id}").createSync(recursive: true);
-  File stickerFile;
+/// The background of [editorData] is copied next to the sticker. The caller
+/// keeps ownership of the original.
+Future<void> addToPack(StickerPack pack, Uint8List data, {EditorData? editorData, int? replace}) async {
+  final dir = pack.directory;
+  await Directory(dir).create(recursive: true);
+  // This is enough to avoid filename collisions
+  final filename = "${replace ?? pack.stickers.length}_${uid()}";
+  final stickerFile = File("$dir/$filename.webp");
   File? editorDataFile;
 
-  if (index == 30) {
-    stickerFile = File("$packsDir/${pack.id}/tray.webp");
-    await stickerFile.writeAsBytes(data);
-    pack.trayIcon = stickerFile.path;
-  } else {
-    // This is enough to avoid filename collisions
-    final String filename = "${index}_${uid()}";
-
+  try {
     if (editorData != null) {
-      await Directory("$packsDir/${pack.id}/$filename/").create(recursive: true);
-      final backgroundPath = "$packsDir/${pack.id}/$filename/background.${editorData.background.split(".").last}";
       final bgFile = File(editorData.background);
-      if (await bgFile.exists()) {
-        await bgFile.copy(backgroundPath);
-        if (editorData.background.contains(mediaCacheDir)) {
-          try {
-            await bgFile.delete();
-          } catch (_) {}
-        }
+      if (!await bgFile.exists()) {
+        throw FileSystemException("Background not found", editorData.background);
       }
+      await Directory("$dir/$filename").create();
+      final backgroundPath = "$dir/$filename/background.${extensionOf(editorData.background)}";
+      await bgFile.copy(backgroundPath);
       editorData.background = backgroundPath;
 
-      for (int i = 0; i < editorData.layers.length; i++) {
-        if (editorData.layers[i] is ImageLayer) {
-          final ImageLayer layer = editorData.layers[i] as ImageLayer;
-          final layerFile = File(layer.source);
-          if (await layerFile.exists()) {
-            await layerFile.copy("$packsDir/${pack.id}/$filename/$i.webp");
-            if (layer.source.contains(mediaCacheDir)) {
-              try {
-                await layerFile.delete();
-              } catch (_) {}
-            }
-          }
-          layer.source = "$packsDir/${pack.id}/$filename/$i.webp";
-        }
-      }
-
-      editorDataFile = File("$packsDir/${pack.id}/$filename.json");
-      await editorDataFile.writeAsString(jsonEncode(editorData.toJson()));
+      editorDataFile = File("$dir/$filename.json");
+      await editorDataFile.writeAsString(jsonEncode(editorData.toJson()), flush: true);
     }
-    stickerFile = File("$packsDir/${pack.id}/$filename.webp");
-    await stickerFile.writeAsBytes(data);
-    if (replace) {
-      await deleteStickerFiles(pack.stickers[index]);
-      pack.stickers[index].source = stickerFile.path;
-      pack.stickers[index].editorData = editorDataFile?.path;
-    } else {
-      pack.stickers.add(Sticker(stickerFile.path, ["❤"], editorDataFile?.path));
-    }
+    await stickerFile.writeAsBytes(data, flush: true);
+  } catch (_) {
+    await deleteStickerFiles(Sticker(stickerFile.path, [], editorDataFile?.path ?? "$dir/$filename.json"));
+    rethrow;
   }
 
-  pack.onEdit();
-  await FileImage(stickerFile).evict();
-  await savePacks(packs);
-  // Clear media cache after adding a sticker
-  print("Clearing media cache");
-  await for (final entry in Directory(mediaCacheDir).list()) {
-    try {
-      await entry.delete(recursive: true);
-    } catch (e) {
-      debugPrint("Failed to clear ${entry.path}: $e");
-    }
+  Sticker? replaced;
+  if (replace != null) {
+    final sticker = pack.stickers[replace];
+    replaced = Sticker(sticker.source, sticker.emojis, sticker.editorData);
+    sticker.source = stickerFile.path;
+    sticker.editorData = editorDataFile?.path;
+  } else {
+    pack.stickers.add(Sticker(stickerFile.path, ["❤"], editorDataFile?.path));
   }
+
+  await pack.onEdit();
+  // Only deleted once packs.json no longer refers to them.
+  if (replaced != null) await deleteStickerFiles(replaced);
 }
 
 Future<File> saveTemp(Uint8List data) async {

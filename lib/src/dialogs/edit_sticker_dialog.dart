@@ -165,9 +165,12 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
   }
 
   Future<void> deleteSticker() async {
-    await deleteStickerFiles(widget.pack.stickers[widget.index]);
-    widget.pack.stickers.removeAt(widget.index);
-    widget.pack.onEdit();
+    final sticker = widget.pack.stickers.removeAt(widget.index);
+    // Older versions used a sticker as tray icon.
+    if (sticker.source == widget.pack.trayIcon) widget.pack.trayIcon = null;
+    // Only deleted once packs.json no longer refers to them.
+    await widget.pack.onEdit();
+    await deleteStickerFiles(sticker);
   }
 
   String? validator(String? value) {

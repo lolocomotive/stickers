@@ -988,8 +988,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "47d089a886cc0df4fa2f7f8af659b06454442e9d"
-      resolved-ref: "47d089a886cc0df4fa2f7f8af659b06454442e9d"
+      ref: "3ac0058d0643bf6b241629baf49617355dcfeb9c"
+      resolved-ref: "3ac0058d0643bf6b241629baf49617355dcfeb9c"
       url: "https://github.com/lolocomotive/whatsapp_stickers_plus"
     source: git
     version: "1.1.2"

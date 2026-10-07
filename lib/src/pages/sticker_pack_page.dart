@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/data/storage.dart';
 import 'package:stickers/src/settings/settings.dart';
 import 'package:stickers/src/video/gif_transcoder.dart';
 import 'package:stickers/src/dialogs/delete_confirm_dialog.dart';
@@ -106,17 +107,16 @@ class StickerPackPageState extends State<StickerPackPage> {
 
     if (confirmed == true) {
       final sorted = _selectedIndices.toList()..sort((a, b) => b.compareTo(a));
-      for (final index in sorted) {
-        final sticker = widget.pack.stickers[index];
-        await deleteStickerFiles(sticker);
-        widget.pack.stickers.removeAt(index);
-      }
-      if (widget.pack.trayIcon != null && !File(widget.pack.trayIcon!).existsSync()) {
+      final removed = [for (final index in sorted) widget.pack.stickers.removeAt(index)];
+      // Older versions used a sticker as tray icon.
+      if (removed.any((sticker) => sticker.source == widget.pack.trayIcon)) {
         widget.pack.trayIcon = null;
       }
       _selectedIndices.clear();
-      widget.pack.onEdit();
       if (mounted) setState(() {});
+      // Only deleted once packs.json no longer refers to them.
+      await widget.pack.onEdit();
+      await Future.wait(removed.map(deleteStickerFiles));
     }
   }
 
@@ -129,8 +129,7 @@ class StickerPackPageState extends State<StickerPackPage> {
     packs.remove(widget.pack);
     widget.deleteCallback();
     Navigator.of(context).pop();
-    await deletePackDirectory(widget.pack);
-    savePacks(packs);
+    await deletePack(widget.pack);
   }
 
   Future<void> _exportPack() async {
@@ -552,6 +551,8 @@ class StickerPackPageState extends State<StickerPackPage> {
   Future<void> _createSticker() async {
     if (_importing || widget.pack.stickers.length >= 30) return;
     setState(() => _importing = true);
+    // Copies made by the pickers, deleted once the stickers are made.
+    final picked = <String>[];
     try {
       final ImagePicker picker = ImagePicker();
       if (widget.pack.animated) {
@@ -580,6 +581,7 @@ class StickerPackPageState extends State<StickerPackPage> {
           selectedPath = path;
           isValid = isSupportedVideo(selectedPath) || GifTranscoder.isGifFile(selectedPath);
         }
+        picked.add(selectedPath);
 
         if (!mounted) return;
         if (!isValid) {
@@ -605,6 +607,7 @@ class StickerPackPageState extends State<StickerPackPage> {
         } else {
           images = await picker.pickMultiImage(limit: remaining);
         }
+        picked.addAll(images.map((image) => image.path));
         if (!mounted) return;
         if (images.isEmpty) return;
 
@@ -649,6 +652,7 @@ class StickerPackPageState extends State<StickerPackPage> {
         );
       }
     } finally {
+      await Future.wait(picked.map(deleteTemporaryFile));
       if (mounted) setState(() => _importing = false);
     }
   }

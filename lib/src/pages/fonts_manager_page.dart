@@ -68,7 +68,7 @@ class _FontsManagerPageState extends State<FontsManagerPage> {
                     final shouldDelete = await showDialog(
                         context: context, builder: (context) => DeleteConfirmDialog(FontsRegistry.at(i).family));
                     if (shouldDelete) {
-                      FontsRegistry.delete(FontsRegistry.at(i).family);
+                      await FontsRegistry.delete(FontsRegistry.at(i).family);
                       setState(() {});
                     }
                   },

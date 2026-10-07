@@ -6,6 +6,8 @@ import 'package:stickers/src/settings/settings.dart';
 
 const String localizationUnavailable = "Localization unavailable";
 const double defaultBorderRadius = 10;
+late String dataDir;
+late String tempDir;
 late String packsDir;
 late String cacheDir;
 late String fontsCacheDir;
@@ -13,6 +15,10 @@ late String exportCacheDir;
 late String mediaCacheDir;
 late String bundledFontsDir;
 late String googleFontsDir;
+late String customFontsDir;
+
+/// Index passed to the crop and edit pages to make a pack's tray icon instead of a sticker.
+const int trayIndex = 30;
 
 late List<StickerPack> packs;
 final navigatorKey = GlobalKey<NavigatorState>();

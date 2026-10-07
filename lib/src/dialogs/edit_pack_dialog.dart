@@ -5,7 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/data/storage.dart';
 import 'package:stickers/src/dialogs/select_sticker_dialog.dart';
+import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/util.dart';
 
@@ -207,9 +209,9 @@ class TrayIconMethodSelector extends StatelessWidget {
             onTap: () {
               showDialog(
                   context: context,
-                  builder: (_) => SelectStickerDialog(callback: (sticker) {
-                        pack.setTray(sticker.source);
-                        Navigator.of(context).pop();
+                  builder: (_) => SelectStickerDialog(callback: (sticker) async {
+                        await pack.setTray(sticker.source);
+                        if (context.mounted) Navigator.of(context).pop();
                       }));
             },
             leading: Icon(Icons.search),
@@ -226,10 +228,11 @@ class TrayIconMethodSelector extends StatelessWidget {
                 "/crop",
                 arguments: EditArguments(
                   pack: pack,
-                  index: 30,
+                  index: trayIndex,
                   mediaPath: image.path,
                 ),
               ).then((value) {
+                deleteTemporaryFile(image.path);
                 if (!context.mounted) return;
                 Navigator.of(context).pop();
               });

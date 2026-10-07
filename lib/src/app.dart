@@ -6,6 +6,7 @@ import 'package:share_handler/share_handler.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/data/storage.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
 import 'package:stickers/src/globals.dart';
 import 'package:stickers/src/pages/crop_page.dart';
@@ -207,6 +208,8 @@ class StickersAppState extends State<StickersApp> {
                       title: AppLocalizations.of(context)!.importError,
                     ));
           }
+        } finally {
+          await deleteTemporaryFile(attachment!.path);
         }
       }
       return;
@@ -231,7 +234,9 @@ class StickersAppState extends State<StickersApp> {
   }
 
   Future<void> _quickAdd(SharedMedia media, String defaultTitle, String defaultAuthor) async {
-    final rawImageData = File(media.attachments!.first!.path).readAsBytesSync();
+    final path = media.attachments!.first!.path;
+    final rawImageData = await File(path).readAsBytes();
+    await deleteTemporaryFile(path);
     final pack = packs.firstWhere((pack) => pack.stickers.length < 30 && !pack.animated, orElse: () {
       final pack = StickerPack(
         defaultTitle,
@@ -249,7 +254,7 @@ class StickersAppState extends State<StickersApp> {
     final img = await decodeImageFromList(rawImageData);
     final cropRect = Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble());
     final cropped = await cropSticker(cropRect, rawImageData, pack, index, 0);
-    addToPack(pack, index, cropped);
+    await addToPack(pack, cropped);
 
     navigatorKey.currentState!.pushNamed("/pack", arguments: pack).then((value) {
       if (homeState != null) {

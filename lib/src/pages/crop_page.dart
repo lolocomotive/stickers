@@ -258,16 +258,22 @@ class _CropPageState extends State<CropPage> with TickerProviderStateMixin {
       );
       if (!mounted) return;
       final output = await saveTemp(cropped);
-      if (!mounted) return;
-      final result = await Navigator.of(context).pushNamed(
-        "/edit",
-        arguments: EditArguments(
-          pack: widget.pack,
-          index: widget.index,
-          mediaPath: output.path,
-          returnResult: widget.returnCrop,
-        ),
-      );
+      final Object? result;
+      try {
+        if (!mounted) return;
+        result = await Navigator.of(context).pushNamed(
+          "/edit",
+          arguments: EditArguments(
+            pack: widget.pack,
+            index: widget.index,
+            mediaPath: output.path,
+            returnResult: widget.returnCrop,
+          ),
+        );
+      } finally {
+        // The editor copies what it keeps.
+        await output.delete();
+      }
       if (widget.returnCrop && mounted && result != null) {
         Navigator.of(context).pop(result);
       }
@@ -292,7 +298,7 @@ enum StickerMediaType {
 class EditArguments {
   StickerPack pack;
 
-  // Index 30 is tray icon
+  // trayIndex is the tray icon
   int index;
   String? mediaPath;
   StickerMediaType type;

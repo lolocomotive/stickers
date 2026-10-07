@@ -170,33 +170,36 @@ Future<void> exportStickersWithProgress(
     ),
   );
 
-  final List<XFile> files;
-  try {
-    files = await convertStickers(
-      stickers,
-      format: format,
-      packTitle: packTitle,
-      onProgress: (fraction, current) => progress.value = (fraction, current),
-    );
-  } catch (e, st) {
-    debugPrint("Sticker export failed: $e");
-    debugPrintStack(stackTrace: st);
+  await withExportDirectory((exportDir) async {
+    final List<XFile> files;
+    try {
+      files = await convertStickers(
+        stickers,
+        exportDir,
+        format: format,
+        packTitle: packTitle,
+        onProgress: (fraction, current) => progress.value = (fraction, current),
+      );
+    } catch (e, st) {
+      debugPrint("Sticker export failed: $e");
+      debugPrintStack(stackTrace: st);
+      navigator.pop();
+      if (!context.mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => ErrorDialog(
+          title: AppLocalizations.of(context)!.couldntExportSticker,
+          message: e.toString(),
+        ),
+      );
+      return;
+    }
     navigator.pop();
-    if (!context.mounted) return;
-    showDialog(
-      context: context,
-      builder: (context) => ErrorDialog(
-        title: AppLocalizations.of(context)!.couldntExportSticker,
-        message: e.toString(),
-      ),
-    );
-    return;
-  }
-  navigator.pop();
-  if (files.isEmpty || !context.mounted) return;
-  await exportWithFeedback(context, () async {
-    await SharePlus.instance.share(ShareParams(files: files));
-    return true;
+    if (files.isEmpty || !context.mounted) return;
+    await exportWithFeedback(context, () async {
+      await SharePlus.instance.share(ShareParams(files: files));
+      return true;
+    });
   });
 }
 

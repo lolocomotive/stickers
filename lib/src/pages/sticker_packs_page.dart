@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/data/load_store.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
+import 'package:stickers/src/data/storage.dart';
 import 'package:stickers/src/dialogs/create_pack_dialog.dart';
 import 'package:stickers/src/dialogs/delete_confirm_dialog.dart';
 import 'package:stickers/src/dialogs/error_dialog.dart';
@@ -89,11 +90,9 @@ class StickerPacksPageState extends State<StickerPacksPage> {
 
     if (confirmed == true) {
       for (final pack in _selectedPacks.toList()) {
-        packs.remove(pack);
-        await deletePackDirectory(pack);
+        await deletePack(pack);
       }
       _selectedPacks.clear();
-      await savePacks(packs);
       if (mounted) setState(() {});
     }
   }
@@ -194,6 +193,8 @@ class StickerPacksPageState extends State<StickerPacksPage> {
                               message: AppLocalizations.of(context)!.checkPack,
                             ),
                           );
+                        } finally {
+                          await deleteTemporaryFile(f.path);
                         }
                       }
                       setState(() {});
