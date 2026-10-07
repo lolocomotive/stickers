@@ -8,23 +8,28 @@ import androidx.annotation.NonNull
 import androidx.annotation.RequiresApi
 import de.loicezt.stickers.video.CropAndScale
 import de.loicezt.stickers.video.OverlayAndEncode
+import de.loicezt.stickers.video.VideoThumbnails
 import de.loicezt.stickers.video.WebPConfig
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class MainActivity : FlutterActivity() {
     private val METHOD_CHANNEL_NAME = "de.loicezt.stickers/methods"
     private val TRIM_CHANNEL_NAME = "de.loicezt.stickers/progress_trim"
     private val ECODE_CHANNEL_NAME = "de.loicezt.stickers/progress_encode"
+    private val THUMBNAILS_CHANNEL_NAME = "de.loicezt.stickers/thumbnails"
 
     private lateinit var cropAndScale: CropAndScale
     private lateinit var overlayAndEncode: OverlayAndEncode
@@ -151,6 +156,46 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        // Streams {index, bytes} thumbnails for the video given in the listen arguments
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            THUMBNAILS_CHANNEL_NAME
+        ).setStreamHandler(
+            object : EventChannel.StreamHandler {
+                private var job: Job? = null
+
+                override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                    if (events == null) return
+                    val args = arguments as Map<*, *>
+                    val path = args["path"] as String
+                    val count = (args["count"] as Number).toInt()
+                    val shortSide = (args["shortSide"] as Number).toInt()
+                    job?.cancel()
+                    job = scope.launch {
+                        try {
+                            withContext(Dispatchers.IO) {
+                                VideoThumbnails.extract(path, count, shortSide) { index, bytes ->
+                                    withContext(Dispatchers.Main) {
+                                        events.success(mapOf("index" to index, "bytes" to bytes))
+                                    }
+                                }
+                            }
+                            events.endOfStream()
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            events.error("THUMBNAIL_FAILED", e.message, null)
+                        }
+                    }
+                }
+
+                override fun onCancel(arguments: Any?) {
+                    job?.cancel()
+                    job = null
+                }
+            }
+        )
 
         // 2. Setup the EventChannel to stream updates to Flutter
         EventChannel(

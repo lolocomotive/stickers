@@ -1,5 +1,9 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 /// A custom video trim bar widget that solves the alignment mismatch between
 /// range trim handles and the playback progress head.
@@ -8,6 +12,8 @@ import 'package:flutter/material.dart';
 /// - Start and end trim handles with clear grab bars and bounding borders.
 /// - Unselected regions (before start and after end) dimmed out.
 /// - Selected region framed with an accent border.
+/// - Optional frame thumbnails filling the track, laid out along the timeline. Each one
+///   fades in when it first appears, so they can be supplied progressively.
 /// - Playhead indicator that precisely tracks playback position within [0.0, 1.0],
 ///   aligning perfectly with the handles at the edges.
 /// - Can drag start handle, end handle, the middle region (to shift the whole trim window),
@@ -22,10 +28,15 @@ class VideoTrimBar extends StatefulWidget {
     this.onChangeEnd,
     this.onSeek,
     this.minRangeDistance = 0.01,
-    this.height = 44.0,
-    this.handleWidth = 14.0,
+    this.height = defaultHeight,
+    this.handleWidth = defaultHandleWidth,
     this.showPlayhead = true,
+    this.thumbnails,
+    this.thumbnailRotation = 0,
   });
+
+  static const double defaultHeight = 44.0;
+  static const double defaultHandleWidth = 14.0;
 
   /// Range values between 0.0 and 1.0 representing start and end fractions.
   final RangeValues range;
@@ -57,6 +68,13 @@ class VideoTrimBar extends StatefulWidget {
   /// Whether to render the playhead line/indicator.
   final bool showPlayhead;
 
+  /// Evenly spaced frames drawn across the track. Null entries are left blank.
+  /// Pass a new list instance when an entry changes.
+  final List<ui.Image?>? thumbnails;
+
+  /// Rotation in degrees (multiple of 90) applied to each thumbnail.
+  final int thumbnailRotation;
+
   @override
   State<VideoTrimBar> createState() => _VideoTrimBarState();
 }
@@ -69,10 +87,70 @@ enum _DragTarget {
   playhead,
 }
 
-class _VideoTrimBarState extends State<VideoTrimBar> {
+class _VideoTrimBarState extends State<VideoTrimBar> with SingleTickerProviderStateMixin {
+  static const _fadeDuration = Duration(milliseconds: 150);
+
   _DragTarget _dragTarget = _DragTarget.none;
   double _dragStartDx = 0.0;
   RangeValues _dragInitialRange = const RangeValues(0.0, 1.0);
+
+  /// Drives repaints while thumbnails are fading in; timing comes from [_clock].
+  late final Ticker _fadeTicker = createTicker((_) => _onFadeTick());
+  final Stopwatch _clock = Stopwatch()..start();
+  final Map<int, ui.Image> _fadingImages = {};
+  final Map<int, Duration> _fadeStarts = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _registerThumbnails();
+  }
+
+  @override
+  void didUpdateWidget(covariant VideoTrimBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.thumbnails != widget.thumbnails) {
+      _registerThumbnails();
+    }
+  }
+
+  @override
+  void dispose() {
+    _fadeTicker.dispose();
+    super.dispose();
+  }
+
+  /// Starts a fade for every thumbnail slot whose image is new.
+  void _registerThumbnails() {
+    final thumbs = widget.thumbnails ?? const <ui.Image?>[];
+    for (int i = 0; i < thumbs.length; i++) {
+      final image = thumbs[i];
+      if (image != null && _fadingImages[i] != image) {
+        _fadingImages[i] = image;
+        _fadeStarts[i] = _clock.elapsed;
+      }
+    }
+    if (!_fadeTicker.isActive && _thumbnailOpacities().any((o) => o < 1.0)) {
+      _fadeTicker.start();
+    }
+  }
+
+  void _onFadeTick() {
+    setState(() {});
+    if (_thumbnailOpacities().every((o) => o >= 1.0)) {
+      _fadeTicker.stop();
+    }
+  }
+
+  List<double> _thumbnailOpacities() {
+    final count = widget.thumbnails?.length ?? 0;
+    final now = _clock.elapsed;
+    return List.generate(count, (i) {
+      final start = _fadeStarts[i];
+      if (start == null) return 0.0;
+      return ((now - start).inMicroseconds / _fadeDuration.inMicroseconds).clamp(0.0, 1.0);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -200,6 +278,9 @@ class _VideoTrimBarState extends State<VideoTrimBar> {
                 playbackPosition: widget.playbackPosition,
                 handleWidth: widget.handleWidth,
                 showPlayhead: widget.showPlayhead,
+                thumbnails: widget.thumbnails,
+                thumbnailOpacities: _thumbnailOpacities(),
+                thumbnailRotation: widget.thumbnailRotation,
                 primaryColor: colorScheme.primary,
                 onPrimaryColor: colorScheme.onPrimary,
                 trackColor: colorScheme.surfaceContainerHighest,
@@ -239,6 +320,9 @@ class _TrimBarPainter extends CustomPainter {
     required this.playbackPosition,
     required this.handleWidth,
     required this.showPlayhead,
+    required this.thumbnails,
+    required this.thumbnailOpacities,
+    required this.thumbnailRotation,
     required this.primaryColor,
     required this.onPrimaryColor,
     required this.trackColor,
@@ -250,6 +334,9 @@ class _TrimBarPainter extends CustomPainter {
   final double? playbackPosition;
   final double handleWidth;
   final bool showPlayhead;
+  final List<ui.Image?>? thumbnails;
+  final List<double> thumbnailOpacities;
+  final int thumbnailRotation;
   final Color primaryColor;
   final Color onPrimaryColor;
   final Color trackColor;
@@ -284,6 +371,23 @@ class _TrimBarPainter extends CustomPainter {
 
     canvas.save();
     canvas.clipRRect(fullRect);
+
+    // Frame thumbnails, aligned with the track so each one sits at its point in time
+    final thumbs = thumbnails;
+    if (thumbs != null && thumbs.isNotEmpty) {
+      final cellWidth = trackWidth / thumbs.length;
+      for (int i = 0; i < thumbs.length; i++) {
+        final image = thumbs[i];
+        final opacity = i < thumbnailOpacities.length ? thumbnailOpacities[i] : 1.0;
+        if (image == null || opacity <= 0) continue;
+        _drawThumbnail(
+          canvas,
+          image,
+          opacity,
+          Rect.fromLTWH(handleWidth + i * cellWidth, 0, cellWidth, size.height),
+        );
+      }
+    }
 
     if (startHandleLeft > 0) {
       canvas.drawRect(Rect.fromLTWH(0, 0, startHandleLeft, size.height), scrimPaint);
@@ -402,6 +506,30 @@ class _TrimBarPainter extends CustomPainter {
     canvas.restore();
   }
 
+  /// Draws [image] rotated by [thumbnailRotation], center-cropped to cover [cell].
+  void _drawThumbnail(Canvas canvas, ui.Image image, double opacity, Rect cell) {
+    final quarterTurns = (thumbnailRotation ~/ 90) % 4;
+    final sideways = quarterTurns.isOdd;
+    final rotatedWidth = (sideways ? image.height : image.width).toDouble();
+    final rotatedHeight = (sideways ? image.width : image.height).toDouble();
+    final scale = math.max(cell.width / rotatedWidth, cell.height / rotatedHeight);
+
+    canvas.save();
+    // Slight overlap avoids hairline seams between cells
+    canvas.clipRect(cell.inflate(0.5));
+    canvas.translate(cell.center.dx, cell.center.dy);
+    canvas.rotate(quarterTurns * math.pi / 2);
+    canvas.drawImageRect(
+      image,
+      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+      Rect.fromCenter(center: Offset.zero, width: image.width * scale, height: image.height * scale),
+      Paint()
+        ..filterQuality = FilterQuality.medium
+        ..color = Color.fromRGBO(0, 0, 0, opacity),
+    );
+    canvas.restore();
+  }
+
   void _drawGrip(Canvas canvas, Rect handleRect, Color gripColor) {
     final gripPaint = Paint()
       ..color = gripColor.withValues(alpha: 0.85)
@@ -430,6 +558,9 @@ class _TrimBarPainter extends CustomPainter {
         oldDelegate.playbackPosition != playbackPosition ||
         oldDelegate.handleWidth != handleWidth ||
         oldDelegate.showPlayhead != showPlayhead ||
+        oldDelegate.thumbnails != thumbnails ||
+        !listEquals(oldDelegate.thumbnailOpacities, thumbnailOpacities) ||
+        oldDelegate.thumbnailRotation != thumbnailRotation ||
         oldDelegate.primaryColor != primaryColor ||
         oldDelegate.onPrimaryColor != onPrimaryColor ||
         oldDelegate.trackColor != trackColor ||

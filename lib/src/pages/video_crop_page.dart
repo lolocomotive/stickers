@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +15,7 @@ import 'package:stickers/src/util.dart';
 import 'package:stickers/src/video/common.dart';
 import 'package:stickers/src/video/crop_scale.dart';
 import 'package:stickers/src/video/gif_transcoder.dart';
+import 'package:stickers/src/video/thumbnails.dart';
 import 'package:stickers/src/widgets/crop_aspect_ratio_selector.dart';
 import 'package:stickers/src/widgets/progress_bar_button.dart';
 import 'package:stickers/src/widgets/video_crop_overlay.dart';
@@ -55,6 +58,9 @@ class _VideoCropPageState extends State<VideoCropPage> {
 
   bool _isGif = false;
   GifInfo? _gifInfo;
+  static const int _thumbnailCount = 10;
+  List<ui.Image?> _thumbnails = List.filled(_thumbnailCount, null);
+  StreamSubscription<(int, ui.Image)>? _thumbnailSubscription;
 
   static const List<double> _speedSteps = [0.25, 0.5, 1.0, 1.5, 2.0, 5.0, 10.0];
 
@@ -103,6 +109,42 @@ class _VideoCropPageState extends State<VideoCropPage> {
     } else {
       _initVideo();
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_thumbnailSubscription == null && (_isGif || _controller != null)) {
+      _loadThumbnails();
+    }
+  }
+
+  void _loadThumbnails() {
+    // Thumbnails are center-cropped to cover their cell, so their shorter side must match the
+    // cell's larger dimension. Cells are usually taller than wide, except on wide screens.
+    final trackWidth = MediaQuery.sizeOf(context).width - 32 - VideoTrimBar.defaultHandleWidth * 2;
+    final cellExtent = math.max(VideoTrimBar.defaultHeight, trackWidth / _thumbnailCount);
+    final shortSide = (cellExtent * MediaQuery.devicePixelRatioOf(context)).ceil();
+
+    _thumbnailSubscription = loadVideoThumbnails(
+      widget.imagePath,
+      isGif: _isGif,
+      count: _thumbnailCount,
+      shortSide: shortSide,
+    ).listen(
+      (thumbnail) {
+        final (index, image) = thumbnail;
+        if (!mounted) {
+          image.dispose();
+          return;
+        }
+        setState(() {
+          _thumbnails[index]?.dispose();
+          _thumbnails = [..._thumbnails]..[index] = image;
+        });
+      },
+      onError: (e) => debugPrint("Failed to load thumbnails: $e"),
+    );
   }
 
   Future<void> _initGif() async {
@@ -175,6 +217,10 @@ class _VideoCropPageState extends State<VideoCropPage> {
 
   @override
   void dispose() {
+    _thumbnailSubscription?.cancel();
+    for (final image in _thumbnails) {
+      image?.dispose();
+    }
     _controller?.removeListener(_videoListener);
     _controller?.dispose();
     service.dispose();
@@ -329,6 +375,8 @@ class _VideoCropPageState extends State<VideoCropPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: VideoTrimBar(
                       range: _range,
+                      thumbnails: _thumbnails,
+                      thumbnailRotation: _rotationDegrees,
                       showPlayhead: !_isGif && _ready && (_controller?.value.duration.inMilliseconds ?? 0) > 0,
                       playbackPosition: (_ready &&
                               _controller != null &&

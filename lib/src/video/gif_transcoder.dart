@@ -113,6 +113,41 @@ class GifTranscoder {
   }) async {
     return compute(_transcodeWebpOverlayWorker, _WebpOverlayParams(webpPath, overlayBytes));
   }
+
+  /// Extracts [count] evenly spaced frames from the GIF, each scaled down so its shorter side
+  /// is [shortSide] pixels and PNG-encoded.
+  static Future<List<Uint8List>> extractThumbnails(String gifPath, int count, int shortSide) {
+    return compute(_thumbnailWorker, (gifPath, count, shortSide));
+  }
+}
+
+List<Uint8List> _thumbnailWorker((String, int, int) params) {
+  final (gifPath, count, shortSide) = params;
+  final gif = img.decodeGif(File(gifPath).readAsBytesSync());
+  if (gif == null || gif.frames.isEmpty) return [];
+
+  final frameEndsMs = <int>[];
+  int totalMs = 0;
+  for (final frame in gif.frames) {
+    totalMs += frame.frameDuration > 0 ? frame.frameDuration : 100;
+    frameEndsMs.add(totalMs);
+  }
+
+  final thumbnails = <Uint8List>[];
+  int frameIndex = 0;
+  for (int i = 0; i < count; i++) {
+    // Sample the middle of each slot so the thumbnail represents its segment
+    final timeMs = totalMs * (2 * i + 1) / (2 * count);
+    while (frameIndex < gif.frames.length - 1 && frameEndsMs[frameIndex] <= timeMs) {
+      frameIndex++;
+    }
+    final frame = img.Image.from(gif.frames[frameIndex], noAnimation: true);
+    final scaled = frame.width <= frame.height
+        ? img.copyResize(frame, width: min(shortSide, frame.width))
+        : img.copyResize(frame, height: min(shortSide, frame.height));
+    thumbnails.add(img.encodePng(scaled));
+  }
+  return thumbnails;
 }
 
 class _WebpOverlayParams {
