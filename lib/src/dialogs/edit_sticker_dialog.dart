@@ -65,41 +65,33 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
                     painter: CheckerPainter(context),
                     child: Image.file(File(widget.pack.stickers[widget.index].source)),
                   ),
-                  if (!widget.pack.animated || widget.pack.stickers[widget.index].editorData != null)
-                    Positioned(
-                      // FIXME this is ugly
-                      top: 0,
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: Center(
-                        child: FilledButton(
-                          onPressed: () async {
-                            if (widget.pack.stickers[widget.index].editorData != null) {
-                              Navigator.of(context).pushNamed(
-                                "/edit",
-                                arguments: EditArguments(
-                                  pack: widget.pack,
-                                  index: widget.index,
-                                  type: widget.pack.animated ? .video : .picture,
-                                  editorData: widget.pack.stickers[widget.index].editorData!,
-                                ),
-                              );
-                            } else {
-                              Navigator.of(context).pushNamed(
-                                "/edit",
-                                arguments: EditArguments(
-                                  pack: widget.pack,
-                                  index: widget.index,
-                                  mediaPath: widget.pack.stickers[widget.index].source,
-                                ),
-                              );
-                            }
-                          },
-                          child: Text(AppLocalizations.of(context)!.edit),
-                        ),
+                  Positioned(
+                    // FIXME this is ugly
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: FilledButton(
+                        onPressed: () {
+                          final sticker = widget.pack.stickers[widget.index];
+                          // The sticker image is the background when there is
+                          // no editor data, or when it can't be loaded.
+                          Navigator.of(context).pushNamed(
+                            "/edit",
+                            arguments: EditArguments(
+                              pack: widget.pack,
+                              index: widget.index,
+                              type: widget.pack.animated ? .video : .picture,
+                              mediaPath: sticker.source,
+                              editorData: sticker.editorData,
+                            ),
+                          );
+                        },
+                        child: Text(AppLocalizations.of(context)!.edit),
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
@@ -173,13 +165,7 @@ class _EditStickerDialogState extends State<EditStickerDialog> {
   }
 
   Future<void> deleteSticker() async {
-    await File(widget.pack.stickers[widget.index].source).delete();
-    if (widget.pack.stickers[widget.index].editorData != null) {
-      await File(widget.pack.stickers[widget.index].editorData!).delete();
-      await Directory(
-        widget.pack.stickers[widget.index].editorData!.replaceAll(RegExp("\\.json\$"), ""),
-      ).delete(recursive: true);
-    }
+    await deleteStickerFiles(widget.pack.stickers[widget.index]);
     widget.pack.stickers.removeAt(widget.index);
     widget.pack.onEdit();
   }

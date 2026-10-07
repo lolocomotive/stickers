@@ -66,26 +66,24 @@ class _EditPageState extends State<EditPage> {
 
   /// The sticker is 512x512 as opposed to the canvas, which is why we need a scale factor
   double scaleFactor = 0;
-  final List<EditorText> _texts = [];
   final List<EditorLayer> _layers = [];
+
+  Iterable<EditorText> get _texts => _layers.whereType<TextLayer>().map((layer) => layer.text);
 
   TextLayer? _currentTextLayer;
 
   @override
   void initState() {
     super.initState();
-    if (widget.mediaPath == null) {
-      EditorData data = EditorData.fromJson(jsonDecode(File(widget.editorData!).readAsStringSync()), _rbKey);
+    final data = widget.editorData == null ? null : _loadEditorData(widget.editorData!);
+    if (data != null) {
       _source = File(data.background);
       for (final layer in data.layers) {
-        if (layer is TextLayer) {
-          layer.openNextFrame = false;
-          _texts.add(layer.text);
-        }
-        _layers.add(layer);
+        _layers.add(layer is TextLayer ? _createTextLayer(layer.text, openEditor: false) : layer);
       }
     } else {
-      _source = File(widget.mediaPath!);
+      // Without usable editor data, the sticker itself is the background.
+      _source = File(widget.mediaPath ?? widget.pack.stickers[widget.index].source);
     }
     _isWebpVideo = widget.mediaType == StickerMediaType.video &&
         _source.path.toLowerCase().endsWith('.webp');
@@ -105,6 +103,36 @@ class _EditPageState extends State<EditPage> {
       });
     }
   }
+
+  /// Returns null when the saved data can't be used.
+  EditorData? _loadEditorData(String path) {
+    try {
+      final data = EditorData.fromJson(jsonDecode(File(path).readAsStringSync()), _rbKey);
+      if (!File(data.background).existsSync()) {
+        throw FileSystemException("Background not found", data.background);
+      }
+      return data;
+    } catch (e) {
+      debugPrint("Couldn't load editor data $path: $e");
+      return null;
+    }
+  }
+
+  TextLayer _createTextLayer(EditorText text, {bool openEditor = true}) {
+    return TextLayer(
+      text,
+      rbKey: _rbKey,
+      openNextFrame: openEditor,
+      onDelete: (layer) {
+        _layers.remove(layer);
+        if (_currentTextLayer == layer) _currentTextLayer = null;
+        setState(() {});
+      },
+    );
+  }
+
+  /// Whether this edits a sticker already in the pack, which can be replaced.
+  bool get _editsExistingSticker => !widget.returnResult && widget.index < widget.pack.stickers.length;
 
   @override
   void dispose() {
@@ -270,13 +298,18 @@ class _EditPageState extends State<EditPage> {
             );
 
             final imageDisplay = LayoutBuilder(builder: (context, constraints) {
-              if (scaleFactor != constraints.biggest.width / 512) {
-                //FIXME this probably breaks when the screen size changes
-                scaleFactor = constraints.biggest.width / 512;
-
-                // We have to do this after loading from json
-                // We cannot do this in initState because scaleFactor cannot be defined there.
-                denormalizeTexts();
+              final newScaleFactor = constraints.biggest.width / 512;
+              if (scaleFactor != newScaleFactor) {
+                if (scaleFactor == 0) {
+                  scaleFactor = newScaleFactor;
+                  // We have to do this after loading from json
+                  // We cannot do this in initState because scaleFactor cannot be defined there.
+                  denormalizeTexts();
+                } else {
+                  // The canvas was resized, e.g. on rotation; texts are in canvas coordinates.
+                  _scaleTexts(newScaleFactor / scaleFactor);
+                  scaleFactor = newScaleFactor;
+                }
                 for (final layer in _layers) {
                   if (layer is DrawLayer) {
                     layer.painter.scaleFactor = scaleFactor;
@@ -446,7 +479,7 @@ class _EditPageState extends State<EditPage> {
 
             var doneButton = Row(
               children: [
-                if (widget.editorData != null)
+                if (_editsExistingSticker)
                   FilledButton.tonal(
                     onPressed: _exporting
                         ? null
@@ -455,7 +488,7 @@ class _EditPageState extends State<EditPage> {
                           },
                     child: Text(AppLocalizations.of(context)!.replace),
                   ),
-                if (widget.editorData != null)
+                if (_editsExistingSticker)
                   SizedBox(
                     width: 16,
                   ),
@@ -551,16 +584,7 @@ class _EditPageState extends State<EditPage> {
       fontSize: 40,
       textColor: Colors.white,
     );
-    _texts.add(text);
-    _layers.add(TextLayer(
-      text,
-      rbKey: _rbKey,
-      onDelete: (layer) {
-        _layers.remove(layer);
-        if (_currentTextLayer == layer) _currentTextLayer = null;
-        setState(() {});
-      },
-    ));
+    _layers.add(_createTextLayer(text));
 
     setState(() {});
   }
@@ -626,11 +650,23 @@ class _EditPageState extends State<EditPage> {
     } finally {
       //This is useless if the screen goes away but useful for debugging
       denormalizeTexts();
-      setState(() {
-        _exporting = false;
-      });
+      if (mounted) {
+        setState(() {
+          _exporting = false;
+        });
+      }
     }
     return;
+  }
+
+  void _scaleTexts(double ratio) {
+    for (EditorText text in _texts) {
+      final transform = text.transform.storage;
+      transform[12] *= ratio;
+      transform[13] *= ratio;
+      text.fontSize *= ratio;
+      text.outlineWidth *= ratio;
+    }
   }
 
   void denormalizeTexts() {
