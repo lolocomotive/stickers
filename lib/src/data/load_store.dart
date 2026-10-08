@@ -219,17 +219,26 @@ Future<bool> exportPacks(List<StickerPack> packsToExport, {bool includeEditData 
   if (packsToExport.isEmpty) return false;
   Stopwatch sw = Stopwatch()..start();
   return await withExportDirectory((exportDir) async {
-    List<XFile> files = [];
-    for (final (i, pack) in packsToExport.indexed) {
-      // Packs with the same title would get the same zip name.
-      final packDir = Directory("${exportDir.path}/$i");
-      await packDir.create();
-      File zip = await createPackZip(pack, packDir, includeEditData: includeEditData);
-      files.add(XFile(zip.path));
+    File shared;
+    if (packsToExport.length == 1) {
+      shared = await createPackZip(packsToExport.first, exportDir, includeEditData: includeEditData);
+    } else {
+      // The pack zips go into one zip, which importPack unpacks.
+      final bundleDir = Directory("${exportDir.path}/bundle");
+      await bundleDir.create();
+      for (final (i, pack) in packsToExport.indexed) {
+        // Packs with the same title would get the same zip name.
+        final packDir = Directory("${exportDir.path}/$i");
+        await packDir.create();
+        final zip = await createPackZip(pack, packDir, includeEditData: includeEditData);
+        await zip.rename("${bundleDir.path}/${baseName(zip.path)}".replaceFirst(RegExp(r"\.zip$"), "_$i.zip"));
+      }
+      shared = File("${exportDir.path}/stickers.zip");
+      await ZipFile.createFromDirectory(sourceDir: bundleDir, zipFile: shared);
     }
 
-    debugPrint("Exported ${files.length} packs t=${sw.elapsedMilliseconds}ms");
-    await SharePlus.instance.share(ShareParams(files: files));
+    debugPrint("Exported ${packsToExport.length} packs t=${sw.elapsedMilliseconds}ms");
+    await SharePlus.instance.share(ShareParams(files: [XFile(shared.path)]));
     return true;
   });
 }
@@ -357,6 +366,17 @@ Future<void> importPack(File f) async {
     List<StickerPack> packsToAdd = [];
     // Directory that relative editor data paths start from.
     final root = unzipDir.path.replaceAll(RegExp(r"/$"), "");
+
+    // A zip of pack zips, made by exporting several packs at once.
+    if (!await File("$root/pack.json").exists()) {
+      final nested = unzipDir.listSync().whereType<File>().where((e) => e.path.toLowerCase().endsWith(".zip")).toList();
+      if (nested.isNotEmpty) {
+        for (final zip in nested) {
+          await importPack(zip);
+        }
+        return;
+      }
+    }
 
     switch (f.path.split(".").last.toLowerCase()) {
       case "wastickers":
