@@ -46,6 +46,7 @@ class SettingsPage extends StatelessWidget {
       ),
       body: ListView(
         children: [
+          _SectionHeader(AppLocalizations.of(context)!.general),
           _DropdownTile(
             icon: Icons.invert_colors,
             title: AppLocalizations.of(context)!.theme,
@@ -72,34 +73,6 @@ class SettingsPage extends StatelessWidget {
               "de": "Deutsch",
               "ru": "Русский",
               "pt": "Português",
-            },
-          ),
-          _DropdownTile(
-            icon: Icons.fit_screen,
-            title: AppLocalizations.of(context)!.defaultFitMode,
-            setting: settings.defaultStretch,
-            items: {
-              false: AppLocalizations.of(context)!.fit,
-              true: AppLocalizations.of(context)!.stretch,
-            },
-          ),
-          _DropdownTile(
-            icon: Icons.aspect_ratio,
-            title: AppLocalizations.of(context)!.defaultAspectRatio,
-            setting: settings.defaultAspectRatio,
-            items: {
-              null: AppLocalizations.of(context)!.freeAspectRatio,
-              for (final ratio in CropAspectRatioSelector.ratios) ratio.value: ratio.label,
-            },
-          ),
-          _DropdownTile(
-            icon: Icons.video_library,
-            title: AppLocalizations.of(context)!.videoInputMethod,
-            setting: settings.videoInputMethod,
-            items: {
-              VideoInputMethod.ask: AppLocalizations.of(context)!.askEveryTime,
-              VideoInputMethod.gallery: AppLocalizations.of(context)!.gallery,
-              VideoInputMethod.filePicker: AppLocalizations.of(context)!.filePicker,
             },
           ),
           ListTile(
@@ -158,6 +131,35 @@ class SettingsPage extends StatelessWidget {
               child: CacheUseIndicator(),
             ),
           ),
+          _SectionHeader(AppLocalizations.of(context)!.defaults),
+          _DropdownTile(
+            icon: Icons.fit_screen,
+            title: AppLocalizations.of(context)!.fitMode,
+            setting: settings.defaultStretch,
+            items: {
+              false: AppLocalizations.of(context)!.fit,
+              true: AppLocalizations.of(context)!.stretch,
+            },
+          ),
+          _DropdownTile(
+            icon: Icons.aspect_ratio,
+            title: AppLocalizations.of(context)!.aspectRatio,
+            setting: settings.defaultAspectRatio,
+            items: {
+              null: AppLocalizations.of(context)!.freeAspectRatio,
+              for (final ratio in CropAspectRatioSelector.ratios) ratio.value: ratio.label,
+            },
+          ),
+          _DropdownTile(
+            icon: Icons.video_library,
+            title: AppLocalizations.of(context)!.videoInputMethod,
+            setting: settings.videoInputMethod,
+            items: {
+              VideoInputMethod.ask: AppLocalizations.of(context)!.askEveryTime,
+              VideoInputMethod.gallery: AppLocalizations.of(context)!.gallery,
+              VideoInputMethod.filePicker: AppLocalizations.of(context)!.filePicker,
+            },
+          ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 24, vertical: 4),
             child: Divider(),
@@ -204,6 +206,23 @@ class SettingsPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => EditQuickmodeDefaultsDialog(),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader(this.title);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleSmall!.copyWith(color: Theme.of(context).colorScheme.primary),
+      ),
     );
   }
 }
