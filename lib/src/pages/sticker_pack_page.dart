@@ -571,12 +571,12 @@ class StickerPackPageState extends State<StickerPackPage> {
           selectedPath = video.path;
           isValid = isSupportedVideo(selectedPath) || GifTranscoder.isGifFile(selectedPath);
         } else {
-          final FilePickerResult? result = await FilePicker.pickFiles(
+          final file = await FilePicker.pickFile(
             type: FileType.custom,
             allowedExtensions: ['gif', ...supportedVideoExtensions],
             dialogTitle: selectVideoTitle,
           );
-          final path = result?.files.singleOrNull?.path;
+          final path = file?.path;
           if (path == null) return;
           selectedPath = path;
           isValid = isSupportedVideo(selectedPath) || GifTranscoder.isGifFile(selectedPath);

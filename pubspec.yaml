@@ -45,7 +45,7 @@ dependencies:
   whatsapp_stickers_plus:
     git:
       url: https://github.com/lolocomotive/whatsapp_stickers_plus
-      ref: 3ac0058d0643bf6b241629baf49617355dcfeb9c
+      ref: 36ab4b7268e0e607fe9c57b8959c7c1a1b6c06f8
   flutter_archive:
     git:
       url: https://github.com/lolocomotive/flutter_archive

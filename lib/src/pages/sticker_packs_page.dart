@@ -168,13 +168,12 @@ class StickerPacksPageState extends State<StickerPacksPage> {
                   FloatingActionButton(
                     tooltip: AppLocalizations.of(context)!.import,
                     onPressed: () async {
-                      FilePickerResult? result = await FilePicker.pickFiles(
+                      final files = await FilePicker.pickFiles(
                         type: FileType.custom,
                         allowedExtensions: const ['stickify', 'zip', 'wastickers'],
                         dialogTitle: AppLocalizations.of(context)!.selectPack,
                       );
-                      if (result == null) return;
-                      for (final f in result.files) {
+                      for (final f in files) {
                         try {
                           if (f.path == null || !isSupportedPack(f.path!)) {
                             if (context.mounted) showUnsupportedFormatDialog(context);
