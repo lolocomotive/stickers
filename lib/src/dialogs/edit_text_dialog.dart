@@ -209,92 +209,102 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.max,
           children: [
-            LabeledIconButton(
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                child: Text(
-                  "A",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    fontFamily: "Lobster",
-                    color: Colors.white,
+            Expanded(
+              child: LabeledIconButton(
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                  child: Text(
+                    "A",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: "Lobster",
+                      color: Colors.white,
+                    ),
                   ),
                 ),
+                AppLocalizations.of(context)!.font,
+                active: _currentTool == 0,
+                onTap: () {
+                  _setTool(0);
+                },
               ),
-              AppLocalizations.of(context)!.font,
-              active: _currentTool == 0,
-              onTap: () {
-                _setTool(0);
-              },
             ),
-            LabeledIconButton(
-              Padding(
-                padding: const EdgeInsets.all(3.0),
-                child: Icon(Icons.format_size, color: Colors.white),
-              ),
-              AppLocalizations.of(context)!.fontSize,
-              active: _currentTool == 1,
-              onTap: () {
-                _setTool(1);
-              },
-            ),
-            LabeledIconButton(
-              Padding(
-                padding: const EdgeInsets.all(3.0),
-                child: Icon(Icons.palette, color: Colors.white),
-              ),
-              AppLocalizations.of(context)!.color,
-              active: _currentTool == 2,
-              onTap: () {
-                _setTool(2);
-              },
-            ),
-            LabeledIconButton(
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                child: Stack(
-                  children: [
-                    Text(
-                      "A",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        foreground: Paint()
-                          ..style = PaintingStyle.stroke
-                          ..strokeWidth = 3
-                          ..color = Colors.white
-                          ..strokeCap = StrokeCap.round
-                          ..strokeJoin = StrokeJoin.round,
-                      ),
-                    ),
-                    Text(
-                      "A",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ],
+            Expanded(
+              child: LabeledIconButton(
+                Padding(
+                  padding: const EdgeInsets.all(3.0),
+                  child: Icon(Icons.format_size, color: Colors.white),
                 ),
+                AppLocalizations.of(context)!.fontSize,
+                active: _currentTool == 1,
+                onTap: () {
+                  _setTool(1);
+                },
               ),
-              AppLocalizations.of(context)!.outline,
-              active: _currentTool == 3,
-              onTap: () {
-                _setTool(3);
-              },
             ),
-            LabeledIconButton(
-              Padding(
-                padding: const EdgeInsets.all(3.0),
-                child: Icon(Icons.format_color_fill, color: Colors.white),
+            Expanded(
+              child: LabeledIconButton(
+                Padding(
+                  padding: const EdgeInsets.all(3.0),
+                  child: Icon(Icons.palette, color: Colors.white),
+                ),
+                AppLocalizations.of(context)!.color,
+                active: _currentTool == 2,
+                onTap: () {
+                  _setTool(2);
+                },
               ),
-              AppLocalizations.of(context)!.background,
-              active: _currentTool == 4,
-              onTap: () {
-                _setTool(4);
-              },
+            ),
+            Expanded(
+              child: LabeledIconButton(
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                  child: Stack(
+                    children: [
+                      Text(
+                        "A",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          foreground: Paint()
+                            ..style = PaintingStyle.stroke
+                            ..strokeWidth = 3
+                            ..color = Colors.white
+                            ..strokeCap = StrokeCap.round
+                            ..strokeJoin = StrokeJoin.round,
+                        ),
+                      ),
+                      Text(
+                        "A",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                AppLocalizations.of(context)!.outline,
+                active: _currentTool == 3,
+                onTap: () {
+                  _setTool(3);
+                },
+              ),
+            ),
+            Expanded(
+              child: LabeledIconButton(
+                Padding(
+                  padding: const EdgeInsets.all(3.0),
+                  child: Icon(Icons.format_color_fill, color: Colors.white),
+                ),
+                AppLocalizations.of(context)!.background,
+                active: _currentTool == 4,
+                onTap: () {
+                  _setTool(4);
+                },
+              ),
             ),
           ],
         );
@@ -617,9 +627,12 @@ class LabeledIconButton extends StatelessWidget {
                     child: icon),
                 Padding(
                   padding: const EdgeInsets.all(8.0).copyWith(bottom: 0),
-                  child: Text(
-                    label,
-                    style: TextStyle(color: Colors.white),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
                   ),
                 )
               ],
