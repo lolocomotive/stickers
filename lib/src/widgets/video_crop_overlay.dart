@@ -81,6 +81,7 @@ class VideoCropOverlayState extends State<VideoCropOverlay> with TickerProviderS
   _CropHandle _activeHandle = _CropHandle.none;
   Offset _dragStart = Offset.zero;
   Rect _cropRectAtStart = Rect.zero;
+  Rect _videoRectAtStart = Rect.zero;
   bool _pointerDown = false;
   double _totalDragDist = 0;
 
@@ -259,6 +260,7 @@ class VideoCropOverlayState extends State<VideoCropOverlay> with TickerProviderS
     }
     _dragStart = event.localPosition;
     _cropRectAtStart = _cropRect!;
+    _videoRectAtStart = _videoRect!;
     _totalDragDist = 0;
     _activeHandle = _hitTest(event.localPosition, _cropRect!);
     _pointerDown = true;
@@ -270,6 +272,18 @@ class VideoCropOverlayState extends State<VideoCropOverlay> with TickerProviderS
     if (_cropRect == null || _videoRect == null || _activeHandle == _CropHandle.none) return;
     final delta = event.localPosition - _dragStart;
     _totalDragDist += event.delta.distance;
+    if (_activeHandle == _CropHandle.center) {
+      // Move the video under the crop, keeping the crop covered.
+      final crop = _cropRect!;
+      final start = _videoRectAtStart;
+      final left = (start.left + delta.dx).clamp(min<double>(crop.right - start.width, crop.left), crop.left);
+      final top = (start.top + delta.dy).clamp(min<double>(crop.bottom - start.height, crop.top), crop.top);
+      setState(() {
+        _videoRect = Rect.fromLTWH(left, top, start.width, start.height);
+      });
+      _notifyCropChanged();
+      return;
+    }
     final updated = _calculateNewRect(_activeHandle, _cropRectAtStart, delta, _videoRect!, widget.aspectRatio);
     setState(() {
       _cropRect = updated;
@@ -317,14 +331,6 @@ class VideoCropOverlayState extends State<VideoCropOverlay> with TickerProviderS
     double? targetRatio,
   ) {
     const minSize = 40.0;
-
-    if (handle == _CropHandle.center) {
-      final w = startRect.width;
-      final h = startRect.height;
-      final left = (startRect.left + delta.dx).clamp(bounds.left, max<double>(bounds.left, bounds.right - w));
-      final top = (startRect.top + delta.dy).clamp(bounds.top, max<double>(bounds.top, bounds.bottom - h));
-      return Rect.fromLTWH(left, top, w, h);
-    }
 
     if (targetRatio == null) {
       double left = startRect.left;
