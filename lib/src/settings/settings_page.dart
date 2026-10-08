@@ -222,36 +222,38 @@ class _DropdownTile<T> extends StatelessWidget {
     final values = items.keys.toList();
     return ListTile(
       leading: Icon(icon),
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      // Wrap moves the dropdown below the title when both don't fit on one line.
+      title: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 16,
+        runSpacing: 8,
         children: [
           Text(title),
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.only(left: 16, right: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: ElevationOverlay.applySurfaceTint(colors.surface, colors.primary, 2),
-              ),
-              child: DropdownButton<int>(
-                borderRadius: BorderRadius.circular(16),
-                dropdownColor: ElevationOverlay.applySurfaceTint(colors.surface, colors.primary, 4),
-                underline: Container(),
-                value: values.indexOf(setting.value),
-                items: [
-                  for (final (i, label) in items.values.indexed)
-                    DropdownMenuItem(
-                      value: i,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Text(label),
-                      ),
+          Container(
+            padding: const EdgeInsets.only(left: 16, right: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: ElevationOverlay.applySurfaceTint(colors.surface, colors.primary, 2),
+            ),
+            child: DropdownButton<int>(
+              borderRadius: BorderRadius.circular(16),
+              dropdownColor: ElevationOverlay.applySurfaceTint(colors.surface, colors.primary, 4),
+              underline: Container(),
+              value: values.indexOf(setting.value),
+              items: [
+                for (final (i, label) in items.values.indexed)
+                  DropdownMenuItem(
+                    value: i,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(label),
                     ),
-                ],
-                onChanged: (i) {
-                  if (i != null) setting.value = values[i];
-                },
-              ),
+                  ),
+              ],
+              onChanged: (i) {
+                if (i != null) setting.value = values[i];
+              },
             ),
           ),
         ],
