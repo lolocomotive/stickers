@@ -399,34 +399,30 @@ class _EditPageState extends State<EditPage> {
               secondChild: Padding(
                 padding: isHorizontal ? EdgeInsets.zero : EdgeInsets.only(top: 12),
                 child: Row(children: [
-                  Expanded(
-                    child: FilledButton.tonalIcon(
-                      onPressed: !_hasDrawings && _clearedLayers == null ? null : _undoDrawing,
-                      label: Text(AppLocalizations.of(context)!.undo),
-                      icon: Icon(Icons.undo),
-                    ),
+                  IconButton.filledTonal(
+                    tooltip: AppLocalizations.of(context)!.undo,
+                    onPressed: !_hasDrawings && _clearedLayers == null ? null : _undoDrawing,
+                    icon: Icon(Icons.undo),
                   ),
                   SizedBox(
                     width: 8,
                   ),
-                  Expanded(
-                    child: FilledButton.tonalIcon(
-                      onPressed: _undo.isEmpty
-                          ? null
-                          : () {
-                              setState(() {
-                                switch (_undo.removeLast()) {
-                                  case StrokeUndoEntry(:final stroke, :final painter):
-                                    painter.strokes.add(stroke);
-                                    painter.repaint();
-                                  case ClearUndoEntry():
-                                    _removeDrawings();
-                                }
-                              });
-                            },
-                      label: Text(AppLocalizations.of(context)!.redo),
-                      icon: Icon(Icons.redo),
-                    ),
+                  IconButton.filledTonal(
+                    tooltip: AppLocalizations.of(context)!.redo,
+                    onPressed: _undo.isEmpty
+                        ? null
+                        : () {
+                            setState(() {
+                              switch (_undo.removeLast()) {
+                                case StrokeUndoEntry(:final stroke, :final painter):
+                                  painter.strokes.add(stroke);
+                                  painter.repaint();
+                                case ClearUndoEntry():
+                                  _removeDrawings();
+                              }
+                            });
+                          },
+                    icon: Icon(Icons.redo),
                   ),
                   SizedBox(
                     width: 8,
