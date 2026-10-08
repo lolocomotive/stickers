@@ -424,25 +424,10 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
           }),
         );
 
-        final backgroundColorPicker = Row(
+        final backgroundColorPicker = Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 4, 0),
-              child: widget.parent.text.background.a == 0
-                  ? FilledButton(
-                      onPressed: () {},
-                      child: Text(AppLocalizations.of(context)!.off),
-                    )
-                  : FilledButton.tonal(
-                      onPressed: () {
-                        setState(() {
-                          widget.parent.text.background = Colors.transparent;
-                        });
-                      },
-                      child: Text(AppLocalizations.of(context)!.off),
-                    ),
-            ),
-            Expanded(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: LayoutBuilder(builder: (context, constraints) {
                 final half = (colors.length / 2).floor();
                 Widget row(Iterable<Color> cs) => Row(
@@ -456,14 +441,34 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                               ))
                           .toList(),
                     );
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [row(colors.getRange(0, half)), row(colors.getRange(half + 1, colors.length))],
-                  ),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [row(colors.getRange(0, half)), row(colors.getRange(half + 1, colors.length))],
                 );
               }),
+            ),
+            // Same height as the outline width row so the toolbar doesn't jump between tools.
+            SizedBox(
+              height: 48,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 4, 0),
+                  child: widget.parent.text.background.a == 0
+                      ? FilledButton(
+                          onPressed: () {},
+                          child: Text(AppLocalizations.of(context)!.off),
+                        )
+                      : FilledButton.tonal(
+                          onPressed: () {
+                            setState(() {
+                              widget.parent.text.background = Colors.transparent;
+                            });
+                          },
+                          child: Text(AppLocalizations.of(context)!.off),
+                        ),
+                ),
+              ),
             ),
           ],
         );
