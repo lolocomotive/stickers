@@ -60,6 +60,9 @@ class _EditPageState extends State<EditPage> {
   Color? _pickedColor;
   final Curve _curve = Curves.ease;
   final List<UndoEntry> _undo = [];
+
+  /// Draw layers removed by the last clear, with their index, so the clear can be undone.
+  List<(int, DrawLayer)>? _clearedLayers;
   final double maxWidth = 200;
   String? _message;
   double? _exportProgress;
@@ -398,17 +401,7 @@ class _EditPageState extends State<EditPage> {
                 child: Row(children: [
                   Expanded(
                     child: FilledButton.tonalIcon(
-                      onPressed: _layers
-                              .whereType<DrawLayer>()
-                              .where((layer) => layer.painter.strokes.isNotEmpty)
-                              .isEmpty
-                          ? null
-                          : () {
-                              final layer =
-                                  _layers.whereType<DrawLayer>().lastWhere((layer) => layer.painter.strokes.isNotEmpty);
-                              _undo.add(UndoEntry(layer.painter.strokes.removeLast(), layer.painter));
-                              setState(() {});
-                            },
+                      onPressed: !_hasDrawings && _clearedLayers == null ? null : _undoDrawing,
                       label: Text(AppLocalizations.of(context)!.undo),
                       icon: Icon(Icons.undo),
                     ),
@@ -422,8 +415,12 @@ class _EditPageState extends State<EditPage> {
                           ? null
                           : () {
                               setState(() {
-                                final entry = _undo.removeLast();
-                                entry.painter.strokes.add(entry.stroke);
+                                switch (_undo.removeLast()) {
+                                  case StrokeUndoEntry(:final stroke, :final painter):
+                                    painter.strokes.add(stroke);
+                                  case ClearUndoEntry():
+                                    _removeDrawings();
+                                }
                               });
                             },
                       label: Text(AppLocalizations.of(context)!.redo),
@@ -920,8 +917,32 @@ class _EditPageState extends State<EditPage> {
       _layers.whereType<DrawLayer>().any((layer) => layer.painter.strokes.isNotEmpty);
 
   void _clearDrawings() {
-    _layers.removeWhere((layer) => layer is DrawLayer);
+    _removeDrawings();
     _undo.clear();
+    setState(() {});
+  }
+
+  /// Removes the draw layers that have strokes, keeping them in [_clearedLayers].
+  void _removeDrawings() {
+    _clearedLayers = [
+      for (final (i, layer) in _layers.indexed)
+        if (layer is DrawLayer && layer.painter.strokes.isNotEmpty) (i, layer),
+    ];
+    _layers.removeWhere((layer) => layer is DrawLayer && layer.painter.strokes.isNotEmpty);
+  }
+
+  void _undoDrawing() {
+    // Strokes drawn after a clear are undone first, then the clear itself.
+    if (_hasDrawings) {
+      final layer = _layers.whereType<DrawLayer>().lastWhere((layer) => layer.painter.strokes.isNotEmpty);
+      _undo.add(StrokeUndoEntry(layer.painter.strokes.removeLast(), layer.painter));
+    } else {
+      for (final (i, layer) in _clearedLayers!) {
+        _layers.insert(min(i, _layers.length), layer);
+      }
+      _clearedLayers = null;
+      _undo.add(ClearUndoEntry());
+    }
     setState(() {});
   }
 
@@ -939,12 +960,17 @@ class _EditPageState extends State<EditPage> {
   }
 }
 
-class UndoEntry {
+/// An undone drawing action that can be redone.
+sealed class UndoEntry {}
+
+class StrokeUndoEntry extends UndoEntry {
   final Stroke stroke;
   final DrawingPainter painter;
 
-  UndoEntry(this.stroke, this.painter);
+  StrokeUndoEntry(this.stroke, this.painter);
 }
+
+class ClearUndoEntry extends UndoEntry {}
 
 abstract class EditorLayer extends Widget {
   const EditorLayer({super.key});
