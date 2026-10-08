@@ -418,6 +418,7 @@ class _EditPageState extends State<EditPage> {
                                 switch (_undo.removeLast()) {
                                   case StrokeUndoEntry(:final stroke, :final painter):
                                     painter.strokes.add(stroke);
+                                    painter.repaint();
                                   case ClearUndoEntry():
                                     _removeDrawings();
                                 }
@@ -859,7 +860,9 @@ class _EditPageState extends State<EditPage> {
   void onMatrixUpdate(Matrix4 translationDeltaMatrix, Matrix4 scaleDeltaMatrix, Matrix4 rotationDeltaMatrix) {
     if (_drawing) {
       _brushPos = Offset(_brushPos.dx + translationDeltaMatrix.row0.w, _brushPos.dy + translationDeltaMatrix.row1.w);
-      (_layers.last as DrawLayer).painter.strokes.last.points.add(_brushPos / scaleFactor);
+      final painter = (_layers.last as DrawLayer).painter;
+      painter.strokes.last.points.add(_brushPos / scaleFactor);
+      painter.repaint();
       setState(() {});
       return;
     }
@@ -884,6 +887,7 @@ class _EditPageState extends State<EditPage> {
       final painter = (_layers.last as DrawLayer).painter;
 
       painter.strokes.add(Stroke(_brushColor, _brushSize));
+      painter.repaint();
       setState(() {});
       return;
     }
@@ -936,6 +940,7 @@ class _EditPageState extends State<EditPage> {
     if (_hasDrawings) {
       final layer = _layers.whereType<DrawLayer>().lastWhere((layer) => layer.painter.strokes.isNotEmpty);
       _undo.add(StrokeUndoEntry(layer.painter.strokes.removeLast(), layer.painter));
+      layer.painter.repaint();
     } else {
       for (final (i, layer) in _clearedLayers!) {
         _layers.insert(min(i, _layers.length), layer);

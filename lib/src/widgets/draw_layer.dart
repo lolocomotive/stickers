@@ -66,7 +66,14 @@ class DrawingPainter extends CustomPainter {
   List<Stroke> strokes = [];
   double scaleFactor = 1;
 
-  DrawingPainter();
+  final _RepaintNotifier _repaint;
+
+  DrawingPainter() : this._(_RepaintNotifier());
+
+  DrawingPainter._(this._repaint) : super(repaint: _repaint);
+
+  /// Must be called after [strokes] change, as the layer widget isn't rebuilt.
+  void repaint() => _repaint.notify();
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -88,4 +95,8 @@ class DrawingPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return true;
   }
+}
+
+class _RepaintNotifier extends ChangeNotifier {
+  void notify() => notifyListeners();
 }
