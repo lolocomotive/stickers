@@ -243,11 +243,26 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
             },
           ),
         );
+        // The tools share the width and label size of the widest one, so they're evenly spaced.
+        final toolLabels = [
+          AppLocalizations.of(context)!.font,
+          AppLocalizations.of(context)!.fontSize,
+          AppLocalizations.of(context)!.color,
+          AppLocalizations.of(context)!.outline,
+          AppLocalizations.of(context)!.background,
+        ];
+        const toolLabelPadding = 4.0;
+        final toolbarWidth = min((isHorizontal ? constraints.maxWidth / 2 : constraints.maxWidth) - 24, 512.0);
+        final widestLabel = toolLabels.map((label) => _labelWidth(context, label)).reduce(max);
+        final toolWidth = min(max(widestLabel + toolLabelPadding, 64.0), toolbarWidth / toolLabels.length);
+        final toolLabelSize =
+            LabeledIconButton.defaultLabelSize * min(1.0, (toolWidth - toolLabelPadding) / widestLabel);
         final actions = Row(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.max,
           children: [
-            Expanded(
+            SizedBox(
+              width: toolWidth,
               child: LabeledIconButton(
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
@@ -262,39 +277,45 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                   ),
                 ),
                 AppLocalizations.of(context)!.font,
+                labelSize: toolLabelSize,
                 active: _currentTool == 0,
                 onTap: () {
                   _setTool(0);
                 },
               ),
             ),
-            Expanded(
+            SizedBox(
+              width: toolWidth,
               child: LabeledIconButton(
                 Padding(
                   padding: const EdgeInsets.all(3.0),
                   child: Icon(Icons.format_size, color: Colors.white),
                 ),
                 AppLocalizations.of(context)!.fontSize,
+                labelSize: toolLabelSize,
                 active: _currentTool == 1,
                 onTap: () {
                   _setTool(1);
                 },
               ),
             ),
-            Expanded(
+            SizedBox(
+              width: toolWidth,
               child: LabeledIconButton(
                 Padding(
                   padding: const EdgeInsets.all(3.0),
                   child: Icon(Icons.palette, color: Colors.white),
                 ),
                 AppLocalizations.of(context)!.color,
+                labelSize: toolLabelSize,
                 active: _currentTool == 2,
                 onTap: () {
                   _setTool(2);
                 },
               ),
             ),
-            Expanded(
+            SizedBox(
+              width: toolWidth,
               child: LabeledIconButton(
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
@@ -325,19 +346,22 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                   ),
                 ),
                 AppLocalizations.of(context)!.outline,
+                labelSize: toolLabelSize,
                 active: _currentTool == 3,
                 onTap: () {
                   _setTool(3);
                 },
               ),
             ),
-            Expanded(
+            SizedBox(
+              width: toolWidth,
               child: LabeledIconButton(
                 Padding(
                   padding: const EdgeInsets.all(3.0),
                   child: Icon(Icons.format_color_fill, color: Colors.white),
                 ),
                 AppLocalizations.of(context)!.background,
+                labelSize: toolLabelSize,
                 active: _currentTool == 4,
                 onTap: () {
                   _setTool(4);
@@ -582,6 +606,20 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
     );
   }
 
+  double _labelWidth(BuildContext context, String label) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: DefaultTextStyle.of(context).style.copyWith(fontSize: LabeledIconButton.defaultLabelSize),
+      ),
+      textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final width = painter.width;
+    painter.dispose();
+    return width;
+  }
+
   void _setTool(int tool) {
     setState(() {});
     HapticFeedback.lightImpact();
@@ -633,9 +671,20 @@ class LabeledIconButton extends StatelessWidget {
   final String label;
   final bool active;
 
+  final double labelSize;
+
   final GestureDoubleTapCallback? onTap;
 
-  const LabeledIconButton(this.icon, this.label, {super.key, this.active = false, this.onTap});
+  static const defaultLabelSize = 14.0;
+
+  const LabeledIconButton(
+    this.icon,
+    this.label, {
+    super.key,
+    this.active = false,
+    this.onTap,
+    this.labelSize = defaultLabelSize,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -643,38 +692,32 @@ class LabeledIconButton extends StatelessWidget {
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
         child: Padding(
-          padding: const EdgeInsets.all(4.0).copyWith(bottom: 0, top: 8),
-          child: AnimatedContainer(
-            duration: Duration(milliseconds: 200),
-            transform: Matrix4.identity() * (active ? 1.1 : 1.0),
-            transformAlignment: Alignment.center,
-            curve: Curves.ease,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedContainer(
-                    duration: Duration(milliseconds: 200),
-                    transform: Matrix4.identity() * (active ? 1.2 : 1.0),
-                    transformAlignment: Alignment.center,
-                    curve: Curves.ease,
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(100),
-                      color: active ? Theme.of(context).colorScheme.primary.withAlpha(100) : null,
-                    ),
-                    child: icon),
-                Padding(
-                  padding: const EdgeInsets.all(8.0).copyWith(bottom: 0),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      label,
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
+          padding: const EdgeInsets.fromLTRB(2, 8, 2, 0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                  duration: Duration(milliseconds: 200),
+                  // Only the icon grows, so the labels keep the same size
+                  transform: Matrix4.identity() * (active ? 1.3 : 1.0),
+                  transformAlignment: Alignment.center,
+                  curve: Curves.ease,
+                  padding: EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(100),
+                    color: active ? Theme.of(context).colorScheme.primary.withAlpha(100) : null,
                   ),
-                )
-              ],
-            ),
+                  child: icon),
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: TextStyle(color: Colors.white, fontSize: labelSize),
+                ),
+              )
+            ],
           ),
         ));
   }
