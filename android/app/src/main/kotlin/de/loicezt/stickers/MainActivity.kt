@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.annotation.NonNull
 import androidx.annotation.RequiresApi
 import de.loicezt.stickers.video.CropAndScale
+import de.loicezt.stickers.video.LibWebP
 import de.loicezt.stickers.video.OverlayAndEncode
 import de.loicezt.stickers.video.VideoThumbnails
 import de.loicezt.stickers.video.WebPConfig
@@ -140,6 +141,24 @@ class MainActivity : FlutterActivity() {
                             "Missing a required file path argument.",
                             null
                         )
+                    }
+                }
+
+                "encodeWebp" -> {
+                    val args = call.arguments as Map<*, *>
+                    val rgba = args["rgba"] as ByteArray
+                    val width = args["width"] as Int
+                    val height = args["height"] as Int
+                    val config = WebPConfig.fromMap(args["config"] as Map<*, *>)
+                    scope.launch {
+                        val bytes = withContext(Dispatchers.Default) {
+                            LibWebP().nativeEncodeStill(rgba, width, height, config)
+                        }
+                        if (bytes == null) {
+                            result.error("ENCODE_FAILED", "Could not encode WebP", null)
+                        } else {
+                            result.success(bytes)
+                        }
                     }
                 }
 

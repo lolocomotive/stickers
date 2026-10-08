@@ -12,6 +12,7 @@ import 'package:stickers/generated/intl/app_localizations.dart';
 import 'package:stickers/src/checker_painter.dart';
 import 'package:stickers/src/data/editor_data.dart';
 import 'package:stickers/src/data/load_store.dart';
+import 'package:stickers/src/data/sticker_render.dart';
 import 'package:stickers/src/data/sticker_pack.dart';
 import 'package:stickers/src/dialogs/confirm_leave_dialog.dart';
 import 'package:stickers/src/dialogs/edit_text_dialog.dart';
@@ -141,6 +142,7 @@ class _EditPageState extends State<EditPage> {
   }
 
   final GlobalKey _rbKey = GlobalKey();
+  final GlobalKey _layersKey = GlobalKey();
   bool _exporting = false;
   VideoPlayerController? _controller;
 
@@ -366,13 +368,13 @@ class _EditPageState extends State<EditPage> {
                                   )
                                 else
                                   const SizedBox.expand(),
-                                ..._layers.map(
-                                  (e) => Positioned(
-                                    top: 0,
-                                    bottom: 0,
-                                    left: 0,
-                                    right: 0,
-                                    child: e,
+                                // The layers are captured from here on export, without the background.
+                                Positioned.fill(
+                                  child: RepaintBoundary(
+                                    key: _layersKey,
+                                    child: Stack(
+                                      children: _layers.map((e) => Positioned.fill(child: e)).toList(),
+                                    ),
                                   ),
                                 ),
                               ]),
@@ -612,35 +614,26 @@ class _EditPageState extends State<EditPage> {
       _exporting = true;
     });
     try {
-      final option = ImageEditorOption();
-      for (EditorLayer layer in _layers) {
-        final Option layerOption;
-        if (layer is TextLayer) {
-          layerOption = AddTextOption();
-          final transform = layer.text.transform.storage;
-          transform[12] = transform[12] / scaleFactor;
-          transform[13] = transform[13] / scaleFactor;
-          layer.text.fontSize /= scaleFactor;
-          layer.text.outlineWidth /= scaleFactor;
-          layer.text.fontSize *= FontsRegistry.sizeMultiplier(layer.text.fontName) ?? 1;
-          (layerOption as AddTextOption).addText(layer.text);
-        } else if (layer is DrawLayer) {
-          layerOption = layer.drawOption;
-        } else {
-          throw UnimplementedError();
-        }
-        option.addOption(layerOption);
-      }
-
-      option.outputFormat = const OutputFormat.webp_lossy();
+      // Make sure the canvas shows the current state before capturing it.
+      await WidgetsBinding.instance.endOfFrame;
+      final layers = _layersKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
 
       final Uint8List data;
       if (widget.mediaType == StickerMediaType.picture) {
-        data = (await ImageEditor.editFileImage(file: _source, imageEditorOption: option))!;
+        final image = await renderSticker(layers, background: _source);
+        try {
+          data = await encodeWebp(image, const WebPConfig(quality: 80));
+        } finally {
+          image.dispose();
+        }
       } else {
-        data = await exportAnimatedSticker(option, context);
+        if (!context.mounted) return;
+        data = await exportAnimatedSticker(layers, context);
       }
-      final editorData = EditorData(background: _source.path, layers: _layers);
+      final editorData = EditorData(
+        background: _source.path,
+        layers: _layers.map((layer) => layer is TextLayer ? TextLayer(_normalized(layer.text), rbKey: _rbKey) : layer).toList(),
+      );
       if (widget.returnResult) {
         if (!context.mounted) return;
         Navigator.of(context).pop(data);
@@ -666,8 +659,6 @@ class _EditPageState extends State<EditPage> {
             });
       }
     } finally {
-      //This is useless if the screen goes away but useful for debugging
-      denormalizeTexts();
       if (mounted) {
         setState(() {
           _exporting = false;
@@ -689,6 +680,23 @@ class _EditPageState extends State<EditPage> {
     }
   }
 
+  /// A copy of [text] in the 512x512 sticker coordinates editor data is saved in. Reverses [denormalizeTexts].
+  EditorText _normalized(EditorText text) {
+    final transform = text.transform.clone();
+    transform.storage[12] /= scaleFactor;
+    transform.storage[13] /= scaleFactor;
+    return EditorText(
+      text: text.text,
+      transform: transform,
+      fontSize: text.fontSize / scaleFactor * (FontsRegistry.sizeMultiplier(text.fontName) ?? 1),
+      textColor: text.textColor,
+      fontName: text.fontName,
+      outlineColor: text.outlineColor,
+      outlineWidth: text.outlineWidth / scaleFactor,
+      background: text.background,
+    );
+  }
+
   void denormalizeTexts() {
     for (EditorText text in _texts) {
       final transform = text.transform.storage;
@@ -700,14 +708,20 @@ class _EditPageState extends State<EditPage> {
     }
   }
 
-  Future<Uint8List> exportAnimatedSticker(ImageEditorOption option, BuildContext context) async {
-    if (_isWebpVideo && _layers.isEmpty && _texts.isEmpty) {
+  Future<Uint8List> exportAnimatedSticker(RenderRepaintBoundary layers, BuildContext context) async {
+    if (_isWebpVideo && _layers.isEmpty) {
       return await _source.readAsBytes();
     }
-    final transparent = await rootBundle.load("assets/transparent.webp");
-    final out =
-        await ImageEditor.editImageAndGetFile(image: transparent.buffer.asUint8List(), imageEditorOption: option);
+    final overlay = await renderSticker(layers);
+    final Uint8List overlayBytes;
     try {
+      overlayBytes = await encodeWebp(overlay, const WebPConfig(lossless: true));
+    } finally {
+      overlay.dispose();
+    }
+    final out = File("$mediaCacheDir/overlay_${uid()}.webp");
+    try {
+      await out.writeAsBytes(overlayBytes);
       if (!context.mounted) throw Exception();
       return await _encodeAnimatedSticker(out, context);
     } finally {

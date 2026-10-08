@@ -27,6 +27,119 @@ struct EncoderState {
 static EncoderState *state = nullptr;
 
 
+/**
+ * Fills [config] from a Kotlin WebPConfig. Null fields keep the libwebp defaults.
+ */
+static bool loadConfig(JNIEnv *env, jobject configJava, WebPConfig *config) {
+    if (!WebPConfigInit(config)) {
+        LOGE("Failed to initialize WebPConfig.");
+        return false;
+    }
+    jclass configClass = env->GetObjectClass(configJava);
+
+    // --- Helper lambdas to reduce boilerplate for JNI calls ---
+
+    // Helper to update an 'int' field in the C struct from a Java 'Integer'.
+    auto updateInt = [&](const char *fieldName, int &targetField) {
+        jfieldID fid = env->GetFieldID(configClass, fieldName, "Ljava/lang/Integer;");
+        if (fid == nullptr) return; // Field not found, skip.
+        jobject fieldObj = env->GetObjectField(configJava, fid);
+        if (fieldObj != nullptr) {
+            jclass intClass = env->FindClass("java/lang/Integer");
+            jmethodID mid = env->GetMethodID(intClass, "intValue", "()I");
+            targetField = env->CallIntMethod(fieldObj, mid);
+            env->DeleteLocalRef(intClass);
+            env->DeleteLocalRef(fieldObj);
+        }
+    };
+
+    // Helper to update a 'float' field in the C struct from a Java 'Float'.
+    auto updateFloat = [&](const char *fieldName, float &targetField) {
+        jfieldID fid = env->GetFieldID(configClass, fieldName, "Ljava/lang/Float;");
+        if (fid == nullptr) return;
+        jobject fieldObj = env->GetObjectField(configJava, fid);
+        if (fieldObj != nullptr) {
+            jclass floatClass = env->FindClass("java/lang/Float");
+            jmethodID mid = env->GetMethodID(floatClass, "floatValue", "()F");
+            targetField = env->CallFloatMethod(fieldObj, mid);
+            env->DeleteLocalRef(floatClass);
+            env->DeleteLocalRef(fieldObj);
+        }
+    };
+
+    // Helper to update an 'int' field in the C struct from a Java 'Boolean'.
+    auto updateBoolean = [&](const char *fieldName, int &targetField) {
+        jfieldID fid = env->GetFieldID(configClass, fieldName, "Ljava/lang/Boolean;");
+        if (fid == nullptr) return;
+        jobject fieldObj = env->GetObjectField(configJava, fid);
+        if (fieldObj != nullptr) {
+            jclass boolClass = env->FindClass("java/lang/Boolean");
+            jmethodID mid = env->GetMethodID(boolClass, "booleanValue", "()Z");
+            // Assigns 1 for true, 0 for false.
+            targetField = env->CallBooleanMethod(fieldObj, mid);
+            env->DeleteLocalRef(boolClass);
+            env->DeleteLocalRef(fieldObj);
+        }
+    };
+
+    // Helper to update an enum field in the C struct from a Java Enum.
+    // ⚠️ IMPORTANT: Replace "Lcom/yourpackage/WebPImageHint;" with the correct path to your enum class.
+    const char *webPImageHintSignature = "Lde/loicezt/stickers/video/WebPImageHint;";
+    auto updateEnum = [&](const char *fieldName, WebPImageHint &targetField) {
+        jfieldID fid = env->GetFieldID(configClass, fieldName, webPImageHintSignature);
+        if (fid == nullptr) return;
+        jobject fieldObj = env->GetObjectField(configJava, fid);
+        if (fieldObj != nullptr) {
+            jclass enumClass = env->GetObjectClass(fieldObj);
+            jmethodID mid = env->GetMethodID(enumClass, "ordinal", "()I");
+            // Get the enum's ordinal value and cast it to the C enum type.
+            targetField = static_cast<WebPImageHint>(env->CallIntMethod(fieldObj, mid));
+            env->DeleteLocalRef(enumClass);
+            env->DeleteLocalRef(fieldObj);
+        }
+    };
+
+
+    // --- Map and Update Each Field ---
+    // The first argument is the Kotlin field name (camelCase).
+    // The second argument is a reference to the C struct field (snake_case).
+
+    updateBoolean("lossless", config->lossless);
+    updateFloat("quality", config->quality);
+    updateInt("method", config->method);
+    updateEnum("imageHint", config->image_hint);
+    updateInt("targetSize", config->target_size);
+    updateFloat("targetPSNR", config->target_PSNR);
+    updateInt("segments", config->segments);
+    updateInt("snsStrength", config->sns_strength);
+    updateInt("filterStrength", config->filter_strength);
+    updateInt("filterSharpness", config->filter_sharpness);
+    updateInt("filterType", config->filter_type);
+    updateInt("autofilter", config->autofilter);
+    updateInt("alphaCompression", config->alpha_compression);
+    updateInt("alphaFiltering", config->alpha_filtering);
+    updateInt("alphaQuality", config->alpha_quality);
+    updateInt("pass", config->pass);
+    updateInt("showCompressed", config->show_compressed);
+    updateInt("preprocessing", config->preprocessing);
+    updateInt("partitions", config->partitions);
+    updateInt("partitionLimit", config->partition_limit);
+    updateInt("emulateJpegSize", config->emulate_jpeg_size);
+    updateInt("threadLevel", config->thread_level);
+    updateInt("lowMemory", config->low_memory);
+    updateInt("nearLossless", config->near_lossless);
+    updateInt("exact", config->exact);
+
+    // Clean up the local reference to the class object.
+    env->DeleteLocalRef(configClass);
+
+    if (!WebPValidateConfig(config)) {
+        LOGE("Invalid config");
+        return false;
+    }
+    return true;
+}
+
 extern "C" {
 
 
@@ -137,112 +250,7 @@ Java_de_loicezt_stickers_video_LibWebP_nativeInitEncoder(
     state->frame_width = width;
     state->frame_height = height;
 
-    jclass configClass = env->GetObjectClass(configJava);
-
-    if (!WebPConfigInit(&state->config)) {
-        LOGE("Failed to initialize WebPConfig.");
-        delete state;
-        state = nullptr;
-        return JNI_FALSE;
-    }
-    // --- Helper lambdas to reduce boilerplate for JNI calls ---
-
-    // Helper to update an 'int' field in the C struct from a Java 'Integer'.
-    auto updateInt = [&](const char *fieldName, int &targetField) {
-        jfieldID fid = env->GetFieldID(configClass, fieldName, "Ljava/lang/Integer;");
-        if (fid == nullptr) return; // Field not found, skip.
-        jobject fieldObj = env->GetObjectField(configJava, fid);
-        if (fieldObj != nullptr) {
-            jclass intClass = env->FindClass("java/lang/Integer");
-            jmethodID mid = env->GetMethodID(intClass, "intValue", "()I");
-            targetField = env->CallIntMethod(fieldObj, mid);
-            env->DeleteLocalRef(intClass);
-            env->DeleteLocalRef(fieldObj);
-        }
-    };
-
-    // Helper to update a 'float' field in the C struct from a Java 'Float'.
-    auto updateFloat = [&](const char *fieldName, float &targetField) {
-        jfieldID fid = env->GetFieldID(configClass, fieldName, "Ljava/lang/Float;");
-        if (fid == nullptr) return;
-        jobject fieldObj = env->GetObjectField(configJava, fid);
-        if (fieldObj != nullptr) {
-            jclass floatClass = env->FindClass("java/lang/Float");
-            jmethodID mid = env->GetMethodID(floatClass, "floatValue", "()F");
-            targetField = env->CallFloatMethod(fieldObj, mid);
-            env->DeleteLocalRef(floatClass);
-            env->DeleteLocalRef(fieldObj);
-        }
-    };
-
-    // Helper to update an 'int' field in the C struct from a Java 'Boolean'.
-    auto updateBoolean = [&](const char *fieldName, int &targetField) {
-        jfieldID fid = env->GetFieldID(configClass, fieldName, "Ljava/lang/Boolean;");
-        if (fid == nullptr) return;
-        jobject fieldObj = env->GetObjectField(configJava, fid);
-        if (fieldObj != nullptr) {
-            jclass boolClass = env->FindClass("java/lang/Boolean");
-            jmethodID mid = env->GetMethodID(boolClass, "booleanValue", "()Z");
-            // Assigns 1 for true, 0 for false.
-            targetField = env->CallBooleanMethod(fieldObj, mid);
-            env->DeleteLocalRef(boolClass);
-            env->DeleteLocalRef(fieldObj);
-        }
-    };
-
-    // Helper to update an enum field in the C struct from a Java Enum.
-    // ⚠️ IMPORTANT: Replace "Lcom/yourpackage/WebPImageHint;" with the correct path to your enum class.
-    const char *webPImageHintSignature = "Lde/loicezt/stickers/video/WebPImageHint;";
-    auto updateEnum = [&](const char *fieldName, WebPImageHint &targetField) {
-        jfieldID fid = env->GetFieldID(configClass, fieldName, webPImageHintSignature);
-        if (fid == nullptr) return;
-        jobject fieldObj = env->GetObjectField(configJava, fid);
-        if (fieldObj != nullptr) {
-            jclass enumClass = env->GetObjectClass(fieldObj);
-            jmethodID mid = env->GetMethodID(enumClass, "ordinal", "()I");
-            // Get the enum's ordinal value and cast it to the C enum type.
-            targetField = static_cast<WebPImageHint>(env->CallIntMethod(fieldObj, mid));
-            env->DeleteLocalRef(enumClass);
-            env->DeleteLocalRef(fieldObj);
-        }
-    };
-
-
-    // --- Map and Update Each Field ---
-    // The first argument is the Kotlin field name (camelCase).
-    // The second argument is a reference to the C struct field (snake_case).
-
-    updateBoolean("lossless", state->config.lossless);
-    updateFloat("quality", state->config.quality);
-    updateInt("method", state->config.method);
-    updateEnum("imageHint", state->config.image_hint);
-    updateInt("targetSize", state->config.target_size);
-    updateFloat("targetPSNR", state->config.target_PSNR);
-    updateInt("segments", state->config.segments);
-    updateInt("snsStrength", state->config.sns_strength);
-    updateInt("filterStrength", state->config.filter_strength);
-    updateInt("filterSharpness", state->config.filter_sharpness);
-    updateInt("filterType", state->config.filter_type);
-    updateInt("autofilter", state->config.autofilter);
-    updateInt("alphaCompression", state->config.alpha_compression);
-    updateInt("alphaFiltering", state->config.alpha_filtering);
-    updateInt("alphaQuality", state->config.alpha_quality);
-    updateInt("pass", state->config.pass);
-    updateInt("showCompressed", state->config.show_compressed);
-    updateInt("preprocessing", state->config.preprocessing);
-    updateInt("partitions", state->config.partitions);
-    updateInt("partitionLimit", state->config.partition_limit);
-    updateInt("emulateJpegSize", state->config.emulate_jpeg_size);
-    updateInt("threadLevel", state->config.thread_level);
-    updateInt("lowMemory", state->config.low_memory);
-    updateInt("nearLossless", state->config.near_lossless);
-    updateInt("exact", state->config.exact);
-
-    // Clean up the local reference to the class object.
-    env->DeleteLocalRef(configClass);
-
-    if (!WebPValidateConfig(&state->config)) {
-        LOGE("Invalid config");
+    if (!loadConfig(env, configJava, &state->config)) {
         delete state;
         state = nullptr;
         return JNI_FALSE;
@@ -460,6 +468,66 @@ Java_de_loicezt_stickers_video_LibWebP_nativeReleaseEncoder(
 
     LOGI("Native encoder released.");
     return byteArray; // Return the raw data to Kotlin
+}
+
+/**
+ * Encodes a single straight-alpha RGBA image to a still WebP.
+ * @return The WebP bytes, or null on failure.
+ */
+JNIEXPORT jbyteArray JNICALL
+Java_de_loicezt_stickers_video_LibWebP_nativeEncodeStill(
+        JNIEnv *env,
+        jobject /* this */,
+        jbyteArray rgba,
+        jint width,
+        jint height,
+        jobject configJava) {
+
+    WebPConfig config;
+    if (!loadConfig(env, configJava, &config)) return nullptr;
+
+    if (env->GetArrayLength(rgba) < width * height * 4) {
+        LOGE("nativeEncodeStill: Pixel buffer too small for %dx%d.", width, height);
+        return nullptr;
+    }
+
+    WebPPicture pic;
+    if (!WebPPictureInit(&pic)) {
+        LOGE("nativeEncodeStill: Failed to init WebPPicture");
+        return nullptr;
+    }
+    pic.width = width;
+    pic.height = height;
+    pic.use_argb = 1;
+
+    jbyte *pixels = env->GetByteArrayElements(rgba, nullptr);
+    if (pixels == nullptr) return nullptr;
+    int imported = WebPPictureImportRGBA(&pic, reinterpret_cast<const uint8_t *>(pixels), width * 4);
+    env->ReleaseByteArrayElements(rgba, pixels, JNI_ABORT);
+    if (!imported) {
+        LOGE("nativeEncodeStill: Failed to import pixels");
+        WebPPictureFree(&pic);
+        return nullptr;
+    }
+
+    WebPMemoryWriter writer;
+    WebPMemoryWriterInit(&writer);
+    pic.writer = WebPMemoryWrite;
+    pic.custom_ptr = &writer;
+
+    jbyteArray result = nullptr;
+    if (WebPEncode(&config, &pic)) {
+        result = env->NewByteArray(static_cast<jsize>(writer.size));
+        env->SetByteArrayRegion(result, 0, static_cast<jsize>(writer.size),
+                                reinterpret_cast<const jbyte *>(writer.mem));
+    } else {
+        LOGE("nativeEncodeStill: WebPEncode failed. Error: %s (%d)",
+             getWebPErrorString(pic.error_code), pic.error_code);
+    }
+
+    WebPMemoryWriterClear(&writer);
+    WebPPictureFree(&pic);
+    return result;
 }
 
 } // extern "C"

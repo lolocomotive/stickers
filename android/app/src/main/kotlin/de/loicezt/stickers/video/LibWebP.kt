@@ -137,6 +137,12 @@ class LibWebP {
      */
     external fun nativeReleaseEncoder(): ByteArray?
 
+    /**
+     * Encodes a single straight-alpha RGBA image to a still WebP.
+     * @return The WebP bytes, or null on failure.
+     */
+    external fun nativeEncodeStill(rgba: ByteArray, width: Int, height: Int, config: WebPConfig): ByteArray?
+
     companion object {
         init {
             System.loadLibrary("stickers")

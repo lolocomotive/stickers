@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:image_editor/image_editor.dart';
 import 'package:stickers/src/pages/edit_page.dart';
 
 class DrawLayer extends StatelessWidget implements EditorLayer {
@@ -9,31 +8,6 @@ class DrawLayer extends StatelessWidget implements EditorLayer {
     final layer = DrawLayer();
     layer.painter.strokes = (json["strokes"] as List).map((stroke) => Stroke.fromJson(stroke)).toList();
     return layer;
-  }
-
-  DrawOption get drawOption {
-    DrawOption r = DrawOption();
-    for (final stroke in painter.strokes) {
-      if (stroke.points.isEmpty) continue;
-      final linePaint = DrawPaint(paintingStyle: PaintingStyle.stroke, color: stroke.color, lineWeight: stroke.width);
-      final fillPaint = DrawPaint(paintingStyle: PaintingStyle.fill, color: stroke.color, lineWeight: stroke.width);
-      Offset last = stroke.points.first;
-      for (final point in stroke.points) {
-        r.addDrawPart(LineDrawPart(start: last, end: point, paint: linePaint));
-        r.addDrawPart(
-          OvalDrawPart(
-              rect: Rect.fromLTWH(
-                point.dx - (stroke.width) / 2,
-                point.dy - (stroke.width) / 2,
-                stroke.width,
-                stroke.width,
-              ),
-              paint: fillPaint),
-        );
-        last = point;
-      }
-    }
-    return r;
   }
 
   DrawLayer({super.key});
