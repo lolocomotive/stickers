@@ -17,6 +17,7 @@ import 'src/settings/settings.dart';
 void main() async {
   Stopwatch sw = Stopwatch()..start();
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   PackageInfo.fromPlatform().then((result) => info = result);
   await createDirs();
 

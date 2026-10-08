@@ -98,7 +98,12 @@ class DefaultSliverActivity extends StatelessWidget {
             ),
           ];
         },
-        body: Scrollbar(child: child),
+        // The SliverAppBar already covers the status bar; without this, edge-to-edge (Android 15+) adds it again as a gap
+        body: MediaQuery.removePadding(
+          context: context,
+          removeTop: true,
+          child: Scrollbar(child: child),
+        ),
       ),
     );
   }
