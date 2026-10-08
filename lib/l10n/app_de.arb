@@ -98,6 +98,7 @@
     "fontSize":  "Schriftgröße",
     "color": "Farbe",
     "outline": "Umriss",
+    "background": "Hintergrund",
     "pickAColor": "Farbe auswählen",
     "staticPack": "Statisch",
     "animatedPack": "Animiert",

@@ -40,7 +40,7 @@ dependencies:
   image_editor:
     git:
       url: https://github.com/lolocomotive/flutter_image_editor
-      ref: e848b10f7be0e78dc89b0907b92859b66a12144e
+      ref: 7438e5282ab056a1aa46a1de722fe1571d919c71
       path: image_editor
   whatsapp_stickers_plus:
     git:
@@ -62,6 +62,19 @@ dev_dependencies:
 
   flutter_lints: ^6.0.0
   image_picker_platform_interface: ^2.10.1
+
+# image_editor depends on these without a ref, which would resolve to the fork's default branch
+dependency_overrides:
+  image_editor_common:
+    git:
+      url: https://github.com/lolocomotive/flutter_image_editor
+      ref: 7438e5282ab056a1aa46a1de722fe1571d919c71
+      path: image_editor_common
+  image_editor_platform_interface:
+    git:
+      url: https://github.com/lolocomotive/flutter_image_editor
+      ref: 7438e5282ab056a1aa46a1de722fe1571d919c71
+      path: image_editor_platform_interface
 
 flutter:
   generate: true

@@ -98,6 +98,7 @@
   "fontSize": "Taille de police",
   "color": "Couleur",
   "outline": "Contour",
+  "background": "Arrière-plan",
   "pickAColor": "Choisir une couleur",
   "staticPack": "Statique",
   "animatedPack": "Animé",

@@ -45,6 +45,7 @@ class TextLayer extends StatefulWidget implements EditorLayer {
       "fontName": text.fontName,
       "outlineColor": text.outlineColor.toARGB32(),
       "outlineWidth": text.outlineWidth,
+      "background": text.background.toARGB32(),
     };
   }
 
@@ -57,6 +58,7 @@ class TextLayer extends StatefulWidget implements EditorLayer {
       fontName: json["fontName"] as String? ?? "",
       outlineColor: Color(json["outlineColor"] as int? ?? 0),
       outlineWidth: (json["outlineWidth"] as num? ?? 0).toDouble(),
+      background: Color(json["background"] as int? ?? 0),
     );
 
     final layer = TextLayer(text, rbKey: rbKey);
@@ -106,6 +108,8 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    // Must match the padding used by the native renderer.
+    final padding = widget.text.fontSize * (FontsRegistry.sizeMultiplier(widget.text.fontName) ?? 1) * 0.25;
     return Transform(
       origin: const Offset(0, 0),
       transform: widget.text.transform,
@@ -116,7 +120,21 @@ class TextLayerState extends State<TextLayer> with TickerProviderStateMixin {
           GestureDetector(
             onTap: enableEditing,
             child: Stack(
+              clipBehavior: Clip.none,
               children: [
+                if (widget.text.background.a != 0)
+                  Positioned(
+                    left: -padding,
+                    right: -padding,
+                    top: -padding,
+                    bottom: -padding,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: widget.text.background,
+                        borderRadius: BorderRadius.circular(padding),
+                      ),
+                    ),
+                  ),
                 Text(
                   widget.text.text,
                   textAlign: TextAlign.center,

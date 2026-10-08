@@ -101,6 +101,7 @@
   "fontSize": "Размер",
   "color": "Цвет",
   "outline": "Контур",
+  "background": "Фон",
   "pickAColor": "Выбрать цвет",
   "staticPack": "Статичный",
   "animatedPack": "Анимированный",

@@ -139,6 +139,7 @@
   "fontSize": "Font size",
   "color": "Color",
   "outline": "Outline",
+  "background": "Background",
   "pickAColor": "Pick a color",
   "staticPack": "Static",
   "animatedPack": "Animated",

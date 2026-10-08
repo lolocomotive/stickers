@@ -98,6 +98,7 @@
   "fontSize": "Tamanho da fonte",
   "color": "Cor",
   "outline": "Contorno",
+  "background": "Fundo",
   "pickAColor": "Escolha uma cor",
   "staticPack": "Estático",
   "animatedPack": "Animado",

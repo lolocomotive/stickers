@@ -285,6 +285,17 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
                 _setTool(3);
               },
             ),
+            LabeledIconButton(
+              Padding(
+                padding: const EdgeInsets.all(3.0),
+                child: Icon(Icons.format_color_fill, color: Colors.white),
+              ),
+              AppLocalizations.of(context)!.background,
+              active: _currentTool == 4,
+              onTap: () {
+                _setTool(4);
+              },
+            ),
           ],
         );
         final fontSizeSlider = Slider(
@@ -413,11 +424,55 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
           }),
         );
 
+        final backgroundColorPicker = Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 4, 0),
+              child: widget.parent.text.background.a == 0
+                  ? FilledButton(
+                      onPressed: () {},
+                      child: Text(AppLocalizations.of(context)!.off),
+                    )
+                  : FilledButton.tonal(
+                      onPressed: () {
+                        setState(() {
+                          widget.parent.text.background = Colors.transparent;
+                        });
+                      },
+                      child: Text(AppLocalizations.of(context)!.off),
+                    ),
+            ),
+            Expanded(
+              child: LayoutBuilder(builder: (context, constraints) {
+                final half = (colors.length / 2).floor();
+                Widget row(Iterable<Color> cs) => Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: cs
+                          .map((c) => ColorButton(
+                                c,
+                                size: constraints.maxWidth / 10 - 4,
+                                onTap: () => _setBackgroundColor(c),
+                                active: c == widget.parent.text.background,
+                              ))
+                          .toList(),
+                    );
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [row(colors.getRange(0, half)), row(colors.getRange(half + 1, colors.length))],
+                  ),
+                );
+              }),
+            ),
+          ],
+        );
+
         final outlineConfigurator = Column(
           children: [outlineColorPicker, outlineWidthSlider],
         );
 
-        _tools = [fontSelector, fontSizeSlider, textColorPicker, outlineConfigurator];
+        _tools = [fontSelector, fontSizeSlider, textColorPicker, outlineConfigurator, backgroundColorPicker];
 
         final toolbar = Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -503,6 +558,19 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
     }
     setState(() {
       widget.parent.text.outlineColor = color;
+    });
+  }
+
+  void _setBackgroundColor(Color color) async {
+    if (color == Colors.transparent) {
+      _pickedColor = await showDialog(
+          context: context,
+          builder: (context) => EyedropperDialog(
+              widget.rbKey.currentContext!.findRenderObject() as RenderRepaintBoundary));
+      color = _pickedColor!;
+    }
+    setState(() {
+      widget.parent.text.background = color;
     });
   }
 }
