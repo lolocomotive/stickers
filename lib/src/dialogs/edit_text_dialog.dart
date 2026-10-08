@@ -60,10 +60,48 @@ class _TextEditingDialogState extends State<TextEditingDialog> {
       filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
       child: LayoutBuilder(builder: (context, constraints) {
         final isHorizontal = constraints.maxWidth > constraints.maxHeight;
+        final fontSize = widget.parent.text.fontSize * (FontsRegistry.sizeMultiplier(widget.parent.text.fontName) ?? 1);
+        // Same padding as the text layer
+        final backgroundPadding = fontSize * 0.25;
         final textField = Padding(
           padding: const EdgeInsets.all(24.0),
           child: Stack(
+            clipBehavior: Clip.none,
             children: [
+              if (widget.parent.text.background.a != 0 && widget.controller.text.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(right: 3.0),
+                  child: Center(
+                    // Invisible copy of the text, to size the background like in the layer
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Positioned(
+                          left: -backgroundPadding,
+                          right: -backgroundPadding,
+                          top: -backgroundPadding,
+                          bottom: -backgroundPadding,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: widget.parent.text.background,
+                              borderRadius: BorderRadius.circular(backgroundPadding),
+                            ),
+                          ),
+                        ),
+                        Text(
+                          widget.controller.text,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            inherit: false,
+                            fontSize: fontSize,
+                            color: Colors.transparent,
+                            fontFamily: widget.parent.text.fontName,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               Padding(
                 padding: const EdgeInsets.only(right: 3.0),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
