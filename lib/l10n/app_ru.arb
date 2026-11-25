@@ -138,5 +138,14 @@
   "fillMode": "1:1 Заполнить",
   "captureFrame": "Стоп-кадр",
   "captureFrameTooltip": "Захватить стоп-кадр как статичный стикер",
-  "configureSticker": "Настройка стикера"
+  "configureSticker": "Настройка стикера",
+  "qualityTitle": "Качество",
+  "qualityMax": "Макс.",
+  "qualityBalanced": "Баланс",
+  "qualitySmall": "Малый",
+  "qualityAuto": "Авто",
+  "qualityCustom": "Свой",
+  "qualityLevel": "Качество",
+  "qualityFps": "Кадров в секунду",
+  "qualityEffort": "Степень сжатия"
 }

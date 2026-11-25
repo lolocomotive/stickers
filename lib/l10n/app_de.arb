@@ -135,5 +135,14 @@
     "fillMode": "1:1 Füllen",
     "captureFrame": "Standbild",
     "captureFrameTooltip": "Standbild als statischen Sticker erfassen",
-    "configureSticker": "Sticker konfigurieren"
+    "configureSticker": "Sticker konfigurieren",
+    "qualityTitle": "Qualität",
+    "qualityMax": "Maximal",
+    "qualityBalanced": "Ausgewogen",
+    "qualitySmall": "Klein",
+    "qualityAuto": "Auto",
+    "qualityCustom": "Benutzerdefiniert",
+    "qualityLevel": "Qualität",
+    "qualityFps": "Bilder pro Sekunde",
+    "qualityEffort": "Kompressionsaufwand"
 }

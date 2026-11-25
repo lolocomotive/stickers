@@ -138,5 +138,14 @@
   "fillMode": "Fill 1:1",
   "captureFrame": "Static frame",
   "captureFrameTooltip": "Capture still frame as static sticker",
-  "configureSticker": "Configure sticker"
+  "configureSticker": "Configure sticker",
+  "qualityTitle": "Quality",
+  "qualityMax": "Max",
+  "qualityBalanced": "Balanced",
+  "qualitySmall": "Small",
+  "qualityAuto": "Auto",
+  "qualityCustom": "Custom",
+  "qualityLevel": "Quality",
+  "qualityFps": "Frames per second",
+  "qualityEffort": "Compression effort"
 }

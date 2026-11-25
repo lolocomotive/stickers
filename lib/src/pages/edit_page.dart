@@ -21,6 +21,8 @@ import 'package:stickers/src/pages/crop_page.dart';
 import 'package:stickers/src/pages/default_page.dart';
 import 'package:stickers/src/video/common.dart';
 import 'package:stickers/src/video/overlay_encode.dart';
+import 'package:stickers/src/video/quality_profile.dart';
+import 'package:stickers/src/widgets/quality_selector.dart';
 import 'package:stickers/src/widgets/draw_layer.dart';
 import 'package:stickers/src/widgets/text_layer.dart';
 import 'package:vector_math/vector_math_64.dart' hide Colors;
@@ -71,10 +73,15 @@ class _EditPageState extends State<EditPage> {
 
   TextLayer? _currentTextLayer;
 
+  QualitySettings _quality = QualitySettings();
+
   @override
   void initState() {
     super.initState();
     _source = File(widget.imagePath);
+    QualitySettings.load().then((q) {
+      if (mounted) setState(() => _quality = q);
+    });
     if (widget.mediaType == MediaType.video) {
       _controller = VideoPlayerController.file(
         _source,
@@ -423,6 +430,16 @@ class _EditPageState extends State<EditPage> {
               duration: Duration(milliseconds: 200),
             );
 
+            final qualitySelector = QualitySelector(
+              settings: _quality,
+              animated: widget.mediaType != MediaType.picture,
+              enabled: !_exporting,
+              onChanged: (q) {
+                setState(() => _quality = q);
+                q.save();
+              },
+            );
+
             var doneButton = FilledButton.icon(
               icon: Icon(Icons.done),
               onPressed: _exporting
@@ -461,6 +478,7 @@ class _EditPageState extends State<EditPage> {
                                   colorButtons,
                                   undoButtons,
                                   if (_drawing) SizedBox(height: 12),
+                                  qualitySelector,
                                   doneButton,
                                 ],
                               ),
@@ -488,6 +506,7 @@ class _EditPageState extends State<EditPage> {
                         imageDisplay,
                         undoButtons,
                         SizedBox(height: 12),
+                        qualitySelector,
                         doneButton,
                       ],
                     ),
@@ -572,9 +591,12 @@ class _EditPageState extends State<EditPage> {
   }
 
   /// WhatsApp rejects static stickers over 100 kB, so lower the quality until it fits.
+  /// Starts at the quality of the selected profile.
   Future<Uint8List> _exportStaticSticker(ImageEditorOption option) async {
     Uint8List? data;
-    for (final quality in const [90, 75, 60, 45, 30]) {
+    final start = _quality.profile.quality.round();
+    final qualities = <int>{for (int q = start; q >= 10; q -= 15) q};
+    for (final quality in qualities) {
       option.outputFormat = OutputFormat.webp_lossy(quality);
       data = (await ImageEditor.editFileImage(file: _source, imageEditorOption: option))!;
       if (data.lengthInBytes <= 100 * 1024) break;
@@ -599,8 +621,9 @@ class _EditPageState extends State<EditPage> {
     final output = File("$mediaCacheDir/exported_${DateTime.now().millisecondsSinceEpoch}.webp");
     Stopwatch sw = Stopwatch()..start();
     Uint8List? data;
-    double quality = 60;
-    int fps = 24;
+    final profile = _quality.profile;
+    double quality = profile.quality;
+    int fps = profile.fps;
 
     for (int attempt = 0; attempt < 3; attempt++) {
       if (context.mounted) {
@@ -618,7 +641,7 @@ class _EditPageState extends State<EditPage> {
         lossless: false,
         quality: quality,
         alphaCompression: 1,
-        method: 4,
+        method: profile.method,
       );
       await service.start(
         videoFile: _source.path,
@@ -652,7 +675,7 @@ class _EditPageState extends State<EditPage> {
           // If the sticker is really too large, the only solution is to drop frames
           fps = (fps / (data.lengthInBytes / 1024) * 550).round();
         }
-        quality -= 20;
+        quality = max(5, quality - 20);
         print("New configuration: q=$quality fps=$fps");
       }
     }

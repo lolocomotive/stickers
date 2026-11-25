@@ -135,5 +135,14 @@
   "fillMode": "Remplir 1:1",
   "captureFrame": "Image fixe",
   "captureFrameTooltip": "Capturer une image fixe comme sticker statique",
-  "configureSticker": "Configurer le sticker"
+  "configureSticker": "Configurer le sticker",
+  "qualityTitle": "Qualité",
+  "qualityMax": "Max",
+  "qualityBalanced": "Équilibré",
+  "qualitySmall": "Léger",
+  "qualityAuto": "Auto",
+  "qualityCustom": "Personnalisé",
+  "qualityLevel": "Qualité",
+  "qualityFps": "Images par seconde",
+  "qualityEffort": "Effort de compression"
 }
